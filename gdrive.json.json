@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "sigma-consultants-backup",
+  "private_key_id": "df479cd92b309ec46d5234f54fd2a9cce438c8a7",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCFLpppUIIAHbO1\nryhlvxkJ6zkUK905fSTjvLMtbahVuWV4VdM0G+RojWPx3c4CFXHx0g1nopONoaw2\n6pJosjkE7WC1LwCZxqGN6vDjlnCFGL+Jx5UEUrekLKBPqF1O5ZXYgoshydW3NXCy\nf9yYzILG1vzIp5tSJWs5XCan5j5MNQQ33S7qx6x80poI6v6LBgJhHaj2bmMX44aK\nBxYXquHN+mL8TigKEqnB6YePg/RYuLFYO2/YXD+B0K0ZjSXj5zV5XXiAWooq3G16\n5vwTOW90iD86mkk1ktsuFIBg4nH9KviZdBvuAJD0KMGPRsLAitxcKFWH1M/vZ7JO\nRcDt6ZV5AgMBAAECggEAPnC5CEMsj+1dAgNbB0ju7k2P9zsRfxCDKRqhTt0onPhM\n8Hwch0PEdJhFkXISUbvILj3y9vGsCC0SVrTna5qTTRIV0xx0RaRwvd62jZ1Mp7oQ\nowIlhV9apegeSPqAtKrC9D1QCcldH4Y4jheQTzsi3SKSZWjfU0Yj3UKtBO7XqlZL\nuJQdNUC+wOhz1Dld75WZzsoww6g7qu6rEAgyEn0H597P4v/5eIU1uOQDyp+NG4CN\nPqSiqiqJJOVijw8BU5z0N+yC1ti5UROp2OuYSfbcNH7NFKgIBHs1nlbXr1JP4UTA\nL5juaC6PFqoSuPkM2e06gt0gsLIQwGfM6BipTUYl2QKBgQC7jpNSX5Htxq0HtIc3\nlHfkSoXKaJU7mbKvRCT/Bwh+qVoHjvvP303LTILA6Spo7M8EmkrszV3ladlLdetz\niWOzhx4r7fR1XTa8cix0W1UTtVi+y4SQoDZkoBgI4Z6b5FnLfEDh7koDGoZA/pLa\nbqrz/EWsEUT5YXv8mm1z7G25gwKBgQC1yF3+IDbtkmkNYiCJ+9df/SGt8rymF4IO\n9M4gX8a+WeBuEzC/PijY8TI2wYRBU8U1gVoyb3KAbJhr0RwWFDVbi+T+ZHpgPYAk\nI9x/LHWtuDH4rn8ciwDDdcU6NS3yfrEjFG0D5nF9hsZM4h9BMb814BR9Qa68lr9s\nlZZ3+zTQUwKBgC8mIVzUz5+BkV/dfxx2w0jtfwKqFdHcynGK5O4De5wzwIEj7aON\nFEZmHnyWYOXtmgEjNHChE9inKkvxAdaSlDC+Z9RNRmX2n9rxrME3cIS60utryBB/\nZg0XvdMFvNSdrAEeZEUnnQ14roVKOeqVZX5eTbl6wecbHYsb2yYIKnE3AoGBAJ5O\n+pw/jdZjtR00ocXJDw3HMrd8N5Il0twXkhNblYdcWjlCeSdziLs1gldxPC5wN8Sa\n++QEbqEs8aijmWQZAUbSlAB/nJuHs7rFiFcwbuN1D//UZ1qCK44NWE+S1IrkjntQ\nZIgK/jclUjjOjA2It07B8NYMh5Ixbk+wDjQ7DwmFAoGAIw9xNn2XaauLHBEcm4P8\n6TJeqVYJEdmlaOjp6x0NpU7Vbd3mgPp0k1gzMl1LV8rAyw8vnw8P6E/t+N8jj39M\n0L1fTKwxbg61NMYwT9j2UQ6lY+ch6Oq1HvLD6x3MIk3VUMmMJWmD5wO20RoL15he\nOMujTfSJU+gUZASjw//bHoI=\n-----END PRIVATE KEY-----\n",
+  "client_email": "sigma-backup@sigma-consultants-backup.iam.gserviceaccount.com",
+  "client_id": "118031606447935143599",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sigma-backup%40sigma-consultants-backup.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
