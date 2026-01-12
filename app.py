@@ -7,10 +7,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-import json
 # ---------------- PASSWORD -----------------
 PASSWORD = "sigma123"
 if "auth" not in st.session_state:
@@ -107,57 +103,6 @@ if st.session_state.page=="Home":
     # --------- GOOGLE DRIVE SECTION ---------
     if "drive_creds" not in st.session_state:
         st.session_state.drive_creds = None
-
-    st.subheader("☁️ Google Drive Backup")
-
-    if st.session_state.drive_creds is None:
-        if st.button("🔑 Connect Google Drive"):
-            try:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "oauth.json",
-                    scopes=["https://www.googleapis.com/auth/drive.file"]
-                )
-                st.session_state.drive_creds = flow.run_local_server(port=0)
-                st.success("Google Drive connected successfully")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Google login failed: {e}")
-    else:
-        st.success("Google Drive is connected")
-
-        if st.button("☁️ Backup Now"):
-            try:
-                service = build("drive", "v3", credentials=st.session_state.drive_creds)
-
-                folder_name = "Sigma_Consultants_Backup"
-                results = service.files().list(
-                    q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
-                ).execute()
-                items = results.get("files", [])
-
-                if not items:
-                    folder = service.files().create(
-                        body={"name": folder_name, "mimeType": "application/vnd.google-apps.folder"},
-                        fields="id"
-                    ).execute()
-                    folder_id = folder["id"]
-                else:
-                    folder_id = items[0]["id"]
-
-                for file in ["clients.xlsx", "proposals.xlsx"]:
-                    if os.path.exists(file):
-                        media = MediaFileUpload(file)
-                        service.files().create(
-                            media_body=media,
-                            body={"name": file, "parents": [folder_id]}
-                        ).execute()
-
-                st.success("Backup uploaded to Google Drive successfully")
-
-            except Exception as e:
-                st.error(f"Backup failed: {e}")
-
-    st.stop()
 import zipfile
 import io
 
@@ -277,6 +222,7 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
 
