@@ -86,18 +86,20 @@ def calc(cost,rate,days):
 if st.session_state.page=="Home":
     st.markdown("### ☁️ Cloud Backup")
 
+import json
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
 if st.button("Backup to Google Drive"):
     try:
-        import json
-from google.oauth2 import service_account
+        gdrive_dict = json.loads(st.secrets["gdrive_json"])
 
-gdrive_dict = json.loads(st.secrets["gdrive_json"])
-creds = service_account.Credentials.from_service_account_info(
-    gdrive_dict,
-    scopes=["https://www.googleapis.com/auth/drive"]
-)
+        creds = service_account.Credentials.from_service_account_info(
+            gdrive_dict,
             scopes=["https://www.googleapis.com/auth/drive"]
         )
+
         service = build("drive", "v3", credentials=creds)
 
         folder_name = "Sigma_Consultants_Backup"
@@ -105,6 +107,7 @@ creds = service_account.Credentials.from_service_account_info(
             q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'",
             spaces="drive"
         ).execute()
+
         items = results.get("files", [])
 
         if not items:
@@ -238,5 +241,6 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
