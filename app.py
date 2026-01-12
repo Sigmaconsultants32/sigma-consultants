@@ -84,111 +84,81 @@ def calc(cost,rate,days):
 
 # ---------------- HOME -----------------
 if st.session_state.page=="Home":
-    if "drive_creds" not in st.session_state:
-    st.session_state.drive_creds = None
+    st.markdown("<h2 class='header'>Sigma Consultants</h2>", unsafe_allow_html=True)
 
-st.markdown("### ☁️ Google Drive")
-
-if st.session_state.drive_creds is None:
-    if st.button("🔑 Connect Google Drive"):
-        flow = InstalledAppFlow.from_client_secrets_file(
-            "oauth.json",
-            scopes=["https://www.googleapis.com/auth/drive.file"]
-        )
-        st.session_state.drive_creds = flow.run_local_server(port=0)
-        st.success("Google Drive connected")
-        st.rerun()
-else:
-    st.success("Google Drive connected")
-    if st.session_state.drive_creds:
-    if st.button("☁️ Backup Now"):
-        try:
-            service = build("drive", "v3", credentials=st.session_state.drive_creds)
-
-            folder_name = "Sigma_Consultants_Backup"
-            results = service.files().list(
-                q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
-            ).execute()
-            items = results.get("files", [])
-
-            if not items:
-                folder = service.files().create(
-                    body={"name": folder_name, "mimeType": "application/vnd.google-apps.folder"},
-                    fields="id"
-                ).execute()
-                folder_id = folder["id"]
-            else:
-                folder_id = items[0]["id"]
-
-            for file in ["clients.xlsx", "proposals.xlsx"]:
-                if os.path.exists(file):
-                    media = MediaFileUpload(file)
-                    service.files().create(
-                        media_body=media,
-                        body={"name": file, "parents": [folder_id]}
-                    ).execute()
-
-            st.success("Backup uploaded to Google Drive")
-
-        except Exception as e:
-            st.error(f"Backup failed: {e}")
-    st.markdown("### ☁️ Cloud Backup")
-
-import json
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-
-if st.button("Backup to Google Drive"):
-    try:
-        gdrive_dict = json.loads(st.secrets["gdrive_json"])
-
-        creds = service_account.Credentials.from_service_account_info(
-            gdrive_dict,
-            scopes=["https://www.googleapis.com/auth/drive"]
-        )
-
-        service = build("drive", "v3", credentials=creds)
-
-        folder_name = "Sigma_Consultants_Backup"
-        results = service.files().list(
-            q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'",
-            spaces="drive"
-        ).execute()
-
-        items = results.get("files", [])
-
-        if not items:
-            folder = service.files().create(
-                body={"name": folder_name, "mimeType": "application/vnd.google-apps.folder"},
-                fields="id"
-            ).execute()
-            folder_id = folder["id"]
-        else:
-            folder_id = items[0]["id"]
-
-        for file in ["clients.xlsx", "proposals.xlsx"]:
-            if os.path.exists(file):
-                media = MediaFileUpload(file)
-                service.files().create(
-                    media_body=media,
-                    body={"name": file, "parents": [folder_id]}
-                ).execute()
-
-        st.success("Backup uploaded to Google Drive successfully")
-
-    except Exception as e:
-        st.error(f"Backup failed: {e}")
-    st.markdown("<h2 class='header'>Sigma Consultants</h2>",unsafe_allow_html=True)
-    c1,c2=st.columns(2)
+    # --------- DASHBOARD BUTTONS ---------
+    c1, c2 = st.columns(2)
     with c1:
-        if st.button("➕ Add Client"): st.session_state.page="Add Client"
-        if st.button("📄 Add Proposal"): st.session_state.page="Add Proposal"
-        if st.button("✏️ Edit / Delete"): st.session_state.page="Edit"
+        if st.button("➕ Add Client", use_container_width=True):
+            st.session_state.page = "Add Client"
+        if st.button("📄 Add Proposal", use_container_width=True):
+            st.session_state.page = "Add Proposal"
+        if st.button("✏️ Edit / Delete", use_container_width=True):
+            st.session_state.page = "Edit"
+
     with c2:
-        if st.button("🔍 Find Details"): st.session_state.page="Find"
-        if st.button("📊 Summary"): st.session_state.page="Summary"
+        if st.button("🔍 Find Details", use_container_width=True):
+            st.session_state.page = "Find"
+        if st.button("📊 Summary", use_container_width=True):
+            st.session_state.page = "Summary"
+
+    st.markdown("---")
+
+    # --------- GOOGLE DRIVE SECTION ---------
+    if "drive_creds" not in st.session_state:
+        st.session_state.drive_creds = None
+
+    st.subheader("☁️ Google Drive Backup")
+
+    if st.session_state.drive_creds is None:
+        if st.button("🔑 Connect Google Drive"):
+            try:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "oauth.json",
+                    scopes=["https://www.googleapis.com/auth/drive.file"]
+                )
+                st.session_state.drive_creds = flow.run_local_server(port=0)
+                st.success("Google Drive connected successfully")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Google login failed: {e}")
+    else:
+        st.success("Google Drive is connected")
+
+        if st.button("☁️ Backup Now"):
+            try:
+                service = build("drive", "v3", credentials=st.session_state.drive_creds)
+
+                folder_name = "Sigma_Consultants_Backup"
+                results = service.files().list(
+                    q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
+                ).execute()
+                items = results.get("files", [])
+
+                if not items:
+                    folder = service.files().create(
+                        body={"name": folder_name, "mimeType": "application/vnd.google-apps.folder"},
+                        fields="id"
+                    ).execute()
+                    folder_id = folder["id"]
+                else:
+                    folder_id = items[0]["id"]
+
+                for file in ["clients.xlsx", "proposals.xlsx"]:
+                    if os.path.exists(file):
+                        media = MediaFileUpload(file)
+                        service.files().create(
+                            media_body=media,
+                            body={"name": file, "parents": [folder_id]}
+                        ).execute()
+
+                st.success("Backup uploaded to Google Drive successfully")
+
+            except Exception as e:
+                st.error(f"Backup failed: {e}")
+
     st.stop()
+
 # ================= ADD CLIENT =====================
 if st.session_state.page=="Add Client":
     st.markdown("<h2 class='header'>Add Client</h2>",unsafe_allow_html=True)
@@ -289,6 +259,7 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
 
