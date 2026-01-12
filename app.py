@@ -7,10 +7,10 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-from google.oauth2 import service_account
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-
+import json
 # ---------------- PASSWORD -----------------
 PASSWORD = "sigma123"
 if "auth" not in st.session_state:
@@ -84,6 +84,22 @@ def calc(cost,rate,days):
 
 # ---------------- HOME -----------------
 if st.session_state.page=="Home":
+    if "drive_creds" not in st.session_state:
+    st.session_state.drive_creds = None
+
+st.markdown("### ☁️ Google Drive")
+
+if st.session_state.drive_creds is None:
+    if st.button("🔑 Connect Google Drive"):
+        flow = InstalledAppFlow.from_client_secrets_file(
+            "oauth.json",
+            scopes=["https://www.googleapis.com/auth/drive.file"]
+        )
+        st.session_state.drive_creds = flow.run_local_server(port=0)
+        st.success("Google Drive connected")
+        st.rerun()
+else:
+    st.success("Google Drive connected")
     st.markdown("### ☁️ Cloud Backup")
 
 import json
@@ -241,6 +257,7 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
 
