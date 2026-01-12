@@ -97,6 +97,25 @@ if st.session_state.page=="Home":
             st.session_state.page = "Find"
         if st.button("📊 Summary", use_container_width=True):
             st.session_state.page = "Summary"
+    
+    import zipfile
+    import io
+
+    st.subheader("📦 Data Backup")
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+        if os.path.exists("clients.xlsx"):
+            zipf.write("clients.xlsx")
+        if os.path.exists("proposals.xlsx"):
+            zipf.write("proposals.xlsx")
+
+    st.download_button(
+        "⬇ Download Backup",
+        data=buffer.getvalue(),
+        file_name="Sigma_Consultants_Backup.zip",
+        mime="application/zip"
+    )
 
     st.markdown("---")
 
@@ -222,6 +241,7 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
 
