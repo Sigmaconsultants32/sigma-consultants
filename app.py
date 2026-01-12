@@ -110,13 +110,14 @@ if st.session_state.page=="Home":
         if os.path.exists("proposals.xlsx"):
             zipf.write("proposals.xlsx")
 
-    st.download_button(
-        "⬇ Download Backup",
-        data=buffer.getvalue(),
-        file_name="Sigma_Consultants_Backup.zip",
-        mime="application/zip"
-    )
-
+st.download_button(
+    "⬇ Download Backup",
+    data=buffer.getvalue(),
+    file_name="Sigma_Consultants_Backup.zip",
+    mime="application/zip",
+    key="backup_download"
+)
+    
     st.markdown("---")
 
     # --------- GOOGLE DRIVE SECTION ---------
@@ -241,6 +242,7 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
 
