@@ -88,8 +88,14 @@ if st.session_state.page=="Home":
 
 if st.button("Backup to Google Drive"):
     try:
-        creds = service_account.Credentials.from_service_account_file(
-            "gdrive.json",
+        import json
+from google.oauth2 import service_account
+
+gdrive_dict = json.loads(st.secrets["gdrive_json"])
+creds = service_account.Credentials.from_service_account_info(
+    gdrive_dict,
+    scopes=["https://www.googleapis.com/auth/drive"]
+)
             scopes=["https://www.googleapis.com/auth/drive"]
         )
         service = build("drive", "v3", credentials=creds)
@@ -232,4 +238,5 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
