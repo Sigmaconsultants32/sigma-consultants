@@ -100,6 +100,38 @@ if st.session_state.drive_creds is None:
         st.rerun()
 else:
     st.success("Google Drive connected")
+    if st.session_state.drive_creds:
+    if st.button("☁️ Backup Now"):
+        try:
+            service = build("drive", "v3", credentials=st.session_state.drive_creds)
+
+            folder_name = "Sigma_Consultants_Backup"
+            results = service.files().list(
+                q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
+            ).execute()
+            items = results.get("files", [])
+
+            if not items:
+                folder = service.files().create(
+                    body={"name": folder_name, "mimeType": "application/vnd.google-apps.folder"},
+                    fields="id"
+                ).execute()
+                folder_id = folder["id"]
+            else:
+                folder_id = items[0]["id"]
+
+            for file in ["clients.xlsx", "proposals.xlsx"]:
+                if os.path.exists(file):
+                    media = MediaFileUpload(file)
+                    service.files().create(
+                        media_body=media,
+                        body={"name": file, "parents": [folder_id]}
+                    ).execute()
+
+            st.success("Backup uploaded to Google Drive")
+
+        except Exception as e:
+            st.error(f"Backup failed: {e}")
     st.markdown("### ☁️ Cloud Backup")
 
 import json
@@ -257,6 +289,7 @@ if st.session_state.page=="Summary":
         st.dataframe(table,use_container_width=True)
 
     if st.button("⬅️ Back"): st.session_state.page="Home"
+
 
 
 
