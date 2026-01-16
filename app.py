@@ -271,15 +271,17 @@ if st.session_state.page == "Edit":
         st.success("Proposal updated successfully")
 
 # =====================================================
-# ================= CLIENTS ===========================
+# ================= CLIENTS (ENHANCED) ================
 # =====================================================
 if st.session_state.page == "Clients":
 
-    st.header("👤 Clients")
+    st.header("👤 Clients Management")
 
-    # -------- ADD NEW CLIENT --------
+    # -------------------------------------------------
+    # ADD NEW CLIENT
+    # -------------------------------------------------
     with st.expander("➕ Add New Client"):
-        cname = st.text_input("Client Name")
+        cname = st.text_input("Client Name", placeholder="Enter client name")
         if st.button("Add Client", use_container_width=True):
             if cname.strip():
                 clients_df.loc[len(clients_df)] = [
@@ -293,12 +295,97 @@ if st.session_state.page == "Clients":
             else:
                 st.error("Client name cannot be empty")
 
-    # -------- CLIENT LIST --------
+    # -------------------------------------------------
+    # CLIENT SEARCH
+    # -------------------------------------------------
+    search = st.text_input("🔍 Search Client", placeholder="Type client name")
+
+    filtered_clients = clients_df.copy()
+    if search.strip():
+        filtered_clients = filtered_clients[
+            filtered_clients["Client_Name"].str.contains(search, case=False, na=False)
+        ]
+
+    # -------------------------------------------------
+    # CLIENT LIST WITH ACTIONS
+    # -------------------------------------------------
     with st.expander("📋 Client List", expanded=True):
-        if clients_df.empty:
-            st.info("No clients available")
-        else:
-            st.dataframe(clients_df, use_container_width=True)
+
+        if filtered_clients.empty:
+            st.info("No clients found")
+            st.stop()
+
+        for _, client in filtered_clients.iterrows():
+
+            client_id = client["Client_ID"]
+            client_name = client["Client_Name"]
+
+            # Proposal count
+            proposal_count = len(
+                proposals_df[proposals_df["Client_ID"] == client_id]
+            )
+
+            st.markdown(
+                f"""
+                <div style="
+                border:1px solid #ddd;
+                border-radius:12px;
+                padding:12px;
+                margin-bottom:10px;
+                background:#fafafa">
+                <b>{client_name}</b><br>
+                <span style="color:#555">Client ID:</span> {client_id}<br>
+                <span style="color:#555">Proposals:</span> {proposal_count}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            col1, col2, col3 = st.columns([3, 2, 2])
+
+            # -------- EDIT CLIENT --------
+            with col1:
+                new_name = st.text_input(
+                    "Edit Name",
+                    value=client_name,
+                    key=f"edit_{client_id}"
+                )
+                if new_name.strip() and new_name != client_name:
+                    clients_df.loc[
+                        clients_df["Client_ID"] == client_id,
+                        "Client_Name"
+                    ] = new_name.strip()
+
+                    proposals_df.loc[
+                        proposals_df["Client_ID"] == client_id,
+                        "Client_Name"
+                    ] = new_name.strip()
+
+                    save_clients()
+                    save_proposals()
+                    st.success("Client name updated")
+                    st.rerun()
+
+            # -------- VIEW PROPOSALS --------
+            with col2:
+                if st.button("📄 View Proposals", key=f"view_{client_id}"):
+                    st.session_state.page = "Find"
+                    st.rerun()
+
+            # -------- DELETE CLIENT --------
+            with col3:
+                if st.button("🗑️ Delete", key=f"del_{client_id}"):
+
+                    if proposal_count > 0:
+                        st.error("Cannot delete client with existing proposals")
+                    else:
+                        clients_df.drop(
+                            clients_df[clients_df["Client_ID"] == client_id].index,
+                            inplace=True
+                        )
+                        save_clients()
+                        st.success("Client deleted")
+                        st.rerun()
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -400,6 +487,7 @@ if st.session_state.page == "AddProposal":
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
         st.rerun()
+
 
 
 
