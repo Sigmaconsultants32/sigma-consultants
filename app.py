@@ -138,20 +138,40 @@ if st.session_state.page == "Summary":
             c3.metric("Active Proposals", active)
 
 # =====================================================
-# ================= FIND DETAILS ======================
+# ================= FIND DETAILS (IMPROVED) ===========
 # =====================================================
 if st.session_state.page == "Find":
 
     st.header("🔍 Find Proposal Details")
 
     if proposals_df.empty:
-        st.warning("No data available")
+        st.warning("No proposal data available")
         st.stop()
 
+    # ---------- FILTERS ----------
     col1, col2 = st.columns(2)
-    client = col1.selectbox("Client", ["All"] + sorted(proposals_df["Client_Name"].dropna().unique()))
-    status = col2.selectbox("Status", ["All","Open","Closed"])
+    client = col1.selectbox(
+        "Client Name",
+        ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+    )
 
+    status = col2.selectbox(
+        "Status",
+        ["All", "Active", "Closed"]
+    )
+
+    col3, col4 = st.columns(2)
+    start_date = col3.date_input(
+        "Start Date (From)",
+        value=None
+    )
+
+    end_date = col4.date_input(
+        "End Date (To)",
+        value=None
+    )
+
+    # ---------- APPLY FILTERS ----------
     result = proposals_df.copy()
 
     if client != "All":
@@ -160,20 +180,61 @@ if st.session_state.page == "Find":
     if status != "All":
         result = result[result["Status"] == status]
 
-    st.markdown("### Results")
+    if start_date:
+        result = result[result["Start_Date"] >= pd.to_datetime(start_date)]
 
+    if end_date:
+        result = result[result["End_Date"] <= pd.to_datetime(end_date)]
+
+    st.markdown("---")
+    st.subheader("📋 Follow-up Details")
+
+    # ---------- NO RESULT ----------
     if result.empty:
-        st.info("No matching records found")
+        st.info("No records found for selected criteria")
+        st.stop()
+
+    # ---------- MOBILE VIEW (VERTICAL TABLE) ----------
+    if is_mobile:
+        for _, r in result.sort_values("Start_Date").iterrows():
+            st.markdown(
+                f"""
+                <div style="
+                border:1px solid #ddd;
+                border-radius:12px;
+                padding:14px;
+                margin-bottom:12px;
+                background:#fafafa">
+
+                <b>Client:</b> {r['Client_Name']}<br>
+                <b>Proposal ID:</b> {r['Proposal_ID']}<br>
+                <b>Status:</b> {r['Status']}<br>
+                <b>Start Date:</b> {r['Start_Date'].date() if pd.notna(r['Start_Date']) else "-"}<br>
+                <b>End Date:</b> {r['End_Date'].date() if pd.notna(r['End_Date']) else "-"}<br>
+                <b>Proposal Amount:</b> ₹ {r['Proposal_Cost']:,.0f}<br>
+                <b>Profit:</b> ₹ {r['Profit']:,.0f}
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # ---------- DESKTOP VIEW (CLEAN TABLE) ----------
     else:
-        if is_mobile:
-            for _, r in result.iterrows():
-                card("Client", r["Client_Name"])
-                card("Proposal ID", r["Proposal_ID"])
-                card("Amount", f"₹ {r['Proposal_Cost']:,.0f}")
-                card("Profit", f"₹ {r['Profit']:,.0f}")
-                card("Status", r["Status"])
-        else:
-            st.dataframe(result, use_container_width=True)
+        display_df = result[[
+            "Client_Name",
+            "Proposal_ID",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Profit",
+            "Status"
+        ]].sort_values("Start_Date")
+
+        display_df["Start_Date"] = display_df["Start_Date"].dt.date
+        display_df["End_Date"] = display_df["End_Date"].dt.date
+
+        st.dataframe(display_df, use_container_width=True)
 
 # =====================================================
 # ================= EDIT PROPOSAL =====================
@@ -219,4 +280,5 @@ if st.session_state.page == "Clients":
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
+
 
