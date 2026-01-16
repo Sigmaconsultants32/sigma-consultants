@@ -198,35 +198,110 @@ if st.session_state.page == "AddProposal":
         st.rerun()
 
 # =====================================================
-# ================= FIND DETAILS ======================
+# ================= FIND DETAILS (FINAL) ==============
 # =====================================================
 if st.session_state.page == "Find":
 
     st.header("🔍 Find Proposal Details")
 
-    col1,col2 = st.columns(2)
-    client = col1.selectbox("Client", ["All"]+sorted(proposals_df["Client_Name"].unique()))
-    status = col2.selectbox("Status", ["All","Open","Closed"])
+    if proposals_df.empty:
+        st.warning("No proposal data available")
+        st.stop()
 
-    col3,col4 = st.columns(2)
-    sdate = col3.date_input("Start Date From", value=None)
-    edate = col4.date_input("End Date To", value=None)
+    # ---------- FILTERS ----------
+    col1, col2 = st.columns(2)
+    client = col1.selectbox(
+        "Client Name",
+        ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+    )
 
-    df = proposals_df.copy()
-    if client!="All": df=df[df["Client_Name"]==client]
-    if status!="All": df=df[df["Status"]==status]
-    if sdate: df=df[df["Start_Date"]>=pd.to_datetime(sdate)]
-    if edate: df=df[df["End_Date"]<=pd.to_datetime(edate)]
+    status = col2.selectbox(
+        "Status",
+        ["All", "Open", "Closed"]
+    )
 
-    if df.empty:
-        st.info("No records found")
+    col3, col4 = st.columns(2)
+    start_date = col3.date_input(
+        "Start Date (From)",
+        value=None
+    )
+
+    end_date = col4.date_input(
+        "End Date (To)",
+        value=None
+    )
+
+    # ---------- APPLY FILTERS ----------
+    result = proposals_df.copy()
+
+    if client != "All":
+        result = result[result["Client_Name"] == client]
+
+    if status != "All":
+        result = result[result["Status"] == status]
+
+    if start_date:
+        result = result[result["Start_Date"] >= pd.to_datetime(start_date)]
+
+    if end_date:
+        result = result[result["End_Date"] <= pd.to_datetime(end_date)]
+
+    st.markdown("---")
+    st.subheader("📋 Follow-up Details")
+
+    if result.empty:
+        st.info("No records found for selected criteria")
+        st.stop()
+
+    # ---------- MOBILE VIEW (VERTICAL FOLLOW-UP CARDS) ----------
+    if is_mobile:
+        for _, r in result.sort_values("Start_Date").iterrows():
+            st.markdown(
+                f"""
+                <div style="
+                border:1px solid #ddd;
+                border-radius:12px;
+                padding:14px;
+                margin-bottom:12px;
+                background:#fafafa">
+
+                <b>Client:</b> {r['Client_Name']}<br>
+                <b>Proposal ID:</b> {r['Proposal_ID']}<br>
+                <b>Status:</b> {r['Status']}<br>
+                <b>Rate (%):</b> {float(r['Rate']):.2f}%<br>
+                <b>Start Date:</b> {r['Start_Date'].date() if pd.notna(r['Start_Date']) else "-"}<br>
+                <b>End Date:</b> {r['End_Date'].date() if pd.notna(r['End_Date']) else "-"}<br>
+                <b>Proposal Amount:</b> ₹ {float(r['Proposal_Cost']):,.2f}<br>
+                <b>Final Amount:</b> ₹ {float(r['Final_Cost']):,.2f}<br>
+                <b>Profit:</b> ₹ {float(r['Profit']):,.2f}
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # ---------- DESKTOP VIEW (FOLLOW-UP TABLE) ----------
     else:
-        for _,r in df.iterrows():
-            card("Client", r["Client_Name"])
-            card("Rate (%)", f"{r['Rate']:.2f}")
-            card("Proposal Amount", f"₹ {r['Proposal_Cost']:,.2f}")
-            card("Final Amount", f"₹ {r['Final_Cost']:,.2f}")
-            card("Profit", f"₹ {r['Profit']:,.2f}")
+        display_df = result[[
+            "Client_Name",
+            "Proposal_ID",
+            "Rate",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Final_Cost",
+            "Profit",
+            "Status"
+        ]].sort_values("Start_Date")
+
+        display_df["Rate"] = display_df["Rate"].astype(float).round(2)
+        display_df["Proposal_Cost"] = display_df["Proposal_Cost"].astype(float).round(2)
+        display_df["Final_Cost"] = display_df["Final_Cost"].astype(float).round(2)
+        display_df["Profit"] = display_df["Profit"].astype(float).round(2)
+        display_df["Start_Date"] = display_df["Start_Date"].dt.date
+        display_df["End_Date"] = display_df["End_Date"].dt.date
+
+        st.dataframe(display_df, use_container_width=True)
 
 # =====================================================
 # ================= EDIT PROPOSAL =====================
@@ -311,3 +386,4 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
