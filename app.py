@@ -1,6 +1,5 @@
 # =====================================================
-# Sigma Consultants – Production Build v2.2
-# Mobile + Desktop Stable
+# Sigma Consultants – Production Build v2.3
 # =====================================================
 
 import streamlit as st
@@ -8,7 +7,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# ---------------- PAGE CONFIG (MUST BE FIRST) ----------------
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
 # ---------------- MOBILE TOGGLE ----------------
@@ -24,7 +23,7 @@ def card(title, value):
         margin-bottom:12px;
         box-shadow:0 4px 10px rgba(0,0,0,0.08)">
         <div style="font-size:14px;color:#555">{title}</div>
-        <div style="font-size:26px;font-weight:600">{value}</div>
+        <div style="font-size:22px;font-weight:600">{value}</div>
         </div>
         """,
         unsafe_allow_html=True
@@ -32,7 +31,6 @@ def card(title, value):
 
 # ---------------- PASSWORD ----------------
 PASSWORD = "sigma123"
-
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
@@ -51,12 +49,12 @@ if not st.session_state.auth:
 CLIENT_FILE = "clients.xlsx"
 PROPOSAL_FILE = "proposals.xlsx"
 
-# ---------------- DATA LOADERS ----------------
+# ---------------- LOADERS ----------------
 def load_clients():
     if os.path.exists(CLIENT_FILE):
         return pd.read_excel(CLIENT_FILE)
-    df = pd.DataFrame(columns=["Client_ID", "Client_Name", "Created_Date"])
-    df.to_excel(CLIENT_FILE, index=False)
+    df = pd.DataFrame(columns=["Client_ID","Client_Name","Created_Date"])
+    df.to_excel(CLIENT_FILE,index=False)
     return df
 
 def load_proposals():
@@ -64,18 +62,18 @@ def load_proposals():
         df = pd.read_excel(PROPOSAL_FILE)
     else:
         df = pd.DataFrame(columns=[
-            "Proposal_ID", "Client_ID", "Client_Name",
-            "Proposal_Cost", "Rate", "Final_Cost", "Profit",
-            "Start_Date", "End_Date", "Status", "Closing_Date"
+            "Proposal_ID","Client_ID","Client_Name",
+            "Proposal_Cost","Rate","Final_Cost","Profit",
+            "Start_Date","End_Date","Status","Closing_Date"
         ])
-        df.to_excel(PROPOSAL_FILE, index=False)
+        df.to_excel(PROPOSAL_FILE,index=False)
 
-    for c in ["Start_Date", "End_Date", "Closing_Date"]:
+    for c in ["Start_Date","End_Date","Closing_Date"]:
         if c in df.columns:
             df[c] = pd.to_datetime(df[c], errors="coerce")
     return df
 
-# ---------------- SESSION STATE (CRITICAL) ----------------
+# ---------------- SESSION STATE ----------------
 if "clients_df" not in st.session_state:
     st.session_state.clients_df = load_clients()
 
@@ -85,50 +83,38 @@ if "proposals_df" not in st.session_state:
 clients_df = st.session_state.clients_df
 proposals_df = st.session_state.proposals_df
 
-def save_clients():
-    st.session_state.clients_df.to_excel(CLIENT_FILE, index=False)
-
-def save_proposals():
-    st.session_state.proposals_df.to_excel(PROPOSAL_FILE, index=False)
+def save_clients(): st.session_state.clients_df.to_excel(CLIENT_FILE,index=False)
+def save_proposals(): st.session_state.proposals_df.to_excel(PROPOSAL_FILE,index=False)
 
 # ---------------- UTIL ----------------
-def new_client_id():
-    return f"SIG-C-{len(clients_df)+1:03d}"
-
-def new_proposal_id():
-    return f"SIG-P-{len(proposals_df)+1:03d}"
-
-def calc(cost, rate, days):
-    months = days / 30
-    profit = cost * (rate / 100) * months
-    return round(cost + profit, 2), round(profit, 2)
+def new_client_id(): return f"SIG-C-{len(clients_df)+1:03d}"
+def new_proposal_id(): return f"SIG-P-{len(proposals_df)+1:03d}"
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
     st.session_state.page = "Summary"
 
-# ---------------- SIDEBAR NAVIGATION ----------------
+# ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.markdown("## 📂 Sigma Consultants")
 
     if st.button("🏠 Home / Summary", use_container_width=True):
-        st.session_state.page = "Summary"
-        st.rerun()
+        st.session_state.page = "Summary"; st.rerun()
+
+    if st.button("🔍 Find Details", use_container_width=True):
+        st.session_state.page = "Find"; st.rerun()
 
     if st.button("✏️ Edit Proposal", use_container_width=True):
-        st.session_state.page = "Edit"
-        st.rerun()
+        st.session_state.page = "Edit"; st.rerun()
 
     if st.button("👤 Clients", use_container_width=True):
-        st.session_state.page = "Clients"
-        st.rerun()
+        st.session_state.page = "Clients"; st.rerun()
 
     if st.button("🚪 Logout", use_container_width=True):
-        st.session_state.auth = False
-        st.rerun()
+        st.session_state.auth = False; st.rerun()
 
 # =====================================================
-# ================== SUMMARY PAGE =====================
+# ================= SUMMARY ===========================
 # =====================================================
 if st.session_state.page == "Summary":
 
@@ -139,20 +125,55 @@ if st.session_state.page == "Summary":
     else:
         total_investment = proposals_df["Proposal_Cost"].sum()
         total_profit = proposals_df["Profit"].sum()
-        active = len(proposals_df[proposals_df["Status"] == "Active"])
+        active = len(proposals_df[proposals_df["Status"]=="Active"])
 
         if is_mobile:
             card("Total Investment", f"₹ {total_investment:,.0f}")
             card("Total Profit", f"₹ {total_profit:,.0f}")
             card("Active Proposals", active)
         else:
-            c1, c2, c3 = st.columns(3)
+            c1,c2,c3 = st.columns(3)
             c1.metric("Total Investment", f"₹ {total_investment:,.0f}")
             c2.metric("Total Profit", f"₹ {total_profit:,.0f}")
             c3.metric("Active Proposals", active)
 
-        with st.expander("📄 View Proposal Details"):
-            st.dataframe(proposals_df, use_container_width=True)
+# =====================================================
+# ================= FIND DETAILS ======================
+# =====================================================
+if st.session_state.page == "Find":
+
+    st.header("🔍 Find Proposal Details")
+
+    if proposals_df.empty:
+        st.warning("No data available")
+        st.stop()
+
+    col1, col2 = st.columns(2)
+    client = col1.selectbox("Client", ["All"] + sorted(proposals_df["Client_Name"].dropna().unique()))
+    status = col2.selectbox("Status", ["All","Active","Closed"])
+
+    result = proposals_df.copy()
+
+    if client != "All":
+        result = result[result["Client_Name"] == client]
+
+    if status != "All":
+        result = result[result["Status"] == status]
+
+    st.markdown("### Results")
+
+    if result.empty:
+        st.info("No matching records found")
+    else:
+        if is_mobile:
+            for _, r in result.iterrows():
+                card("Client", r["Client_Name"])
+                card("Proposal ID", r["Proposal_ID"])
+                card("Amount", f"₹ {r['Proposal_Cost']:,.0f}")
+                card("Profit", f"₹ {r['Profit']:,.0f}")
+                card("Status", r["Status"])
+        else:
+            st.dataframe(result, use_container_width=True)
 
 # =====================================================
 # ================= EDIT PROPOSAL =====================
@@ -168,27 +189,18 @@ if st.session_state.page == "Edit":
     pid = st.selectbox("Select Proposal ID", proposals_df["Proposal_ID"].unique())
     row = proposals_df[proposals_df["Proposal_ID"] == pid].iloc[0]
 
-    if is_mobile:
-        cost = st.number_input("Proposal Cost (₹)", value=int(row["Proposal_Cost"]), step=1000)
-        rate = st.number_input("Rate (%)", value=float(row["Rate"]), step=0.1)
-        status = st.selectbox("Status", ["Active", "Closed"],
-                               index=0 if row["Status"] == "Active" else 1)
-    else:
-        c1, c2 = st.columns(2)
-        cost = c1.number_input("Proposal Cost (₹)", value=int(row["Proposal_Cost"]), step=1000)
-        rate = c2.number_input("Rate (%)", value=float(row["Rate"]), step=0.1)
-        status = st.selectbox("Status", ["Active", "Closed"],
-                               index=0 if row["Status"] == "Active" else 1)
+    cost = st.number_input("Proposal Cost (₹)", value=int(row["Proposal_Cost"]), step=1000)
+    rate = st.number_input("Rate (%)", value=float(row["Rate"]), step=0.1)
+    status = st.selectbox("Status", ["Active","Closed"],
+                          index=0 if row["Status"]=="Active" else 1)
 
     if st.button("💾 Save Changes", use_container_width=True):
-        proposals_df.loc[proposals_df["Proposal_ID"] == pid, "Proposal_Cost"] = cost
-        proposals_df.loc[proposals_df["Proposal_ID"] == pid, "Rate"] = rate
-        proposals_df.loc[proposals_df["Proposal_ID"] == pid, "Status"] = status
+        proposals_df.loc[proposals_df["Proposal_ID"]==pid, ["Proposal_Cost","Rate","Status"]] = [cost,rate,status]
         save_proposals()
         st.success("Proposal updated successfully")
 
 # =====================================================
-# ================= CLIENTS PAGE ======================
+# ================= CLIENTS ===========================
 # =====================================================
 if st.session_state.page == "Clients":
 
@@ -202,18 +214,8 @@ if st.session_state.page == "Clients":
     with st.expander("➕ Add New Client"):
         cname = st.text_input("Client Name")
         if st.button("Add Client", use_container_width=True):
-            if cname.strip() == "":
-                st.error("Client name required")
-            else:
-                new_row = {
-                    "Client_ID": new_client_id(),
-                    "Client_Name": cname,
-                    "Created_Date": datetime.now()
-                }
-                st.session_state.clients_df = pd.concat(
-                    [clients_df, pd.DataFrame([new_row])],
-                    ignore_index=True
-                )
+            if cname.strip():
+                clients_df.loc[len(clients_df)] = [new_client_id(), cname, datetime.now()]
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
