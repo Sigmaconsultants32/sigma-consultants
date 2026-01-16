@@ -101,6 +101,9 @@ with st.sidebar:
     if st.button("🏠 Home / Summary", use_container_width=True):
         st.session_state.page = "Summary"; st.rerun()
 
+    if st.button("➕ Add Proposal", use_container_width=True):
+        st.session_state.page = "AddProposal"; st.rerun()
+    
     if st.button("🔍 Find Details", use_container_width=True):
         st.session_state.page = "Find"; st.rerun()
 
@@ -287,6 +290,7 @@ if st.session_state.page == "Clients":
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
+
 
 
 
