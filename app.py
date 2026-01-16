@@ -100,6 +100,12 @@ with st.sidebar:
 
     if st.button("🏠 Home / Summary", use_container_width=True):
         st.session_state.page = "Summary"; st.rerun()
+        
+    if st.button("👤 Clients", use_container_width=True):
+        st.session_state.page = "Clients"; st.rerun()
+        
+    if st.button("📊 Client Dashboard", use_container_width=True):
+        st.session_state.page = "ClientDashboard"; st.rerun()
 
     if st.button("➕ Add Proposal", use_container_width=True):
         st.session_state.page = "AddProposal"; st.rerun()
@@ -109,9 +115,6 @@ with st.sidebar:
 
     if st.button("✏️ Edit Proposal", use_container_width=True):
         st.session_state.page = "Edit"; st.rerun()
-
-    if st.button("👤 Clients", use_container_width=True):
-        st.session_state.page = "Clients"; st.rerun()
 
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.auth = False; st.rerun()
@@ -487,6 +490,7 @@ if st.session_state.page == "AddProposal":
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
         st.rerun()
+
 
 
 
