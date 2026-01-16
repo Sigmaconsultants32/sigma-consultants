@@ -275,20 +275,30 @@ if st.session_state.page == "Edit":
 # =====================================================
 if st.session_state.page == "Clients":
 
+    st.header("👤 Clients")
+
+    # -------- ADD NEW CLIENT --------
     with st.expander("➕ Add New Client"):
         cname = st.text_input("Client Name")
         if st.button("Add Client", use_container_width=True):
             if cname.strip():
-                clients_df.loc[len(clients_df)] = [new_client_id(), cname, datetime.now()]
+                clients_df.loc[len(clients_df)] = [
+                    new_client_id(),
+                    cname.strip(),
+                    datetime.now()
+                ]
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
+            else:
+                st.error("Client name cannot be empty")
 
-    with st.expander("👤 Clients"):
-    if clients_df.empty:
-        st.info("No clients available")
-    else:
-        st.dataframe(clients_df, use_container_width=True)
+    # -------- CLIENT LIST --------
+    with st.expander("📋 Client List", expanded=True):
+        if clients_df.empty:
+            st.info("No clients available")
+        else:
+            st.dataframe(clients_df, use_container_width=True)
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -390,6 +400,7 @@ if st.session_state.page == "AddProposal":
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
         st.rerun()
+
 
 
 
