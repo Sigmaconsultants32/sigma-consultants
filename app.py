@@ -344,7 +344,7 @@ if st.session_state.page == "AddProposal":
     final_cost = proposal_cost + profit
 
     st.markdown("---")
-    st.subheader("💰 Auto Calculated")
+    st.subheader("💰 Proposal Details")
 
     if is_mobile:
         st.markdown(f"""
@@ -391,6 +391,7 @@ if st.session_state.page == "AddProposal":
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
         st.rerun()
+
 
 
 
