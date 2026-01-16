@@ -7,6 +7,27 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import os
+import streamlit as st
+
+# Temporary toggle (useful for testing)
+is_mobile = st.toggle("📱 Mobile View", value=True)
+
+def card(title, value):
+    st.markdown(
+        f"""
+        <div style="
+        padding:16px;
+        border-radius:14px;
+        background:#ffffff;
+        margin-bottom:12px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.08)">
+        <div style="font-size:14px;color:#555">{title}</div>
+        <div style="font-size:26px;font-weight:600">₹ {value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 # ---------------- PASSWORD -----------------
 PASSWORD = "sigma123"
 if "auth" not in st.session_state:
@@ -187,32 +208,46 @@ if st.session_state.page=="Add Proposal":
     if st.button("⬅️ Back"): st.session_state.page="Home"
 
 # ================= EDIT / DELETE ==================
-if st.session_state.page=="Edit":
-    st.markdown("<h2 class='header'>Edit / Delete Proposals</h2>",unsafe_allow_html=True)
-    if not proposals_df.empty:
-        pid = st.selectbox("Select Proposal", proposals_df["Proposal_ID"])
-        row = proposals_df[proposals_df["Proposal_ID"]==pid].iloc[0]
+st.header("✏️ Edit Client Details")
 
-        with st.form("e"):
-            cost = st.number_input("Proposal Cost", float(row["Proposal_Cost"]))
-            rate = st.selectbox("Rate", list(range(5,16)), index=int(row["Rate"])-5)
-            days = (row["End_Date"] - row["Start_Date"]).days
-            status = st.selectbox("Status", ["Open","Closed"], 0 if row["Status"]=="Open" else 1)
-            submit = st.form_submit_button("Update")
-            if submit:
-                final,profit = calc(cost,rate,days)
-                proposals_df.loc[proposals_df["Proposal_ID"]==pid,
-                    ["Proposal_Cost","Rate","Final_Cost","Profit","Status"]] = [cost,rate,final,profit,status]
-                save_proposals(proposals_df)
-                st.success("Updated")
+client_name = st.selectbox("Select Client", df["Client Name"].unique())
 
-        st.markdown("---")
-        dels = st.multiselect("Select proposals to delete", proposals_df["Proposal_ID"])
-        if st.button("Delete Selected"):
-            proposals_df = proposals_df[~proposals_df["Proposal_ID"].isin(dels)]
-            save_proposals(proposals_df)
-            st.success("Deleted")
-    if st.button("⬅️ Back"): st.session_state.page="Home"
+client = df[df["Client Name"] == client_name].iloc[0]
+
+st.markdown("---")
+
+if is_mobile:
+    # MOBILE LAYOUT (VERTICAL)
+    amount = st.number_input("Investment Amount (₹)", value=int(client["Amount"]), step=1000)
+    rate = st.number_input("Monthly Profit Rate (%)", value=float(client["Rate"]), step=0.1)
+    duration = st.number_input("Duration (Months)", value=int(client["Duration"]))
+    status = st.selectbox("Status", ["Active", "Closed"], index=0 if client["Status"]=="Active" else 1)
+
+    with st.expander("Additional Details"):
+        remarks = st.text_area("Remarks", value=client.get("Remarks", ""))
+
+else:
+    # DESKTOP LAYOUT
+    col1, col2 = st.columns(2)
+    amount = col1.number_input("Investment Amount (₹)", value=int(client["Amount"]), step=1000)
+    rate = col2.number_input("Monthly Profit Rate (%)", value=float(client["Rate"]), step=0.1)
+
+    col3, col4 = st.columns(2)
+    duration = col3.number_input("Duration (Months)", value=int(client["Duration"]))
+    status = col4.selectbox("Status", ["Active", "Closed"], index=0 if client["Status"]=="Active" else 1)
+
+    remarks = st.text_area("Remarks", value=client.get("Remarks", ""))
+
+st.markdown("---")
+
+if st.button("💾 Save Changes", use_container_width=True):
+    df.loc[df["Client Name"] == client_name, "Amount"] = amount
+    df.loc[df["Client Name"] == client_name, "Rate"] = rate
+    df.loc[df["Client Name"] == client_name, "Duration"] = duration
+    df.loc[df["Client Name"] == client_name, "Status"] = status
+    df.loc[df["Client Name"] == client_name, "Remarks"] = remarks
+
+    st.success("Client details updated successfully")
 
 # ================= FIND DETAILS ===================
 if st.session_state.page=="Find":
@@ -229,22 +264,30 @@ if st.session_state.page=="Find":
     if st.button("⬅️ Back"): st.session_state.page="Home"
 
 # ================= SUMMARY ========================
-if st.session_state.page=="Summary":
-    st.markdown("<h2 class='header'>Summary</h2>",unsafe_allow_html=True)
-    st.metric("Total Clients", len(clients_df))
-    st.metric("Total Proposals", len(proposals_df))
-    st.metric("Total Turnover", proposals_df["Final_Cost"].sum())
-    st.metric("Total Profit", proposals_df["Profit"].sum())
+st.header("📊 Summary")
 
-    st.markdown("### Client-wise Contribution")
-    if not proposals_df.empty:
-        table = proposals_df.groupby("Client_Name").agg(
-            Turnover=("Final_Cost","sum"),
-            Profit=("Profit","sum")
-        ).reset_index().sort_values("Turnover",ascending=False)
-        st.dataframe(table,use_container_width=True)
+total_investment = df["Amount"].sum()
+total_profit = df["Profit"].sum()
+active_clients = len(df[df["Status"] == "Active"])
 
-    if st.button("⬅️ Back"): st.session_state.page="Home"
+st.markdown("---")
+
+if is_mobile:
+    card("Total Investment", f"{total_investment:,.0f}")
+    card("Total Profit", f"{total_profit:,.0f}")
+    card("Active Clients", active_clients)
+else:
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total Investment", f"₹ {total_investment:,.0f}")
+    c2.metric("Total Profit", f"₹ {total_profit:,.0f}")
+    c3.metric("Active Clients", active_clients)
+
+st.markdown("---")
+
+with st.expander("📄 View Detailed Report"):
+    st.dataframe(df, use_container_width=True)
+
+
 
 
 
