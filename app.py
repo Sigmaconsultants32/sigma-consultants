@@ -150,7 +150,7 @@ if st.session_state.page == "Find":
 
     col1, col2 = st.columns(2)
     client = col1.selectbox("Client", ["All"] + sorted(proposals_df["Client_Name"].dropna().unique()))
-    status = col2.selectbox("Status", ["All","Active","Closed"])
+    status = col2.selectbox("Status", ["All","Open","Closed"])
 
     result = proposals_df.copy()
 
@@ -219,3 +219,4 @@ if st.session_state.page == "Clients":
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
+
