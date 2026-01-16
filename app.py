@@ -146,7 +146,16 @@ if st.session_state.page == "Welcome":
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        st.image("sigma_logo.png", use_container_width=True)
+
+        logo_path = "sigma_logo.png"
+
+        if os.path.exists(logo_path):
+            st.image(logo_path, use_container_width=True)
+        else:
+            st.markdown(
+                "<h2 style='text-align:center;'>Sigma Consultants</h2>",
+                unsafe_allow_html=True
+            )
 
         st.markdown(
             """
@@ -157,10 +166,10 @@ if st.session_state.page == "Welcome":
             border-radius:16px;
             box-shadow:0 4px 12px rgba(0,0,0,0.08)">
             
-            <h2>Welcome to <span style="color:#1f77ff">Sigma Consultants</span></h2>
+            <h3>Welcome</h3>
             <p style="font-size:16px;color:#555">
-            Your trusted platform for managing clients, proposals, profits,  
-            and financial follow-ups — all in one place.
+            Manage clients, proposals, profits, and follow-ups  
+            in one secure platform.
             </p>
 
             <p style="font-size:14px;color:#777">
@@ -433,6 +442,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
