@@ -210,6 +210,11 @@ if st.session_state.page=="Add Proposal":
 # ================= EDIT / DELETE ==================
 st.header("✏️ Edit Client Details")
 
+df = st.session_state.get("df")
+
+if df is None:
+    st.error("Data not loaded")
+    st.stop()
 client_name = st.selectbox("Select Client", df["Client Name"].unique())
 
 client = df[df["Client Name"] == client_name].iloc[0]
@@ -286,6 +291,7 @@ st.markdown("---")
 
 with st.expander("📄 View Detailed Report"):
     st.dataframe(df, use_container_width=True)
+
 
 
 
