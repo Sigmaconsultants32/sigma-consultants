@@ -36,8 +36,9 @@ if not st.session_state.auth:
     pwd = st.text_input("Enter Password", type="password")
     if st.button("Login", use_container_width=True):
         if pwd == PASSWORD:
-            st.session_state.auth = True
-            st.rerun()
+    st.session_state.auth = True
+    st.session_state.page = "Welcome"
+    st.rerun()
         else:
             st.error("Incorrect password")
     st.stop()
@@ -130,6 +131,47 @@ with st.sidebar:
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.auth = False; st.rerun()
 
+# =====================================================
+# ================= WELCOME SCREEN ====================
+# =====================================================
+if st.session_state.page == "Welcome":
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        st.image("sigma_logo.png", use_container_width=True)
+
+        st.markdown(
+            """
+            <div style="
+            text-align:center;
+            padding:20px;
+            background:#ffffff;
+            border-radius:16px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+            
+            <h2>Welcome to <span style="color:#1f77ff">Sigma Consultants</span></h2>
+            <p style="font-size:16px;color:#555">
+            Your trusted platform for managing clients, proposals, profits,  
+            and financial follow-ups — all in one place.
+            </p>
+
+            <p style="font-size:14px;color:#777">
+            Please choose an option from the menu to get started.
+            </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("🚀 Go to Dashboard", use_container_width=True):
+            st.session_state.page = "Summary"
+            st.rerun()
+            
 # =====================================================
 # ================= SUMMARY ===========================
 # =====================================================
@@ -386,4 +428,5 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
