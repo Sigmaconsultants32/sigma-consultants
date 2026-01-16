@@ -284,7 +284,7 @@ if st.session_state.page == "Clients":
                 st.success("Client added successfully")
                 st.rerun()
 
-    st.expander("👤 Clients")
+    with st.expander("👤 Clients")
 
     if clients_df.empty:
         st.info("No clients available")
@@ -391,6 +391,7 @@ if st.session_state.page == "AddProposal":
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
         st.rerun()
+
 
 
 
