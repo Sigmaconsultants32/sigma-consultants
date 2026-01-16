@@ -138,7 +138,7 @@ if st.session_state.page == "Summary":
             c3.metric("Active Proposals", active)
 
 # =====================================================
-# ================= FIND DETAILS (IMPROVED) ===========
+# ================= FIND DETAILS (FINAL) ==============
 # =====================================================
 if st.session_state.page == "Find":
 
@@ -189,12 +189,11 @@ if st.session_state.page == "Find":
     st.markdown("---")
     st.subheader("📋 Follow-up Details")
 
-    # ---------- NO RESULT ----------
     if result.empty:
         st.info("No records found for selected criteria")
         st.stop()
 
-    # ---------- MOBILE VIEW (VERTICAL TABLE) ----------
+    # ---------- MOBILE VIEW (VERTICAL FOLLOW-UP CARDS) ----------
     if is_mobile:
         for _, r in result.sort_values("Start_Date").iterrows():
             st.markdown(
@@ -209,28 +208,36 @@ if st.session_state.page == "Find":
                 <b>Client:</b> {r['Client_Name']}<br>
                 <b>Proposal ID:</b> {r['Proposal_ID']}<br>
                 <b>Status:</b> {r['Status']}<br>
+                <b>Rate (%):</b> {float(r['Rate']):.2f}%<br>
                 <b>Start Date:</b> {r['Start_Date'].date() if pd.notna(r['Start_Date']) else "-"}<br>
                 <b>End Date:</b> {r['End_Date'].date() if pd.notna(r['End_Date']) else "-"}<br>
-                <b>Proposal Amount:</b> ₹ {r['Proposal_Cost']:,.0f}<br>
-                <b>Profit:</b> ₹ {r['Profit']:,.0f}
+                <b>Proposal Amount:</b> ₹ {float(r['Proposal_Cost']):,.2f}<br>
+                <b>Final Amount:</b> ₹ {float(r['Final_Cost']):,.2f}<br>
+                <b>Profit:</b> ₹ {float(r['Profit']):,.2f}
 
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-    # ---------- DESKTOP VIEW (CLEAN TABLE) ----------
+    # ---------- DESKTOP VIEW (FOLLOW-UP TABLE) ----------
     else:
         display_df = result[[
             "Client_Name",
             "Proposal_ID",
+            "Rate",
             "Start_Date",
             "End_Date",
             "Proposal_Cost",
+            "Final_Cost",
             "Profit",
             "Status"
         ]].sort_values("Start_Date")
 
+        display_df["Rate"] = display_df["Rate"].astype(float).round(2)
+        display_df["Proposal_Cost"] = display_df["Proposal_Cost"].astype(float).round(2)
+        display_df["Final_Cost"] = display_df["Final_Cost"].astype(float).round(2)
+        display_df["Profit"] = display_df["Profit"].astype(float).round(2)
         display_df["Start_Date"] = display_df["Start_Date"].dt.date
         display_df["End_Date"] = display_df["End_Date"].dt.date
 
@@ -280,6 +287,7 @@ if st.session_state.page == "Clients":
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
+
 
 
 
