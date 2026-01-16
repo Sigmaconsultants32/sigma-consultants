@@ -157,7 +157,7 @@ if st.session_state.page == "Find":
 
     status = col2.selectbox(
         "Status",
-        ["All", "Active", "Closed"]
+        ["All", "Open", "Closed"]
     )
 
     col3, col4 = st.columns(2)
@@ -280,5 +280,6 @@ if st.session_state.page == "Clients":
                 save_clients()
                 st.success("Client added successfully")
                 st.rerun()
+
 
 
