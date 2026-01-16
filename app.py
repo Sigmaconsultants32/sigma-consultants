@@ -491,6 +491,45 @@ if st.session_state.page == "AddProposal":
         st.session_state.page = "Summary"
         st.rerun()
 
+# =====================================================
+# ================= CLIENT DASHBOARD ==================
+# =====================================================
+if st.session_state.page == "ClientDashboard":
+
+    st.header("📊 Client Summary Dashboard")
+
+    active_clients = clients_df[clients_df["Is_Archived"] == False]
+
+    if active_clients.empty:
+        st.info("No active clients")
+        st.stop()
+
+    client = st.selectbox(
+        "Select Client",
+        active_clients["Client_Name"]
+    )
+
+    client_id = active_clients.loc[
+        active_clients["Client_Name"] == client,
+        "Client_ID"
+    ].values[0]
+
+    data = proposals_df[proposals_df["Client_ID"] == client_id]
+
+    total_invest = data["Proposal_Cost"].sum()
+    total_profit = data["Profit"].sum()
+    open_props = len(data[data["Status"] == "Open"])
+    closed_props = len(data[data["Status"] == "Closed"])
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
+    c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
+    c3.metric("Open Proposals", open_props)
+    c4.metric("Closed Proposals", closed_props)
+
+    st.markdown("### 📄 Proposal Details")
+    st.dataframe(data, use_container_width=True)
+
 
 
 
