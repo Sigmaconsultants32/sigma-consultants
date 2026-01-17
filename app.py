@@ -514,80 +514,80 @@ if st.session_state.page == "Find":
         if status != "All":
             df = df[df["Status"] == status]
 
-    # ---------- DATE MULTISELECT ----------
-    date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+        # ---------- DATE MULTISELECT ----------
+        date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
-    available_dates = sorted(
-        df[date_col].dropna().dt.date.unique()
-    )
+        available_dates = sorted(
+            df[date_col].dropna().dt.date.unique()
+        )
 
-    if not available_dates:
-        st.info("No dates available for selected filters")
-        st.stop()
+        if not available_dates:
+            st.info("No dates available for selected filters")
+            st.stop()
 
-    date_options = ["All"] + available_dates
+        date_options = ["All"] + available_dates
 
-    selected_dates = st.multiselect(
-        f"Select {date_type}(s)",
-        date_options,
-        default="All",
-        format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
-    )
+            selected_dates = st.multiselect(
+            f"Select {date_type}(s)",
+            date_options,
+            default="All",
+            format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
+        )
 
-    # ---------- APPLY DATE FILTER ----------
-    if "All" not in selected_dates:
-        df = df[df[date_col].dt.date.isin(selected_dates)]
+        # ---------- APPLY DATE FILTER ----------
+        if "All" not in selected_dates:
+            df = df[df[date_col].dt.date.isin(selected_dates)]
 
-    st.markdown("---")
+        st.markdown("---")
 
-    if df.empty:
-        st.info("No records found")
-        st.stop()
+        if df.empty:
+            st.info("No records found")
+            st.stop()
 
-    # =================================================
-    # ================= DISPLAY =======================
-    # =================================================
-    if is_mobile:
-        for _, r in df.sort_values(date_col).iterrows():
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ddd;
-                border-radius:12px;
-                padding:12px;
-                margin-bottom:10px;
-                background:#fafafa">
+        # =================================================
+        # ================= DISPLAY =======================
+        # =================================================
+        if is_mobile:
+            for _, r in df.sort_values(date_col).iterrows():
+                st.markdown(
+                    f"""
+                    <div style="border:1px solid #ddd;
+                    border-radius:12px;
+                    padding:12px;
+                    margin-bottom:10px;
+                    background:#fafafa">
 
-                <b>Client:</b> {r['Client_Name']}<br>
-                <b>Status:</b> {r['Status']}<br>
-                <b>{date_type}:</b> {r[date_col].date()}<br>
-                <b>Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                <b>Rate:</b> {int(round(r['Rate'], 0))} %<br>
-                <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                <b>Profit:</b> ₹ {r['Profit']:,.2f}
+                    <b>Client:</b> {r['Client_Name']}<br>
+                    <b>Status:</b> {r['Status']}<br>
+                    <b>{date_type}:</b> {r[date_col].date()}<br>
+                    <b>Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+                    <b>Rate:</b> {int(round(r['Rate'], 0))} %<br>
+                    <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
+                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
 
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-    else:
-        display_df = df[[
-            "Client_Name",
-            "Proposal_ID",
-            "Rate",
-            "Start_Date",
-            "End_Date",
-            "Proposal_Cost",
-            "Final_Cost",
-            "Profit",
-            "Status"
-        ]].copy()
+        else:
+            display_df = df[[
+                "Client_Name",
+                "Proposal_ID",
+                "Rate",
+                "Start_Date",
+                "End_Date",
+                "Proposal_Cost",
+                "Final_Cost",
+                "Profit",
+                "Status"
+            ]].copy()
 
-        display_df["Rate"] = display_df["Rate"].round(0).astype(int)
-        display_df["Start_Date"] = display_df["Start_Date"].dt.date
-        display_df["End_Date"] = display_df["End_Date"].dt.date
+            display_df["Rate"] = display_df["Rate"].round(0).astype(int)
+            display_df["Start_Date"] = display_df["Start_Date"].dt.date
+            display_df["End_Date"] = display_df["End_Date"].dt.date
 
-        st.dataframe(display_df, use_container_width=True)
+            st.dataframe(display_df, use_container_width=True)
         
     # =================================================
     # ============ BY CLIENT NAME MODE ================
@@ -970,6 +970,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
