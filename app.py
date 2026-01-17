@@ -228,10 +228,10 @@ if st.session_state.page == "Summary":
         c3.metric("Open Proposals", open_cnt)
 
     # =====================================================
-    # ============ END DATE BASED SUMMARY =================
+    # ============ DATE BASED SUMMARY =====================
     # =====================================================
     st.markdown("---")
-    st.subheader("📅 End Date Based Summary")
+    st.subheader("📅 Date Based Summary")
     st.caption("ℹ️ Amounts shown in actual ₹ (rupees)")
 
     # ---------- DATE CONVERSION ----------
@@ -263,56 +263,72 @@ if st.session_state.page == "Summary":
         st.stop()
 
     # =====================================================
-    # ================= END DATE FILTER ===================
+    # ============ START / END DATE SELECTOR ===============
     # =====================================================
-    end_dates = sorted(status_filtered_df["End_Date"].dropna().unique())
-
-    if not end_dates:
-        st.info("No End Dates available")
-        st.stop()
-
-    selected_end_date = st.selectbox(
-        "Select End Date",
-        end_dates,
-        format_func=lambda x: x.strftime("%d-%m-%Y")
+    date_type = st.radio(
+        "Select Date Type",
+        ["Start Date", "End Date"],
+        horizontal=True
     )
 
-    filtered_df = status_filtered_df[
-        status_filtered_df["End_Date"] == selected_end_date
-    ].copy()
+    date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+
+    available_dates = sorted(
+        status_filtered_df[date_col].dropna().dt.date.unique()
+    )
+
+    if not available_dates:
+        st.info("No dates available")
+        st.stop()
+
+    date_options = ["All"] + available_dates
+
+    selected_dates = st.multiselect(
+        f"Select {date_type}(s)",
+        date_options,
+        default="All",
+        format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
+    )
+
+    filtered_df = status_filtered_df.copy()
+
+    if "All" not in selected_dates:
+        filtered_df = filtered_df[
+            filtered_df[date_col].dt.date.isin(selected_dates)
+        ]
 
     if filtered_df.empty:
-        st.warning("No data for selected End Date")
+        st.warning("No data for selected date(s)")
         st.stop()
 
     # =====================================================
-    # ===== NORMALIZE RATE (INTEGER BASED GROUPING) =======
+    # ================ NORMALIZE RATE =====================
     # =====================================================
     filtered_df["Rate_Int"] = filtered_df["Rate"].round(0).astype(int)
 
     # =====================================================
-    # ========== END DATE GRAND TOTALS ====================
+    # ================= PROPOSAL STATS ====================
     # =====================================================
-    grand_inv = filtered_df["Proposal_Cost"].sum()
-    grand_final = filtered_df["Final_Cost"].sum()
-    grand_profit = filtered_df["Profit"].sum()
+    total_inv = filtered_df["Proposal_Cost"].sum()
+    total_final = filtered_df["Final_Cost"].sum()
+    total_profit = filtered_df["Profit"].sum()
 
-    st.markdown("### 🔢 End Date Grand Totals")
+    st.markdown("### 📊 Proposal Stats")
 
     if is_mobile:
-        card("Investment", f"₹ {grand_inv:,.2f}")
-        card("Final Amt", f"₹ {grand_final:,.2f}")
-        card("Profit", f"₹ {grand_profit:,.2f}")
+        card("Investment", f"₹ {total_inv:,.2f}")
+        card("Final Amount", f"₹ {total_final:,.2f}")
+        card("Profit", f"₹ {total_profit:,.2f}")
     else:
-        g1, g2, g3 = st.columns(3)
-        g1.metric("Total Investment", f"₹ {grand_inv:,.2f}")
-        g2.metric("Total Final Amount", f"₹ {grand_final:,.2f}")
-        g3.metric("Total Profit", f"₹ {grand_profit:,.2f}")
+        p1, p2, p3 = st.columns(3)
+        p1.metric("Total Investment", f"₹ {total_inv:,.2f}")
+        p2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
+        p3.metric("Total Profit", f"₹ {total_profit:,.2f}")
 
     st.markdown("---")
 
     # =====================================================
-    # ========== GROUP BY RATE + START DATE ================
+    # ========= GROUP BY RATE + START DATE ================
     # =====================================================
     summary_df = (
         filtered_df
@@ -970,6 +986,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
