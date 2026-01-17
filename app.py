@@ -747,104 +747,114 @@ if st.session_state.page == "ClientDashboard":
     st.dataframe(data, use_container_width=True)
 
 # =====================================================
-# 📤 EXPORT DATA SECTION (COMPLETE & FINAL)
+# 📤 EXPORT DATA PAGE (ONLY VISIBLE HERE)
 # =====================================================
 
-st.markdown("---")
-st.subheader("📤 Export Data")
+if page == "Export Data":
 
-# ---- SAFETY CHECK ----
-if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
-    st.warning("⚠️ No data available to export")
-else:
+    st.title("📤 Export Data")
+
+    if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
+        st.warning("⚠️ No data available to export")
+        st.stop()
+
     df = st.session_state.clients_df.copy()
 
-    # ---------------- FILTER CONTROLS ----------------
+    # ---------- AUTO-DETECT COLUMNS ----------
+    columns = df.columns.tolist()
+
+    def find_column(possible_names):
+        for col in columns:
+            if col.lower() in [p.lower() for p in possible_names]:
+                return col
+        return None
+
+    CLIENT_COL = find_column(["client name", "client", "customer name", "name"])
+    STATUS_COL = find_column(["status"])
+    DATE_COL = find_column(["proposal date", "date"])
+
+    # ---------- FILTER UI ----------
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        client_filter = st.selectbox(
-            "👤 Client",
-            ["All"] + sorted(df["Client Name"].dropna().unique().tolist())
-        )
+        if CLIENT_COL:
+            client_filter = st.selectbox(
+                "👤 Client",
+                ["All"] + sorted(df[CLIENT_COL].dropna().astype(str).unique().tolist())
+            )
+        else:
+            client_filter = "All"
+            st.info("Client filter not available")
 
     with col2:
-        status_filter = st.selectbox(
-            "📌 Status",
-            ["All"] + sorted(df["Status"].dropna().unique().tolist())
-        )
+        if STATUS_COL:
+            status_filter = st.selectbox(
+                "📌 Status",
+                ["All"] + sorted(df[STATUS_COL].dropna().astype(str).unique().tolist())
+            )
+        else:
+            status_filter = "All"
+            st.info("Status filter not available")
 
     with col3:
-        date_range = st.date_input(
-            "📅 Proposal Date Range",
-            []
-        )
+        if DATE_COL:
+            date_range = st.date_input("📅 Date Range", [])
+        else:
+            date_range = []
 
-    # ---------------- APPLY FILTERS ----------------
+    # ---------- APPLY FILTERS ----------
     filtered_df = df.copy()
 
-    if client_filter != "All":
+    if CLIENT_COL and client_filter != "All":
         filtered_df = filtered_df[
-            filtered_df["Client Name"] == client_filter
+            filtered_df[CLIENT_COL].astype(str) == client_filter
         ]
 
-    if status_filter != "All":
+    if STATUS_COL and status_filter != "All":
         filtered_df = filtered_df[
-            filtered_df["Status"] == status_filter
+            filtered_df[STATUS_COL].astype(str) == status_filter
         ]
 
-    if len(date_range) == 2:
+    if DATE_COL and len(date_range) == 2:
         start_date, end_date = date_range
-        filtered_df["Proposal Date"] = pd.to_datetime(
-            filtered_df["Proposal Date"],
+        filtered_df[DATE_COL] = pd.to_datetime(
+            filtered_df[DATE_COL],
             errors="coerce"
         )
         filtered_df = filtered_df[
-            (filtered_df["Proposal Date"] >= pd.to_datetime(start_date)) &
-            (filtered_df["Proposal Date"] <= pd.to_datetime(end_date))
+            (filtered_df[DATE_COL] >= pd.to_datetime(start_date)) &
+            (filtered_df[DATE_COL] <= pd.to_datetime(end_date))
         ]
 
-    # ---------------- EXPORT FUNCTION ----------------
-    def export_filtered_excel(dataframe):
+    # ---------- EXPORT FUNCTION ----------
+    def export_excel(dataframe):
         output = io.BytesIO()
-        try:
-            with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            dataframe.to_excel(
+                writer,
+                sheet_name="Export_Data",
+                index=False
+            )
 
-                # Main data
-                dataframe.to_excel(
-                    writer,
-                    sheet_name="Filtered_Data",
-                    index=False
-                )
+            summary = {
+                "Export Date": [datetime.now().strftime("%d-%m-%Y %H:%M")],
+                "Total Records": [len(dataframe)]
+            }
 
-                # Summary
-                summary = {
-                    "Export Date": [datetime.now().strftime("%d-%m-%Y %H:%M")],
-                    "Total Records": [len(dataframe)],
-                    "Client Filter": [client_filter],
-                    "Status Filter": [status_filter]
-                }
+            pd.DataFrame(summary).to_excel(
+                writer,
+                sheet_name="Summary",
+                index=False
+            )
 
-                pd.DataFrame(summary).to_excel(
-                    writer,
-                    sheet_name="Summary",
-                    index=False
-                )
+        output.seek(0)
+        return output.getvalue()
 
-            output.seek(0)
-            return output.getvalue()
-
-        except Exception as e:
-            st.error(f"❌ Export failed: {e}")
-            return None
-
-    # ---------------- DOWNLOAD BUTTON ----------------
-    excel_bytes = export_filtered_excel(filtered_df)
-
-    if excel_bytes and not filtered_df.empty:
+    # ---------- DOWNLOAD ----------
+    if not filtered_df.empty:
         st.download_button(
             "📥 Download Excel",
-            excel_bytes,
+            export_excel(filtered_df),
             file_name=f"Sigma_Export_{datetime.now().strftime('%d%m%Y')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
