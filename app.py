@@ -260,26 +260,32 @@ if st.session_state.page == "Summary":
     )
 
     # ---- DISPLAY VERTICAL SUMMARY BOXES ----
-    for _, row in summary_df.iterrows():
-        st.markdown(
-            f"""
-            <div style="
-                border:1px solid #d0d0d0;
-                border-radius:12px;
-                padding:16px;
-                margin-bottom:14px;
-                background-color:#fafafa;">
-                
-                <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
-                <b>Total Investment</b> : ₹ {row['Proposal_Cost']:,.2f}<br>
-                <b>Rate</b> : {row['Rate']} %<br>
-                <b>Total Final Amount</b> : ₹ {row['Final_Cost']:,.2f}<br>
-                <b>Total Profit</b> :
-                <span style="color:green;"><b>₹ {row['Profit']:,.2f}</b></span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+for _, row in summary_df.iterrows():
+
+    rate_display = round(row["Rate"], 2)
+    inv = round(row["Proposal_Cost"], 2)
+    final_amt = round(row["Final_Cost"], 2)
+    profit = round(row["Profit"], 2)
+
+    st.markdown(
+        f"""
+        <div style="
+            border:1px solid #d0d0d0;
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:14px;
+            background-color:#fafafa;">
+            
+            <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
+            <b>Total Investment</b> : ₹ {inv:,.2f}<br>
+            <b>Rate</b> : {rate_display:.2f} %<br>
+            <b>Total Final Amount</b> : ₹ {final_amt:,.2f}<br>
+            <b>Total Profit</b> :
+            <span style="color:green;"><b>₹ {profit:,.2f}</b></span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =====================================================
 # ================= ADD PROPOSAL ======================
@@ -514,6 +520,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
