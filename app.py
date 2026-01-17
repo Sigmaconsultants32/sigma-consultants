@@ -197,7 +197,7 @@ if st.session_state.page == "Summary":
     # ============ END DATE BASED SUMMARY =================
     # =====================================================
     st.markdown("---")
-    st.subheader("📅 End Date Based Summary")
+    st.subheader("📅 Proposal Details")
     st.caption("ℹ️ Amounts shown in actual ₹ (rupees)")
 
     # ---------- DATE CONVERSION ----------
@@ -341,5 +341,6 @@ if st.session_state.page == "Export":
         file_name="Sigma_Consultants_Data.xlsx",
         use_container_width=True
     )
+
 
 
