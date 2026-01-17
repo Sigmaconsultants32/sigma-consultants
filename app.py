@@ -244,7 +244,7 @@ if st.session_state.page == "Summary":
     if selected_status != "All":
         status_filtered_df = proposals_df[
             proposals_df["Status"] == selected_status
-        ]
+        ].copy()
     else:
         status_filtered_df = proposals_df.copy()
 
@@ -270,47 +270,51 @@ if st.session_state.page == "Summary":
     # ---------- FILTER DATA ----------
     filtered_df = status_filtered_df[
         status_filtered_df["End_Date"] == selected_end_date
-    ]
+    ].copy()
 
     if filtered_df.empty:
         st.warning("No data for selected End Date")
         st.stop()
 
     # =====================================================
+    # ===== NORMALIZE RATE (INTEGER BASED GROUPING) =======
+    # =====================================================
+    filtered_df["Rate_Int"] = filtered_df["Rate"].round(0).astype(int)
+
+    # =====================================================
     # ========== GROUP BY RATE + START DATE ================
     # =====================================================
     summary_df = (
         filtered_df
-        .groupby(["Rate", "Start_Date"], as_index=False)
+        .groupby(["Rate_Int", "Start_Date"], as_index=False)
         .agg({
             "Proposal_Cost": "sum",
             "Final_Cost": "sum",
             "Profit": "sum"
         })
-        .sort_values(["Rate", "Start_Date"])
+        .sort_values(["Rate_Int", "Start_Date"])
     )
 
     # =====================================================
-    # ============ DISPLAY SUMMARY BOXES ===================
-for _, row in summary_df.iterrows():
+    # ============ DISPLAY SUMMARY ========================
+    # =====================================================
+    for _, row in summary_df.iterrows():
 
-    rate_display = round(row["Rate"], 2)
-    inv = round(row["Proposal_Cost"], 2)
-    final_amt = round(row["Final_Cost"], 2)
-    profit = round(row["Profit"], 2)
+        inv = round(row["Proposal_Cost"], 2)
+        final_amt = round(row["Final_Cost"], 2)
+        profit = round(row["Profit"], 2)
 
-    st.markdown(
-        f"""
+        st.markdown(
+            f"""
 **Start Date** : {row['Start_Date'].strftime('%d-%m-%Y')}  
 **Total Investment** : ₹ {inv:,.2f}  
-**Rate** : {rate_display:.2f} %  
+**Rate** : {row['Rate_Int']} %  
 **Total Final Amount** : ₹ {final_amt:,.2f}  
 **Total Profit** : 🟢 ₹ {profit:,.2f}
-""",
-        unsafe_allow_html=False
-    )
+"""
+        )
 
-    st.markdown("---")
+        st.markdown("---")
 
 # =====================================================
 # ================= ADD PROPOSAL ======================
@@ -545,6 +549,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
