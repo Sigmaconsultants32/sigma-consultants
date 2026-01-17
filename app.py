@@ -150,10 +150,7 @@ with st.sidebar:
 
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.auth = False; st.rerun()
-        
-page = st.sidebar.radio(
-    "Navigation",
-    ["Dashboard", "Clients", "Ledger", "Export Data"]
+
 # =====================================================
 # ================= WELCOME SCREEN ====================
 # =====================================================
@@ -750,117 +747,21 @@ if st.session_state.page == "ClientDashboard":
     st.dataframe(data, use_container_width=True)
 
 # =====================================================
-# 📤 EXPORT DATA PAGE (ONLY VISIBLE HERE)
+# ================= EXPORT ============================
 # =====================================================
+if st.session_state.page == "Export":
 
-if page == "Export Data":
+    def export_excel():
+        out = io.BytesIO()
+        with pd.ExcelWriter(out, engine="xlsxwriter") as w:
+            clients_df.to_excel(w, sheet_name="Clients", index=False)
+            proposals_df.to_excel(w, sheet_name="Proposals", index=False)
+        out.seek(0)
+        return out
 
-    st.title("📤 Export Data")
-
-    if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
-        st.warning("⚠️ No data available to export")
-        st.stop()
-
-    df = st.session_state.clients_df.copy()
-
-    # ---------- AUTO-DETECT COLUMNS ----------
-    columns = df.columns.tolist()
-
-    def find_column(possible_names):
-        for col in columns:
-            if col.lower() in [p.lower() for p in possible_names]:
-                return col
-        return None
-
-    CLIENT_COL = find_column(["client name", "client", "customer name", "name"])
-    STATUS_COL = find_column(["status"])
-    DATE_COL = find_column(["proposal date", "date"])
-
-    # ---------- FILTER UI ----------
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if CLIENT_COL:
-            client_filter = st.selectbox(
-                "👤 Client",
-                ["All"] + sorted(df[CLIENT_COL].dropna().astype(str).unique().tolist())
-            )
-        else:
-            client_filter = "All"
-            st.info("Client filter not available")
-
-    with col2:
-        if STATUS_COL:
-            status_filter = st.selectbox(
-                "📌 Status",
-                ["All"] + sorted(df[STATUS_COL].dropna().astype(str).unique().tolist())
-            )
-        else:
-            status_filter = "All"
-            st.info("Status filter not available")
-
-    with col3:
-        if DATE_COL:
-            date_range = st.date_input("📅 Date Range", [])
-        else:
-            date_range = []
-
-    # ---------- APPLY FILTERS ----------
-    filtered_df = df.copy()
-
-    if CLIENT_COL and client_filter != "All":
-        filtered_df = filtered_df[
-            filtered_df[CLIENT_COL].astype(str) == client_filter
-        ]
-
-    if STATUS_COL and status_filter != "All":
-        filtered_df = filtered_df[
-            filtered_df[STATUS_COL].astype(str) == status_filter
-        ]
-
-    if DATE_COL and len(date_range) == 2:
-        start_date, end_date = date_range
-        filtered_df[DATE_COL] = pd.to_datetime(
-            filtered_df[DATE_COL],
-            errors="coerce"
-        )
-        filtered_df = filtered_df[
-            (filtered_df[DATE_COL] >= pd.to_datetime(start_date)) &
-            (filtered_df[DATE_COL] <= pd.to_datetime(end_date))
-        ]
-
-    # ---------- EXPORT FUNCTION ----------
-    def export_excel(dataframe):
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            dataframe.to_excel(
-                writer,
-                sheet_name="Export_Data",
-                index=False
-            )
-
-            summary = {
-                "Export Date": [datetime.now().strftime("%d-%m-%Y %H:%M")],
-                "Total Records": [len(dataframe)]
-            }
-
-            pd.DataFrame(summary).to_excel(
-                writer,
-                sheet_name="Summary",
-                index=False
-            )
-
-        output.seek(0)
-        return output.getvalue()
-
-    # ---------- DOWNLOAD ----------
-    if not filtered_df.empty:
-        st.download_button(
-            "📥 Download Excel",
-            export_excel(filtered_df),
-            file_name=f"Sigma_Export_{datetime.now().strftime('%d%m%Y')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    else:
-        st.info("ℹ️ No records match selected filters")
+    st.download_button(
+        "📥 Download Excel Backup",
+        data=export_excel(),
+        file_name="Sigma_Consultants_Data.xlsx"
+    )
 
