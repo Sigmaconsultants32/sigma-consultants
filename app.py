@@ -480,9 +480,9 @@ if st.session_state.page == "Find":
     )
 
     # =================================================
-# =============== CLASSIC MODE ====================
-# =================================================
-if find_mode == "Classic (Existing)":
+    # =============== CLASSIC MODE ====================
+    # =================================================
+    if find_mode == "Classic (Existing)":
 
     st.subheader("📋 Classic Find Details")
 
@@ -963,6 +963,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
