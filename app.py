@@ -557,33 +557,23 @@ if st.session_state.page == "ClientDashboard":
 # =====================================================
 # ================= EXPORT ============================
 # =====================================================
-if st.session_state.page == "Export":
+import io
 
-    def export_excel():
-        out = io.BytesIO()
-        with pd.ExcelWriter(out, engine="xlsxwriter") as w:
-            clients_df.to_excel(w, sheet_name="Clients", index=False)
-            proposals_df.to_excel(w, sheet_name="Proposals", index=False)
-        out.seek(0)
-        return out
+def export_excel(df):
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Export")
+
+    output.seek(0)
+    return output
 
     st.download_button(
-        "📥 Download Excel Backup",
-        data=export_excel(),
-        file_name="Sigma_Consultants_Data.xlsx"
-    )
-
-
-
-
-
-
-
-
-
-
-
-
+    label="⬇️ Download Excel",
+    data=export_excel(export_df),
+    file_name="Sigma_Export.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
 
 
