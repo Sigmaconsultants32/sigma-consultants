@@ -209,6 +209,59 @@ if st.session_state.page == "Summary":
             c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
             c3.metric("Open Proposals", open_cnt)
 
+import streamlit as st
+import pandas as pd
+
+st.markdown("## 📊 End Date Based Summary")
+
+# Ensure date columns are datetime
+df["Start Date"] = pd.to_datetime(df["Start Date"])
+df["End Date"] = pd.to_datetime(df["End Date"])
+
+# --- End Date Dropdown ---
+end_dates = sorted(df["End Date"].unique())
+selected_end_date = st.selectbox(
+    "Select End Date",
+    end_dates,
+    format_func=lambda x: x.strftime("%d-%m-%Y")
+)
+
+# --- Filter data for selected End Date ---
+filtered_df = df[df["End Date"] == selected_end_date]
+
+# --- Group by Rate and Start Date ---
+grouped = filtered_df.groupby(["Rate", "Start Date"], as_index=False).agg({
+    "Proposal Amount": "sum",
+    "Final Amount": "sum",
+    "Profit": "sum"
+})
+
+# --- Display Summary Boxes ---
+st.markdown("---")
+
+for _, row in grouped.iterrows():
+    with st.container():
+        st.markdown(
+            f"""
+            <div style="
+                border:1px solid #ccc;
+                border-radius:10px;
+                padding:15px;
+                margin-bottom:15px;
+                background-color:#f9f9f9;">
+                
+                <h4>📌 Summary (Rate: {row['Rate']}%)</h4>
+                
+                <b>Start Date</b> : {row['Start Date'].strftime('%d-%m-%Y')}<br>
+                <b>Total Investment</b> : ₹ {row['Proposal Amount']:,.2f}<br>
+                <b>Rate</b> : {row['Rate']} %<br>
+                <b>Total Final Amount</b> : ₹ {row['Final Amount']:,.2f}<br>
+                <b>Total Profit</b> : ₹ {row['Profit']:,.2f}
+                
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 # =====================================================
 # ================= ADD PROPOSAL ======================
 # =====================================================
@@ -442,6 +495,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
