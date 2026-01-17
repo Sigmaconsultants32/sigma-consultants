@@ -38,6 +38,8 @@ if st.session_state.page == "Dashboard":
 # ---------- EXPORT DATA ----------
 if st.session_state.page == "Export Data":
 
+    from openpyxl.styles import Font, PatternFill
+
     st.header("📤 Export Data")
 
     if proposals_df.empty:
@@ -96,42 +98,38 @@ if st.session_state.page == "Export Data":
         st.warning("No data for selected client")
         st.stop()
 
-    # ---------- PREPARE EXPORT ----------
+    # ---------- PREPARE DATA SHEET ----------
     export_df["Rate"] = export_df["Rate"].round(0).astype(int)
 
-    final_export_df = export_df[
+    data_sheet = export_df[
         ["Client_Name", "Start_Date", "Proposal_Cost", "Rate", "Final_Cost", "Profit"]
     ].copy()
 
-    final_export_df["Start_Date"] = final_export_df["Start_Date"].dt.strftime("%d-%m-%Y")
+    data_sheet["Start_Date"] = data_sheet["Start_Date"].dt.strftime("%d-%m-%Y")
 
-    # ---------- GRAND TOTAL ----------
-    total_row = {
+    # ---------- GRAND TOTAL ROW ----------
+    grand_total = {
         "Client_Name": "GRAND TOTAL",
         "Start_Date": "",
-        "Proposal_Cost": final_export_df["Proposal_Cost"].sum(),
+        "Proposal_Cost": data_sheet["Proposal_Cost"].sum(),
         "Rate": "",
-        "Final_Cost": final_export_df["Final_Cost"].sum(),
-        "Profit": final_export_df["Profit"].sum()
+        "Final_Cost": data_sheet["Final_Cost"].sum(),
+        "Profit": data_sheet["Profit"].sum()
     }
 
-    final_export_df = pd.concat(
-        [final_export_df, pd.DataFrame([total_row])],
+    data_sheet = pd.concat(
+        [data_sheet, pd.DataFrame([grand_total])],
         ignore_index=True
     )
 
-    # ---------- EXPORT FUNCTION ----------
-    def export_excel(df):
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False)
-        output.seek(0)
-        return output
-
-    # ---------- DOWNLOAD ----------
-    st.download_button(
-        "⬇️ Download Excel",
-        data=export_excel(final_export_df),
-        file_name="Sigma_Filtered_Export.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    # ---------- SUMMARY SHEET ----------
+    summary_sheet = pd.DataFrame({
+        "Metric": [
+            "Total Records",
+            "Total Investment",
+            "Total Final Amount",
+            "Total Profit"
+        ],
+        "Value": [
+            len(export_df),
+            export_df["Pro]()_
