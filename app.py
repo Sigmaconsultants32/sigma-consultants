@@ -472,7 +472,7 @@ if st.session_state.page == "Find":
     find_mode = st.radio(
         "Find Details Mode",
         [
-            "Classic (Existing)",
+            "By Proposal",
             "By Client Name",
             "By Start / End Date"
         ],
@@ -970,6 +970,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
