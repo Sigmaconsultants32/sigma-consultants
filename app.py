@@ -28,18 +28,23 @@ def card(title, value):
 
 # ---------------- LOGIN ----------------
 PASSWORD = "sigma123"
+
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
     st.title("🔐 Sigma Consultants Login")
+
     pwd = st.text_input("Enter Password", type="password")
+
     if st.button("Login", use_container_width=True):
         if pwd == PASSWORD:
             st.session_state.auth = True
+            st.session_state.page = "Welcome"
             st.rerun()
         else:
             st.error("Incorrect password")
+
     st.stop()
 
 # ---------------- FILES ----------------
@@ -361,5 +366,6 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
