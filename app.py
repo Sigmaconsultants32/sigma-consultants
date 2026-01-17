@@ -2,6 +2,16 @@ import streamlit as st
 import pandas as pd
 import io
 
+def compact_proposal_card(row):
+    profit_icon = "🟢" if row["Profit"] >= 0 else "🔴"
+
+    return f"""
+📅 {row['Start_Date'].strftime('%d-%m-%Y')}  
+👤 {row['Client_Name']}  
+💰 ₹ {row['Proposal_Cost']:,.0f} → ₹ {row['Final_Cost']:,.0f}  
+{profit_icon} Profit: ₹ {row['Profit']:,.0f}
+"""
+
 def is_mobile_view():
     return st.session_state.get("is_mobile", False)
 
@@ -184,4 +194,5 @@ if st.session_state.page == "Export Data":
         file_name="Sigma_Export_With_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
