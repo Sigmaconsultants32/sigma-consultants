@@ -751,7 +751,7 @@ if st.session_state.page == "ClientDashboard":
 # =====================================================
 import io
 
-    st.markdown("---")
+st.markdown("---")
     st.subheader("📤 Export Data")
 
 # ---------- SAFETY CHECK ----------
@@ -900,4 +900,5 @@ def export_excel(df):
     file_name="Sigma_Filtered_Export.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
 
