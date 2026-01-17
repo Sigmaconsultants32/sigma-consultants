@@ -1,16 +1,21 @@
 # =====================================================
-# Sigma Consultants – Full CRM (Final Stable Build)
+# Sigma Consultants – Full CRM (FINAL STABLE BUILD)
 # =====================================================
 
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import os, io
+import os
+import io
+from openpyxl.styles import Font, PatternFill
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Sigma Consultants", layout="wide")
+st.set_page_config(
+    page_title="Sigma Consultants",
+    layout="wide"
+)
 
-# ---------------- MOBILE TOGGLE (STABLE) ----------------
+# ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = True
 
@@ -43,13 +48,15 @@ if "auth" not in st.session_state:
 if not st.session_state.auth:
     st.title("🔐 Sigma Consultants Login")
     pwd = st.text_input("Enter Password", type="password")
+
     if st.button("Login", use_container_width=True):
         if pwd == PASSWORD:
             st.session_state.auth = True
-            st.session_state.page = "Welcome"
+            st.session_state.page = "Summary"
             st.rerun()
         else:
             st.error("Incorrect password")
+
     st.stop()
 
 # ---------------- FILES ----------------
@@ -62,8 +69,8 @@ def load_clients():
         df = pd.read_excel(CLIENT_FILE)
     else:
         df = pd.DataFrame(columns=[
-            "Client_ID","Client_Name","Created_Date",
-            "Is_Archived","Notes"
+            "Client_ID","Client_Name",
+            "Created_Date","Is_Archived","Notes"
         ])
         df.to_excel(CLIENT_FILE, index=False)
 
@@ -86,8 +93,7 @@ def load_proposals():
         df.to_excel(PROPOSAL_FILE, index=False)
 
     for c in ["Start_Date","End_Date","Closing_Date"]:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce")
+        df[c] = pd.to_datetime(df[c], errors="coerce")
 
     return df
 
@@ -101,27 +107,28 @@ if "proposals_df" not in st.session_state:
 clients_df = st.session_state.clients_df
 proposals_df = st.session_state.proposals_df
 
-def save_clients(): clients_df.to_excel(CLIENT_FILE, index=False)
-def save_proposals(): proposals_df.to_excel(PROPOSAL_FILE, index=False)
+def save_clients():
+    clients_df.to_excel(CLIENT_FILE, index=False)
 
-def new_client_id(): return f"SIG-C-{len(clients_df)+1:03d}"
-def new_proposal_id(): return f"SIG-P-{len(proposals_df)+1:03d}"
+def save_proposals():
+    proposals_df.to_excel(PROPOSAL_FILE, index=False)
+
+def new_client_id():
+    return f"SIG-C-{int(datetime.now().timestamp())}"
+
+def new_proposal_id():
+    return f"SIG-P-{int(datetime.now().timestamp())}"
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
-    st.session_state.page = "Welcome"
+    st.session_state.page = "Summary"
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.markdown("## 📂 Sigma Consultants")
 
     menu = [
-        ("🏠 Summary","Summary"),
-        ("➕ Add Proposal","AddProposal"),
-        ("🔍 Find Details","Find"),
-        ("✏️ Edit Proposal","Edit"),
-        ("👤 Clients","Clients"),
-        ("📊 Client Dashboard","ClientDashboard"),
+        ("📊 Summary","Summary"),
         ("📥 Export Data","Export"),
     ]
 
@@ -133,52 +140,20 @@ with st.sidebar:
     st.markdown("---")
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.auth = False
-        st.session_state.page = "Welcome"
+        st.session_state.page = "Summary"
         st.rerun()
 
 # =====================================================
-# ================= WELCOME ===========================
-# =====================================================
-if st.session_state.page == "Welcome":
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        if os.path.exists("sigma_logo.png"):
-            st.image("sigma_logo.png", use_container_width=True)
-        else:
-            st.markdown("<h2 style='text-align:center;'>Sigma Consultants</h2>",
-                        unsafe_allow_html=True)
-
-        st.markdown(
-            """
-            <div style="text-align:center;padding:20px;
-            background:#ffffff;border-radius:16px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.08)">
-            <h3>Welcome</h3>
-            <p>Manage clients, proposals, profits and follow-ups in one place.</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        if st.button("🚀 Go to Dashboard", use_container_width=True):
-            st.session_state.page = "Summary"
-            st.rerun()
-
-# =====================================================
-# ================= SUMMARY ===========================
+# ================= SUMMARY PAGE ======================
 # =====================================================
 if st.session_state.page == "Summary":
+
     st.header("📊 Summary")
 
-    # ---------- SAFETY CHECK ----------
     if proposals_df.empty:
         st.info("No proposals available")
         st.stop()
 
-    # ---------- BASIC SUMMARY ----------
     total_inv = proposals_df["Proposal_Cost"].sum()
     total_profit = proposals_df["Profit"].sum()
     open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
@@ -186,318 +161,164 @@ if st.session_state.page == "Summary":
     if is_mobile:
         card("Investment", f"₹ {total_inv:,.2f}")
         card("Profit", f"₹ {total_profit:,.2f}")
-        card("Open", open_cnt)
+        card("Open Proposals", open_cnt)
     else:
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
         c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
         c3.metric("Open Proposals", open_cnt)
 
-    # =====================================================
-    # ============ END DATE BASED SUMMARY =================
-    # =====================================================
     st.markdown("---")
     st.subheader("📅 Proposal Details")
     st.caption("ℹ️ Amounts shown in actual ₹ (rupees)")
 
-    # ---------- DATE CONVERSION ----------
-    proposals_df["Start_Date"] = pd.to_datetime(
-        proposals_df["Start_Date"], errors="coerce"
-    )
-    proposals_df["End_Date"] = pd.to_datetime(
-        proposals_df["End_Date"], errors="coerce"
-    )
-
-    # =====================================================
-    # ================= STATUS FILTER =====================
-    # =====================================================
     status_options = ["All"] + sorted(
         proposals_df["Status"].dropna().unique().tolist()
     )
+    selected_status = st.selectbox("Select Status", status_options)
 
-    selected_status = st.selectbox("Select Proposal Status", status_options)
-
+    df = proposals_df.copy()
     if selected_status != "All":
-        status_filtered_df = proposals_df[
-            proposals_df["Status"] == selected_status
-        ].copy()
-    else:
-        status_filtered_df = proposals_df.copy()
+        df = df[df["Status"] == selected_status]
 
-    if status_filtered_df.empty:
-        st.warning("No data for selected status")
+    if df.empty:
+        st.warning("No data available")
         st.stop()
 
-    # =====================================================
-    # ================= END DATE FILTER ===================
-    # =====================================================
-    end_dates = sorted(status_filtered_df["End_Date"].dropna().unique())
-
-    if not end_dates:
-        st.info("No End Dates available")
-        st.stop()
-
+    end_dates = sorted(df["End_Date"].dropna().unique())
     selected_end_date = st.selectbox(
         "Select End Date",
         end_dates,
         format_func=lambda x: x.strftime("%d-%m-%Y")
     )
 
-    filtered_df = status_filtered_df[
-        status_filtered_df["End_Date"] == selected_end_date
-    ].copy()
+    df = df[df["End_Date"] == selected_end_date]
+    df["Rate_Int"] = df["Rate"].round(0).astype(int)
 
-    if filtered_df.empty:
-        st.warning("No data for selected End Date")
-        st.stop()
+    g_inv = df["Proposal_Cost"].sum()
+    g_final = df["Final_Cost"].sum()
+    g_profit = df["Profit"].sum()
 
-    # =====================================================
-    # ===== NORMALIZE RATE (INTEGER BASED GROUPING) =======
-    # =====================================================
-    filtered_df["Rate_Int"] = filtered_df["Rate"].round(0).astype(int)
-
-    # =====================================================
-    # ========== END DATE GRAND TOTALS ====================
-    # =====================================================
-    grand_inv = filtered_df["Proposal_Cost"].sum()
-    grand_final = filtered_df["Final_Cost"].sum()
-    grand_profit = filtered_df["Profit"].sum()
-
-    st.markdown("### 🔢 End Date Grand Totals")
+    st.markdown("### 🔢 End Date Totals")
 
     if is_mobile:
-        card("Investment", f"₹ {grand_inv:,.2f}")
-        card("Final Amt", f"₹ {grand_final:,.2f}")
-        card("Profit", f"₹ {grand_profit:,.2f}")
+        card("Investment", f"₹ {g_inv:,.2f}")
+        card("Final Amount", f"₹ {g_final:,.2f}")
+        card("Profit", f"₹ {g_profit:,.2f}")
     else:
         g1, g2, g3 = st.columns(3)
-        g1.metric("Total Investment", f"₹ {grand_inv:,.2f}")
-        g2.metric("Total Final Amount", f"₹ {grand_final:,.2f}")
-        g3.metric("Total Profit", f"₹ {grand_profit:,.2f}")
+        g1.metric("Investment", f"₹ {g_inv:,.2f}")
+        g2.metric("Final Amount", f"₹ {g_final:,.2f}")
+        g3.metric("Profit", f"₹ {g_profit:,.2f}")
 
     st.markdown("---")
 
-    # =====================================================
-    # ========== GROUP BY RATE + START DATE ================
-    # =====================================================
     summary_df = (
-        filtered_df
-        .groupby(["Rate_Int", "Start_Date"], as_index=False)
+        df.groupby(["Rate_Int","Start_Date"], as_index=False)
         .agg({
-            "Proposal_Cost": "sum",
-            "Final_Cost": "sum",
-            "Profit": "sum"
+            "Proposal_Cost":"sum",
+            "Final_Cost":"sum",
+            "Profit":"sum"
         })
-        .sort_values(["Rate_Int", "Start_Date"])
+        .sort_values(["Rate_Int","Start_Date"])
     )
 
-    # =====================================================
-    # ============ COMPACT SUMMARY DISPLAY ================
-    # =====================================================
     for _, row in summary_df.iterrows():
-
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
-
-        if is_mobile:
-            st.markdown(
-                f"""
+        st.markdown(
+            f"""
 **📅 {row['Start_Date'].strftime('%d-%m-%Y')} | {row['Rate_Int']} %**  
-💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
+💰 Investment : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
-{profit_color} Profit : ₹ {row['Profit']:,.2f}
+📊 Profit : ₹ {row['Profit']:,.2f}
 """
-            )
-        else:
-            st.markdown(
-                f"""
-**Start Date** : {row['Start_Date'].strftime('%d-%m-%Y')}  
-**Rate** : {row['Rate_Int']} %  
-**Investment** : ₹ {row['Proposal_Cost']:,.2f}  
-**Final Amount** : ₹ {row['Final_Cost']:,.2f}  
-**Profit** : ₹ {row['Profit']:,.2f}
-"""
-            )
-
+        )
         st.markdown("---")
 
 # =====================================================
-# ================= EXPORT DATA =======================
+# ================= EXPORT PAGE =======================
 # =====================================================
-import io
-from openpyxl.styles import Font, PatternFill
+if st.session_state.page == "Export":
 
-st.markdown("---")
-st.subheader("📤 Export Data")
+    st.header("📤 Export Data")
 
-# ---------- SAFETY CHECK ----------
-if proposals_df.empty:
-    st.info("No data available for export")
-    st.stop()
+    if proposals_df.empty:
+        st.info("No data available")
+        st.stop()
 
-# ---------- DATE CONVERSION ----------
-proposals_df["Start_Date"] = pd.to_datetime(
-    proposals_df["Start_Date"], errors="coerce"
-)
-proposals_df["End_Date"] = pd.to_datetime(
-    proposals_df["End_Date"], errors="coerce"
-)
+    status_options = ["All"] + sorted(
+        proposals_df["Status"].dropna().unique().tolist()
+    )
+    export_status = st.selectbox("Select Status", status_options)
 
-# =====================================================
-# ================= EXPORT FILTERS ====================
-# =====================================================
-st.markdown("### 🔎 Export Filters")
+    df = proposals_df.copy()
+    if export_status != "All":
+        df = df[df["Status"] == export_status]
 
-# 1️⃣ STATUS FILTER
-status_options = ["All"] + sorted(
-    proposals_df["Status"].dropna().unique().tolist()
-)
+    min_date = df["Start_Date"].min().date()
+    max_date = df["End_Date"].max().date()
 
-export_status = st.selectbox("Select Status", status_options)
+    date_range = st.date_input(
+        "Select Date Range",
+        value=(min_date, max_date)
+    )
 
-if export_status != "All":
-    export_df = proposals_df[
-        proposals_df["Status"] == export_status
-    ].copy()
-else:
-    export_df = proposals_df.copy()
+    start_date, end_date = map(pd.to_datetime, date_range)
+    df = df[
+        (df["Start_Date"] >= start_date) &
+        (df["End_Date"] <= end_date)
+    ]
 
-if export_df.empty:
-    st.warning("No data for selected status")
-    st.stop()
+    client_options = ["All"] + sorted(df["Client_Name"].dropna().unique())
+    client = st.selectbox("Select Client", client_options)
 
-# 2️⃣ DATE RANGE FILTER
-min_date = export_df["Start_Date"].min().date()
-max_date = export_df["End_Date"].max().date()
+    if client != "All":
+        df = df[df["Client_Name"] == client]
 
-date_range = st.date_input(
-    "Select Date Range (Start Date → End Date)",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
-)
+    df["Rate"] = df["Rate"].round(0).astype(int)
 
-if len(date_range) != 2:
-    st.warning("Please select a valid date range")
-    st.stop()
-
-start_date, end_date = pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1])
-
-export_df = export_df[
-    (export_df["Start_Date"] >= start_date) &
-    (export_df["End_Date"] <= end_date)
-].copy()
-
-if export_df.empty:
-    st.warning("No data for selected date range")
-    st.stop()
-
-# 3️⃣ CLIENT FILTER
-client_options = ["All"] + sorted(
-    export_df["Client_Name"].dropna().unique().tolist()
-)
-
-export_client = st.selectbox("Select Client", client_options)
-
-if export_client != "All":
-    export_df = export_df[
-        export_df["Client_Name"] == export_client
+    export_df = df[
+        ["Client_Name","Start_Date",
+         "Proposal_Cost","Rate",
+         "Final_Cost","Profit"]
     ].copy()
 
-if export_df.empty:
-    st.warning("No data for selected client")
-    st.stop()
+    export_df["Start_Date"] = export_df["Start_Date"].dt.strftime("%d-%m-%Y")
 
-# =====================================================
-# ========== PREPARE EXPORT DATA ======================
-# =====================================================
-export_df["Rate"] = export_df["Rate"].round(0).astype(int)
+    total_row = {
+        "Client_Name":"GRAND TOTAL",
+        "Start_Date":"",
+        "Proposal_Cost":export_df["Proposal_Cost"].sum(),
+        "Rate":"",
+        "Final_Cost":export_df["Final_Cost"].sum(),
+        "Profit":export_df["Profit"].sum()
+    }
 
-final_export_df = export_df[
-    [
-        "Client_Name",
-        "Start_Date",
-        "Proposal_Cost",
-        "Rate",
-        "Final_Cost",
-        "Profit"
-    ]
-].copy()
+    export_df = pd.concat(
+        [export_df, pd.DataFrame([total_row])],
+        ignore_index=True
+    )
 
-final_export_df["Start_Date"] = final_export_df["Start_Date"].dt.strftime(
-    "%d-%m-%Y"
-)
+    def export_excel(df):
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False)
+            ws = writer.sheets["Sheet1"]
 
-# =====================================================
-# ========== GRAND TOTAL ROW ===========================
-# =====================================================
-grand_total = {
-    "Client_Name": "GRAND TOTAL",
-    "Start_Date": "",
-    "Proposal_Cost": final_export_df["Proposal_Cost"].sum(),
-    "Rate": "",
-    "Final_Cost": final_export_df["Final_Cost"].sum(),
-    "Profit": final_export_df["Profit"].sum()
-}
+            last_row = ws.max_row
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=last_row, column=col)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(
+                    start_color="FFF4CCCC",
+                    end_color="FFF4CCCC",
+                    fill_type="solid"
+                )
+        output.seek(0)
+        return output
 
-final_export_df = pd.concat(
-    [final_export_df, pd.DataFrame([grand_total])],
-    ignore_index=True
-)
-
-# =====================================================
-# ========== SUMMARY SHEET =============================
-# =====================================================
-summary_df = pd.DataFrame({
-    "Metric": [
-        "Total Proposals",
-        "Total Investment",
-        "Total Final Amount",
-        "Total Profit"
-    ],
-    "Value": [
-        len(export_df),
-        export_df["Proposal_Cost"].sum(),
-        export_df["Final_Cost"].sum(),
-        export_df["Profit"].sum()
-    ]
-})
-
-# =====================================================
-# ============== EXCEL EXPORT FUNCTION =================
-# =====================================================
-def export_excel(data_df, summary_df):
-    output = io.BytesIO()
-
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        data_df.to_excel(writer, index=False, sheet_name="Data")
-        summary_df.to_excel(writer, index=False, sheet_name="Summary")
-
-        wb = writer.book
-        ws = writer.sheets["Data"]
-
-        # ---------- STYLE GRAND TOTAL ROW ----------
-        last_row = ws.max_row
-        bold_font = Font(bold=True)
-        fill = PatternFill(
-            start_color="FFF4CCCC",
-            end_color="FFF4CCCC",
-            fill_type="solid"
-        )
-
-        for col in range(1, ws.max_column + 1):
-            cell = ws.cell(row=last_row, column=col)
-            cell.font = bold_font
-            cell.fill = fill
-
-    output.seek(0)
-    return output
-
-# =====================================================
-# ============== DOWNLOAD BUTTON =======================
-# =====================================================
-st.download_button(
-    label="⬇️ Download Excel (Advanced)",
-    data=export_excel(final_export_df, summary_df),
-    file_name="Sigma_Advanced_Export.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    st.download_button(
+        "⬇️ Download Excel",
+        data=export_excel(export_df),
+        file_name="Sigma_Export.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
