@@ -753,24 +753,31 @@ if st.session_state.page == "Export":
 
     def export_excel():
     import io
-    out = io.BytesIO()
+    import pandas as pd
 
-    with pd.ExcelWriter(out, engine="openpyxl") as writer:
+    output = io.BytesIO()
+
+    # IMPORTANT: openpyxl only (Cloud safe)
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
         proposals_df.to_excel(
             writer,
             index=False,
             sheet_name="Proposals"
         )
 
-    out.seek(0)
-    return out
+    output.seek(0)
+    return output
 
-    st.download_button(
-    "⬇️ Export to Excel",
-    data=export_excel(),
+excel_file = export_excel()
+
+st.download_button(
+    label="⬇️ Export to Excel",
+    data=excel_file,
     file_name="sigma_consultants_data.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
+
 
 
 
