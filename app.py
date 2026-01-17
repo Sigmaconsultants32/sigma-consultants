@@ -484,103 +484,103 @@ if st.session_state.page == "Find":
     # =================================================
     if find_mode == "Classic (Existing)":
 
-    st.subheader("📋 Classic Find Details")
+        st.subheader("📋 Classic Find Details")
 
-    col1, col2 = st.columns(2)
-    client = col1.selectbox(
-        "Client Name",
-        ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
-    )
+        col1, col2 = st.columns(2)
+        client = col1.selectbox(
+            "Client Name",
+            ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+        )
 
-    status = col2.selectbox(
-        "Status",
-        ["All", "Open", "Closed"]
-    )
+        status = col2.selectbox(
+            "Status",
+            ["All", "Open", "Closed"]
+        )
 
-    # ---------- DATE DROPDOWNS ----------
-    col3, col4 = st.columns(2)
+        # ---------- DATE DROPDOWNS ----------
+        col3, col4 = st.columns(2)
 
-    # START DATE OPTIONS
-    start_dates = sorted(
-        proposals_df["Start_Date"].dropna().dt.date.unique()
-    )
-    start_dates_display = ["All"] + start_dates
+        # START DATE OPTIONS
+        start_dates = sorted(
+            proposals_df["Start_Date"].dropna().dt.date.unique()
+        )
+        start_dates_display = ["All"] + start_dates
 
-    selected_start = col3.selectbox(
-        "Start Date",
-        start_dates_display,
-        format_func=lambda x: "All"
-        if x == "All"
-        else x.strftime("%d-%m-%Y")
-    )
+        selected_start = col3.selectbox(
+            "Start Date",
+            start_dates_display,
+            format_func=lambda x: "All"
+            if x == "All"
+            else x.strftime("%d-%m-%Y")
+        )
 
-    # END DATE OPTIONS
-    end_dates = sorted(
-        proposals_df["End_Date"].dropna().dt.date.unique()
-    )
-    end_dates_display = ["All"] + end_dates
+        # END DATE OPTIONS
+        end_dates = sorted(
+            proposals_df["End_Date"].dropna().dt.date.unique()
+        )    
+        end_dates_display = ["All"] + end_dates
 
-    selected_end = col4.selectbox(
-        "End Date",
-        end_dates_display,
-        format_func=lambda x: "All"
-        if x == "All"
-        else x.strftime("%d-%m-%Y")
-    )
+        selected_end = col4.selectbox(
+            "End Date",
+            end_dates_display,
+            format_func=lambda x: "All"
+            if x == "All"
+            else x.strftime("%d-%m-%Y")
+        )
 
-    # ---------- APPLY FILTERS ----------
-    result = proposals_df.copy()
+        # ---------- APPLY FILTERS ----------
+        result = proposals_df.copy()
 
-    if client != "All":
-        result = result[result["Client_Name"] == client]
+        if client != "All":
+            result = result[result["Client_Name"] == client]
 
-    if status != "All":
-        result = result[result[result["Status"] == status]]
+        if status != "All":
+            result = result[result[result["Status"] == status]]
 
-    if selected_start != "All":
-        result = result[result["Start_Date"].dt.date == selected_start]
+        if selected_start != "All":
+            result = result[result["Start_Date"].dt.date == selected_start]
 
-    if selected_end != "All":
-        result = result[result["End_Date"].dt.date == selected_end]
+        if selected_end != "All":
+            result = result[result["End_Date"].dt.date == selected_end]
 
-    st.markdown("---")
+        st.markdown("---")
 
-    if result.empty:
-        st.info("No records found")
-        st.stop()
+        if result.empty:
+            st.info("No records found")
+            st.stop()
 
-    # ---------- DISPLAY ----------
-    if is_mobile:
-        for _, r in result.sort_values("Start_Date").iterrows():
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ddd;border-radius:12px;
-                padding:12px;margin-bottom:10px;background:#fafafa">
+        # ---------- DISPLAY ----------
+        if is_mobile:
+            for _, r in result.sort_values("Start_Date").iterrows():
+                st.markdown(
+                    f"""
+                    <div style="border:1px solid #ddd;border-radius:12px;
+                    padding:12px;margin-bottom:10px;background:#fafafa">
 
-                <b>Client:</b> {r['Client_Name']}<br>
-                <b>Status:</b> {r['Status']}<br>
-                <b>Start:</b> {r['Start_Date'].date()}<br>
-                <b>End:</b> {r['End_Date'].date()}<br>
-                <b>Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                <b>Profit:</b> ₹ {r['Profit']:,.2f}
+                    <b>Client:</b> {r['Client_Name']}<br>
+                    <b>Status:</b> {r['Status']}<br>
+                    <b>Start:</b> {r['Start_Date'].date()}<br>
+                    <b>End:</b> {r['End_Date'].date()}<br>
+                    <b>Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+                    <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
+                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
 
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-    else:
-        display_df = result[[
-            "Client_Name","Proposal_ID","Rate",
-            "Start_Date","End_Date",
-            "Proposal_Cost","Final_Cost","Profit","Status"
-        ]].copy()
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )    
+        else:
+            display_df = result[[
+                "Client_Name","Proposal_ID","Rate",
+                "Start_Date","End_Date",
+                "Proposal_Cost","Final_Cost","Profit","Status"
+            ]].copy()
 
-        display_df["Rate"] = display_df["Rate"].round(0).astype(int)
-        display_df["Start_Date"] = display_df["Start_Date"].dt.date
-        display_df["End_Date"] = display_df["End_Date"].dt.date
+            display_df["Rate"] = display_df["Rate"].round(0).astype(int)
+            display_df["Start_Date"] = display_df["Start_Date"].dt.date
+            display_df["End_Date"] = display_df["End_Date"].dt.date
 
-        st.dataframe(display_df, use_container_width=True)
+            st.dataframe(display_df, use_container_width=True)
 
     # =================================================
     # ============ BY CLIENT NAME MODE ================
@@ -963,6 +963,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
