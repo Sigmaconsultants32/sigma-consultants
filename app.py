@@ -747,20 +747,106 @@ if st.session_state.page == "ClientDashboard":
     st.dataframe(data, use_container_width=True)
 
 # =====================================================
-# ================= EXPORT ============================
+# 📤 EXPORT DATA SECTION (COMPLETE & FINAL)
 # =====================================================
-if st.session_state.page == "Export":
 
-    def export_excel():
-        out = io.BytesIO()
-        with pd.ExcelWriter(out, engine="xlsxwriter") as w:
-            clients_df.to_excel(w, sheet_name="Clients", index=False)
-            proposals_df.to_excel(w, sheet_name="Proposals", index=False)
-        out.seek(0)
-        return out
+st.markdown("---")
+st.subheader("📤 Export Data")
 
-    st.download_button(
-        "📥 Download Excel Backup",
-        data=export_excel(),
-        file_name="Sigma_Consultants_Data.xlsx"
-    )
+# ---- SAFETY CHECK ----
+if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
+    st.warning("⚠️ No data available to export")
+else:
+    df = st.session_state.clients_df.copy()
+
+    # ---------------- FILTER CONTROLS ----------------
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        client_filter = st.selectbox(
+            "👤 Client",
+            ["All"] + sorted(df["Client Name"].dropna().unique().tolist())
+        )
+
+    with col2:
+        status_filter = st.selectbox(
+            "📌 Status",
+            ["All"] + sorted(df["Status"].dropna().unique().tolist())
+        )
+
+    with col3:
+        date_range = st.date_input(
+            "📅 Proposal Date Range",
+            []
+        )
+
+    # ---------------- APPLY FILTERS ----------------
+    filtered_df = df.copy()
+
+    if client_filter != "All":
+        filtered_df = filtered_df[
+            filtered_df["Client Name"] == client_filter
+        ]
+
+    if status_filter != "All":
+        filtered_df = filtered_df[
+            filtered_df["Status"] == status_filter
+        ]
+
+    if len(date_range) == 2:
+        start_date, end_date = date_range
+        filtered_df["Proposal Date"] = pd.to_datetime(
+            filtered_df["Proposal Date"],
+            errors="coerce"
+        )
+        filtered_df = filtered_df[
+            (filtered_df["Proposal Date"] >= pd.to_datetime(start_date)) &
+            (filtered_df["Proposal Date"] <= pd.to_datetime(end_date))
+        ]
+
+    # ---------------- EXPORT FUNCTION ----------------
+    def export_filtered_excel(dataframe):
+        output = io.BytesIO()
+        try:
+            with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+
+                # Main data
+                dataframe.to_excel(
+                    writer,
+                    sheet_name="Filtered_Data",
+                    index=False
+                )
+
+                # Summary
+                summary = {
+                    "Export Date": [datetime.now().strftime("%d-%m-%Y %H:%M")],
+                    "Total Records": [len(dataframe)],
+                    "Client Filter": [client_filter],
+                    "Status Filter": [status_filter]
+                }
+
+                pd.DataFrame(summary).to_excel(
+                    writer,
+                    sheet_name="Summary",
+                    index=False
+                )
+
+            output.seek(0)
+            return output.getvalue()
+
+        except Exception as e:
+            st.error(f"❌ Export failed: {e}")
+            return None
+
+    # ---------------- DOWNLOAD BUTTON ----------------
+    excel_bytes = export_filtered_excel(filtered_df)
+
+    if excel_bytes and not filtered_df.empty:
+        st.download_button(
+            "📥 Download Excel",
+            excel_bytes,
+            file_name=f"Sigma_Export_{datetime.now().strftime('%d%m%Y')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.info("ℹ️ No records match selected filters")
