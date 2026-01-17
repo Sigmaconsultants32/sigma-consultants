@@ -747,32 +747,74 @@ if st.session_state.page == "ClientDashboard":
     st.dataframe(data, use_container_width=True)
 
 # =====================================================
-# ================= EXPORT ============================
+# ================= EXPORT DATA =======================
 # =====================================================
-if st.session_state.page == "Export":
+elif st.session_state.page == "Export Data":
 
-    def export_excel():
-        out = io.BytesIO()
-        with pd.ExcelWriter(out, engine="xlsxwriter") as w:
-            clients_df.to_excel(w, sheet_name="Clients", index=False)
-            proposals_df.to_excel(w, sheet_name="Proposals", index=False)
-        out.seek(0)
-        return out
+    st.header("📤 Export Data")
 
-    st.download_button(
-        "📥 Download Excel Backup",
-        data=export_excel(),
-        file_name="Sigma_Consultants_Data.xlsx"
+    if proposals_df.empty:
+        st.info("No data available")
+        st.stop()
+
+    # ---------- FILTER ----------
+    status = st.selectbox(
+        "Select Status",
+        ["All"] + sorted(proposals_df["Status"].unique())
     )
 
+    if status != "All":
+        export_df = proposals_df[proposals_df["Status"] == status].copy()
+    else:
+        export_df = proposals_df.copy()
 
+    if export_df.empty:
+        st.warning("No data after filter")
+        st.stop()
 
+    # ---------- PREPARE EXPORT ----------
+    export_df = export_df[
+        [
+            "Client_Name",
+            "Start_Date",
+            "Proposal_Cost",
+            "Rate",
+            "Final_Cost",
+            "Profit"
+        ]
+    ].copy()
 
+    export_df["Start_Date"] = export_df["Start_Date"].dt.strftime("%d-%m-%Y")
 
+    # ---------- GRAND TOTAL ----------
+    total_row = {
+        "Client_Name": "GRAND TOTAL",
+        "Start_Date": "",
+        "Proposal_Cost": export_df["Proposal_Cost"].sum(),
+        "Rate": "",
+        "Final_Cost": export_df["Final_Cost"].sum(),
+        "Profit": export_df["Profit"].sum()
+    }
 
+    export_df = pd.concat(
+        [export_df, pd.DataFrame([total_row])],
+        ignore_index=True
+    )
 
+    # ---------- EXPORT FUNCTION ----------
+    def export_excel(df):
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Export")
+        output.seek(0)
+        return output
 
-
-
+    # ---------- DOWNLOAD ----------
+    st.download_button(
+        "⬇️ Download Excel",
+        data=export_excel(export_df),
+        file_name="Sigma_Export.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 
