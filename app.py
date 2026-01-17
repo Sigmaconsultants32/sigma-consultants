@@ -484,35 +484,35 @@ if st.session_state.page == "Find":
     # =================================================
     if find_mode == "By Proposal":
 
-    st.subheader("📄 Find Details By Proposal")
+        st.subheader("📄 Find Details By Proposal")
 
-    # ---------- BASIC FILTERS ----------
-    col1, col2 = st.columns(2)
+        # ---------- BASIC FILTERS ----------
+        col1, col2 = st.columns(2)
 
-    client = col1.selectbox(
-        "Client Name",
-        ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
-    )
+        client = col1.selectbox(
+            "Client Name",
+            ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+        )
 
-    status = col2.selectbox(
-        "Status",
-        ["All", "Open", "Closed"]
-    )
+        status = col2.selectbox(
+            "Status",
+            ["All", "Open", "Closed"]
+        )
 
-    # ---------- DATE TYPE SELECTION ----------
-    date_type = st.radio(
-        "Select Date Type",
-        ["Start Date", "End Date"],
-        horizontal=True
-    )
+        # ---------- DATE TYPE SELECTION ----------
+        date_type = st.radio(
+            "Select Date Type",
+            ["Start Date", "End Date"],
+            horizontal=True
+        )
 
-    df = proposals_df.copy()
+        df = proposals_df.copy()
 
-    if client != "All":
-        df = df[df["Client_Name"] == client]
+        if client != "All":
+            df = df[df["Client_Name"] == client]
 
-    if status != "All":
-        df = df[df["Status"] == status]
+        if status != "All":
+            df = df[df["Status"] == status]
 
     # ---------- DATE MULTISELECT ----------
     date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
@@ -533,6 +533,7 @@ if st.session_state.page == "Find":
         default="All",
         format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
     )
+
     # ---------- APPLY DATE FILTER ----------
     if "All" not in selected_dates:
         df = df[df[date_col].dt.date.isin(selected_dates)]
@@ -587,7 +588,6 @@ if st.session_state.page == "Find":
         display_df["End_Date"] = display_df["End_Date"].dt.date
 
         st.dataframe(display_df, use_container_width=True)
-
 
     # =================================================
     # ============ BY CLIENT NAME MODE ================
@@ -970,6 +970,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
