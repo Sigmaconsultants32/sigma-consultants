@@ -749,7 +749,9 @@ if st.session_state.page == "ClientDashboard":
 # =====================================================
 # ================= EXPORT DATA =======================
 # =====================================================
-elif st.session_state.page == "Export Data":
+if st.session_state.page == "Export Data":
+
+    from openpyxl.styles import Font, PatternFill
 
     st.header("📤 Export Data")
 
@@ -757,10 +759,10 @@ elif st.session_state.page == "Export Data":
         st.info("No data available")
         st.stop()
 
-    # ---------- FILTER ----------
+    # ---------- STATUS FILTER ----------
     status = st.selectbox(
         "Select Status",
-        ["All"] + sorted(proposals_df["Status"].unique())
+        ["All"] + sorted(proposals_df["Status"].unique().tolist())
     )
 
     if status != "All":
@@ -769,52 +771,117 @@ elif st.session_state.page == "Export Data":
         export_df = proposals_df.copy()
 
     if export_df.empty:
-        st.warning("No data after filter")
+        st.warning("No data after status filter")
         st.stop()
 
-    # ---------- PREPARE EXPORT ----------
+    # ---------- DATE RANGE FILTER ----------
+    min_date = export_df["Start_Date"].min().date()
+    max_date = export_df["End_Date"].max().date()
+
+    date_range = st.date_input(
+        "Select Date Range",
+        value=(min_date, max_date)
+    )
+
+    if len(date_range) != 2:
+        st.stop()
+
+    start_date = pd.to_datetime(date_range[0])
+    end_date = pd.to_datetime(date_range[1])
+
     export_df = export_df[
-        [
-            "Client_Name",
-            "Start_Date",
-            "Proposal_Cost",
-            "Rate",
-            "Final_Cost",
-            "Profit"
-        ]
+        (export_df["Start_Date"] >= start_date) &
+        (export_df["End_Date"] <= end_date)
     ].copy()
 
-    export_df["Start_Date"] = export_df["Start_Date"].dt.strftime("%d-%m-%Y")
+    if export_df.empty:
+        st.warning("No data for selected date range")
+        st.stop()
 
-    # ---------- GRAND TOTAL ----------
-    total_row = {
+    # ---------- CLIENT FILTER ----------
+    client = st.selectbox(
+        "Select Client",
+        ["All"] + sorted(export_df["Client_Name"].unique().tolist())
+    )
+
+    if client != "All":
+        export_df = export_df[export_df["Client_Name"] == client].copy()
+
+    if export_df.empty:
+        st.warning("No data for selected client")
+        st.stop()
+
+    # ---------- PREPARE DATA SHEET ----------
+    export_df["Rate"] = export_df["Rate"].round(0).astype(int)
+
+    data_sheet = export_df[
+        ["Client_Name", "Start_Date", "Proposal_Cost", "Rate", "Final_Cost", "Profit"]
+    ].copy()
+
+    data_sheet["Start_Date"] = data_sheet["Start_Date"].dt.strftime("%d-%m-%Y")
+
+    # ---------- GRAND TOTAL ROW ----------
+    grand_total = {
         "Client_Name": "GRAND TOTAL",
         "Start_Date": "",
-        "Proposal_Cost": export_df["Proposal_Cost"].sum(),
+        "Proposal_Cost": data_sheet["Proposal_Cost"].sum(),
         "Rate": "",
-        "Final_Cost": export_df["Final_Cost"].sum(),
-        "Profit": export_df["Profit"].sum()
+        "Final_Cost": data_sheet["Final_Cost"].sum(),
+        "Profit": data_sheet["Profit"].sum()
     }
 
-    export_df = pd.concat(
-        [export_df, pd.DataFrame([total_row])],
+    data_sheet = pd.concat(
+        [data_sheet, pd.DataFrame([grand_total])],
         ignore_index=True
     )
 
+    # ---------- SUMMARY SHEET ----------
+    summary_sheet = pd.DataFrame({
+        "Metric": [
+            "Total Records",
+            "Total Investment",
+            "Total Final Amount",
+            "Total Profit"
+        ],
+        "Value": [
+            len(export_df),
+            export_df["Proposal_Cost"].sum(),
+            export_df["Final_Cost"].sum(),
+            export_df["Profit"].sum()
+        ]
+    })
+
     # ---------- EXPORT FUNCTION ----------
-    def export_excel(df):
+    def export_excel(data_df, summary_df):
         output = io.BytesIO()
+
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Export")
+            data_df.to_excel(writer, index=False, sheet_name="Data")
+            summary_df.to_excel(writer, index=False, sheet_name="Summary")
+
+            ws = writer.sheets["Data"]
+
+            # Style GRAND TOTAL row
+            last_row = ws.max_row
+            bold = Font(bold=True)
+            fill = PatternFill(
+                start_color="FFF4CCCC",
+                end_color="FFF4CCCC",
+                fill_type="solid"
+            )
+
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=last_row, column=col)
+                cell.font = bold
+                cell.fill = fill
+
         output.seek(0)
         return output
 
     # ---------- DOWNLOAD ----------
     st.download_button(
-        "⬇️ Download Excel",
-        data=export_excel(export_df),
-        file_name="Sigma_Export.xlsx",
+        "⬇️ Download Excel (Data + Summary)",
+        data=export_excel(data_sheet, summary_sheet),
+        file_name="Sigma_Export_With_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-
