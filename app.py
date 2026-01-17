@@ -555,25 +555,64 @@ if st.session_state.page == "ClientDashboard":
     card("Open Proposals", len(data[data["Status"]=="Open"]))
 
 # =====================================================
-# ================= EXPORT ============================
+# ================= EXPORT DATA =======================
 # =====================================================
 import io
 
+st.markdown("---")
+st.subheader("📤 Export Data")
+
+# ---------- SAFETY CHECK ----------
+if proposals_df.empty:
+    st.info("No data available for export")
+    st.stop()
+
+# ---------- EXPORT OPTIONS ----------
+export_type = st.radio(
+    "Select data to export",
+    ["All Proposals", "Filtered (Current View)"],
+    horizontal=True
+)
+
+# ---------- SELECT DATA ----------
+if export_type == "Filtered (Current View)" and "filtered_df" in locals():
+    export_df = filtered_df.copy()
+else:
+    export_df = proposals_df.copy()
+
+if export_df.empty:
+    st.warning("No data available for export")
+    st.stop()
+
+# ---------- CLEAN DATE COLUMNS ----------
+for col in ["Start_Date", "End_Date"]:
+    if col in export_df.columns:
+        export_df[col] = pd.to_datetime(
+            export_df[col], errors="coerce"
+        ).dt.strftime("%d-%m-%Y")
+
+# =====================================================
+# ============== EXCEL EXPORT FUNCTION =================
+# =====================================================
 def export_excel(df):
     output = io.BytesIO()
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Export")
+        df.to_excel(
+            writer,
+            index=False,
+            sheet_name="Proposals"
+        )
 
     output.seek(0)
     return output
 
-    st.download_button(
+# =====================================================
+# ============== DOWNLOAD BUTTON =======================
+# =====================================================
+st.download_button(
     label="⬇️ Download Excel",
     data=export_excel(export_df),
-    file_name="Sigma_Export.xlsx",
+    file_name="Sigma_Proposals_Export.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
-
-
-
