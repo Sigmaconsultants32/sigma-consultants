@@ -1,5 +1,5 @@
 # =====================================================
-# Sigma Consultants – Full CRM (Polished & Stable)
+# Sigma Consultants – Full CRM (Final Stable Build)
 # =====================================================
 
 import streamlit as st
@@ -20,7 +20,7 @@ st.session_state.is_mobile = st.toggle(
 )
 is_mobile = st.session_state.is_mobile
 
-# ---------------- CARD ----------------
+# ---------------- CARD UI ----------------
 def card(title, value):
     st.markdown(
         f"""
@@ -36,6 +36,7 @@ def card(title, value):
 
 # ---------------- LOGIN ----------------
 PASSWORD = "sigma123"
+
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
@@ -45,6 +46,7 @@ if not st.session_state.auth:
     if st.button("Login", use_container_width=True):
         if pwd == PASSWORD:
             st.session_state.auth = True
+            st.session_state.page = "Welcome"
             st.rerun()
         else:
             st.error("Incorrect password")
@@ -65,10 +67,8 @@ def load_clients():
         ])
         df.to_excel(CLIENT_FILE, index=False)
 
-    # ✅ Pandas-safe defaults
     if "Is_Archived" not in df.columns:
         df["Is_Archived"] = False
-
     if "Notes" not in df.columns:
         df["Notes"] = ""
 
@@ -83,11 +83,12 @@ def load_proposals():
             "Proposal_Cost","Rate","Final_Cost","Profit",
             "Start_Date","End_Date","Status","Closing_Date"
         ])
-        df.to_excel(PROPOSAL_FILE,index=False)
+        df.to_excel(PROPOSAL_FILE, index=False)
 
     for c in ["Start_Date","End_Date","Closing_Date"]:
         if c in df.columns:
             df[c] = pd.to_datetime(df[c], errors="coerce")
+
     return df
 
 # ---------------- SESSION DATA ----------------
@@ -100,31 +101,31 @@ if "proposals_df" not in st.session_state:
 clients_df = st.session_state.clients_df
 proposals_df = st.session_state.proposals_df
 
-def save_clients(): clients_df.to_excel(CLIENT_FILE,index=False)
-def save_proposals(): proposals_df.to_excel(PROPOSAL_FILE,index=False)
+def save_clients(): clients_df.to_excel(CLIENT_FILE, index=False)
+def save_proposals(): proposals_df.to_excel(PROPOSAL_FILE, index=False)
 
 def new_client_id(): return f"SIG-C-{len(clients_df)+1:03d}"
 def new_proposal_id(): return f"SIG-P-{len(proposals_df)+1:03d}"
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
-    st.session_state.page = "Summary"
+    st.session_state.page = "Welcome"
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.markdown("## 📂 Sigma Consultants")
 
-    pages = [
+    menu = [
         ("🏠 Summary","Summary"),
         ("➕ Add Proposal","AddProposal"),
         ("🔍 Find Details","Find"),
         ("✏️ Edit Proposal","Edit"),
         ("👤 Clients","Clients"),
         ("📊 Client Dashboard","ClientDashboard"),
-        ("📥 Export Data","Export")
+        ("📥 Export Data","Export"),
     ]
 
-    for label,page in pages:
+    for label, page in menu:
         if st.button(label, use_container_width=True):
             st.session_state.page = page
             st.rerun()
@@ -132,12 +133,45 @@ with st.sidebar:
     st.markdown("---")
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.auth = False
+        st.session_state.page = "Welcome"
         st.rerun()
+
+# =====================================================
+# ================= WELCOME ===========================
+# =====================================================
+if st.session_state.page == "Welcome":
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if os.path.exists("sigma_logo.png"):
+            st.image("sigma_logo.png", use_container_width=True)
+        else:
+            st.markdown("<h2 style='text-align:center;'>Sigma Consultants</h2>",
+                        unsafe_allow_html=True)
+
+        st.markdown(
+            """
+            <div style="text-align:center;padding:20px;
+            background:#ffffff;border-radius:16px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+            <h3>Welcome</h3>
+            <p>Manage clients, proposals, profits and follow-ups in one place.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if st.button("🚀 Go to Dashboard", use_container_width=True):
+            st.session_state.page = "Summary"
+            st.rerun()
 
 # =====================================================
 # ================= SUMMARY ===========================
 # =====================================================
 if st.session_state.page == "Summary":
+
     st.header("📊 Summary")
 
     if proposals_df.empty:
@@ -167,8 +201,8 @@ if st.session_state.page == "Summary":
     )
 
     df = proposals_df.copy()
-    if status!="All":
-        df = df[df["Status"]==status]
+    if status != "All":
+        df = df[df["Status"] == status]
 
     end_dates = sorted(df["End_Date"].dropna().unique())
     if not end_dates:
@@ -181,7 +215,7 @@ if st.session_state.page == "Summary":
         format_func=lambda x: x.strftime("%d-%m-%Y")
     )
 
-    df = df[df["End_Date"]==end_date].copy()
+    df = df[df["End_Date"] == end_date].copy()
     df["Rate_Int"] = df["Rate"].round(0).astype(int)
 
     summary_df = (
@@ -227,4 +261,3 @@ if st.session_state.page == "Export":
         file_name="Sigma_Consultants_Data.xlsx",
         use_container_width=True
     )
-
