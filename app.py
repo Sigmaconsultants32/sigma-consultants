@@ -150,7 +150,10 @@ with st.sidebar:
 
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.auth = False; st.rerun()
-
+        
+page = st.sidebar.radio(
+    "Navigation",
+    ["Dashboard", "Clients", "Ledger", "Export Data"]
 # =====================================================
 # ================= WELCOME SCREEN ====================
 # =====================================================
@@ -860,3 +863,4 @@ if page == "Export Data":
         )
     else:
         st.info("ℹ️ No records match selected filters")
+
