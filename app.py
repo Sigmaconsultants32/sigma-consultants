@@ -598,11 +598,13 @@ if st.session_state.page == "Edit":
 # =====================================================
 if st.session_state.page == "Clients":
 
-    st.header("👤 Clients")
+    st.header("👤 Clients Management")
 
-    # -------- ADD NEW CLIENT --------
+    # -------------------------------------------------
+    # ADD NEW CLIENT
+    # -------------------------------------------------
     with st.expander("➕ Add New Client"):
-        cname = st.text_input("Client Name")
+        cname = st.text_input("Client Name", placeholder="Enter client name")
         if st.button("Add Client", use_container_width=True):
             if cname.strip():
                 clients_df.loc[len(clients_df)] = [
@@ -616,26 +618,133 @@ if st.session_state.page == "Clients":
             else:
                 st.error("Client name cannot be empty")
 
-    # -------- CLIENT LIST --------
+    # -------------------------------------------------
+    # CLIENT SEARCH
+    # -------------------------------------------------
+    search = st.text_input("🔍 Search Client", placeholder="Type client name")
+
+    filtered_clients = clients_df.copy()
+    if search.strip():
+        filtered_clients = filtered_clients[
+            filtered_clients["Client_Name"].str.contains(search, case=False, na=False)
+        ]
+
+    # -------------------------------------------------
+    # CLIENT LIST WITH ACTIONS
+    # -------------------------------------------------
     with st.expander("📋 Client List", expanded=True):
-        if clients_df.empty:
-            st.info("No clients available")
-        else:
-            st.dataframe(clients_df, use_container_width=True)
+
+        if filtered_clients.empty:
+            st.info("No clients found")
+            st.stop()
+
+        for _, client in filtered_clients.iterrows():
+
+            client_id = client["Client_ID"]
+            client_name = client["Client_Name"]
+
+            # Proposal count
+            proposal_count = len(
+                proposals_df[proposals_df["Client_ID"] == client_id]
+            )
+
+            st.markdown(
+                f"""
+                <div style="
+                border:1px solid #ddd;
+                border-radius:12px;
+                padding:12px;
+                margin-bottom:10px;
+                background:#fafafa">
+                <b>{client_name}</b><br>
+                <span style="color:#555">Client ID:</span> {client_id}<br>
+                <span style="color:#555">Proposals:</span> {proposal_count}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            col1, col2, col3 = st.columns([3, 2, 2])
+
+            # -------- EDIT CLIENT --------
+            with col1:
+                new_name = st.text_input(
+                    "Edit Name",
+                    value=client_name,
+                    key=f"edit_{client_id}"
+                )
+                if new_name.strip() and new_name != client_name:
+                    clients_df.loc[
+                        clients_df["Client_ID"] == client_id,
+                        "Client_Name"
+                    ] = new_name.strip()
+
+                    proposals_df.loc[
+                        proposals_df["Client_ID"] == client_id,
+                        "Client_Name"
+                    ] = new_name.strip()
+
+                    save_clients()
+                    save_proposals()
+                    st.success("Client name updated")
+                    st.rerun()
+
+            # -------- VIEW PROPOSALS --------
+            with col2:
+                if st.button("📄 View Proposals", key=f"view_{client_id}"):
+                    st.session_state.page = "Find"
+                    st.rerun()
+
+            # -------- DELETE CLIENT --------
+            with col3:
+                if st.button("📦 Archive Client", key=f"arc_{client_id}"):
+                    clients_df.loc[
+                    clients_df["Client_ID"] == client_id,
+                    "Is_Archived"
+                    ] = True
+                    save_clients()
+                    st.success("Client archived (data preserved)")
+                    st.rerun()
+
 
 # =====================================================
 # ================= CLIENT DASHBOARD ==================
 # =====================================================
 if st.session_state.page == "ClientDashboard":
 
-    st.header("📊 Client Dashboard")
-    cname = st.selectbox("Client", clients_df["Client_Name"])
-    cid = clients_df.loc[clients_df["Client_Name"]==cname,"Client_ID"].values[0]
-    data = proposals_df[proposals_df["Client_ID"]==cid]
+    st.header("📊 Client Summary Dashboard")
 
-    card("Total Investment", f"₹ {data['Proposal_Cost'].sum():,.2f}")
-    card("Total Profit", f"₹ {data['Profit'].sum():,.2f}")
-    card("Open Proposals", len(data[data["Status"]=="Open"]))
+    active_clients = clients_df[clients_df["Is_Archived"] == False]
+
+    if active_clients.empty:
+        st.info("No active clients")
+        st.stop()
+
+    client = st.selectbox(
+        "Select Client",
+        active_clients["Client_Name"]
+    )
+
+    client_id = active_clients.loc[
+        active_clients["Client_Name"] == client,
+        "Client_ID"
+    ].values[0]
+
+    data = proposals_df[proposals_df["Client_ID"] == client_id]
+
+    total_invest = data["Proposal_Cost"].sum()
+    total_profit = data["Profit"].sum()
+    open_props = len(data[data["Status"] == "Open"])
+    closed_props = len(data[data["Status"] == "Closed"])
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
+    c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
+    c3.metric("Open Proposals", open_props)
+    c4.metric("Closed Proposals", closed_props)
+
+    st.markdown("### 📄 Proposal Details")
+    st.dataframe(data, use_container_width=True)
 
 # =====================================================
 # ================= EXPORT ============================
@@ -655,6 +764,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
