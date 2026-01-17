@@ -1,3 +1,5 @@
+st.write("Current Page:", st.session_state.get("page"))
+
 # =====================================================
 # Sigma Consultants – Full CRM Production Build
 # =====================================================
@@ -722,5 +724,6 @@ if st.session_state.page == "Export Data":
         file_name="Sigma_Export.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
 
