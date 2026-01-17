@@ -588,7 +588,7 @@ if st.session_state.page == "Find":
         display_df["End_Date"] = display_df["End_Date"].dt.date
 
         st.dataframe(display_df, use_container_width=True)
-
+        
     # =================================================
     # ============ BY CLIENT NAME MODE ================
     # =================================================
@@ -970,6 +970,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
