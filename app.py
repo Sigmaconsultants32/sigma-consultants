@@ -371,6 +371,107 @@ if st.session_state.page == "Summary":
         st.markdown("---")
 
 # =====================================================
+# ================= ADD NEW PROPOSAL ==================
+# =====================================================
+if st.session_state.page == "AddProposal":
+
+    st.header("➕ Add New Proposal")
+
+    if clients_df.empty:
+        st.warning("Please add a client before creating a proposal.")
+        st.stop()
+
+    # ----------- INPUTS -----------
+    client_name = st.selectbox(
+        "Client Name",
+        sorted(clients_df["Client_Name"].unique())
+    )
+
+    start_date = st.date_input(
+        "Start Date",
+        value=datetime.today()
+    )
+
+    end_date = st.date_input(
+        "End Date",
+        value=datetime.today()
+    )
+
+    proposal_cost = st.number_input(
+        "Proposal Amount (₹)",
+        min_value=0.0,
+        step=1000.0,
+        format="%.2f"
+    )
+
+    rate = st.number_input(
+        "Monthly Rate (%)",
+        min_value=0.0,
+        step=0.10,
+        format="%.2f"
+    )
+
+    # ----------- CALCULATIONS -----------
+    days = (end_date - start_date).days
+
+    if days < 0:
+        st.error("End Date must be after Start Date")
+        st.stop()
+
+    months = days / 30
+    profit = proposal_cost * (rate / 100) * months
+    final_cost = proposal_cost + profit
+
+    st.markdown("---")
+    st.subheader("💰 Auto Calculated")
+
+    if is_mobile:
+        st.markdown(f"""
+        <div style="border:1px solid #ddd;border-radius:12px;padding:14px;background:#fafafa">
+        <b>Duration:</b> {days} days ({months:.2f} months)<br>
+        <b>Profit:</b> ₹ {profit:,.2f}<br>
+        <b>Final Amount:</b> ₹ {final_cost:,.2f}
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Duration (Months)", f"{months:.2f}")
+        c2.metric("Profit (₹)", f"{profit:,.2f}")
+        c3.metric("Final Amount (₹)", f"{final_cost:,.2f}")
+
+    st.markdown("---")
+
+    # ----------- SAVE -----------
+    if st.button("💾 Save Proposal", use_container_width=True):
+
+        new_row = {
+            "Proposal_ID": new_proposal_id(),
+            "Client_ID": clients_df.loc[
+                clients_df["Client_Name"] == client_name, "Client_ID"
+            ].values[0],
+            "Client_Name": client_name,
+            "Proposal_Cost": round(proposal_cost, 2),
+            "Rate": round(rate, 2),
+            "Final_Cost": round(final_cost, 2),
+            "Profit": round(profit, 2),
+            "Start_Date": pd.to_datetime(start_date),
+            "End_Date": pd.to_datetime(end_date),
+            "Status": "Open",
+            "Closing_Date": ""
+        }
+
+        st.session_state.proposals_df = pd.concat(
+            [proposals_df, pd.DataFrame([new_row])],
+            ignore_index=True
+        )
+
+        save_proposals()
+
+        st.success("✅ Proposal added successfully")
+        st.session_state.page = "Summary"
+        st.rerun()
+
+# =====================================================
 # ================= EDIT PROPOSAL =====================
 # =====================================================
 if st.session_state.page == "Edit":
@@ -1005,6 +1106,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
