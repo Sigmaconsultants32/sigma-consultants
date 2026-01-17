@@ -2,6 +2,18 @@ import streamlit as st
 import pandas as pd
 import io
 
+def is_mobile_view():
+    return st.session_state.get("is_mobile", False)
+
+# Simple toggle (for testing)
+if "is_mobile" not in st.session_state:
+    st.session_state.is_mobile = False
+
+with st.sidebar:
+    st.session_state.is_mobile = st.toggle("📱 Mobile View", value=st.session_state.is_mobile)
+
+is_mobile = is_mobile_view()
+
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
 # ---------- PAGE STATE ----------
@@ -172,3 +184,4 @@ if st.session_state.page == "Export Data":
         file_name="Sigma_Export_With_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
