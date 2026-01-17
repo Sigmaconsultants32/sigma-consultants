@@ -535,13 +535,13 @@ if st.session_state.page == "Find":
             result = result[result["Client_Name"] == client]
 
         if status != "All":
-            result = result[result[result["Status"] == status]]
+            result = result[result["Status"] == status]
 
         if selected_start != "All":
             result = result[result["Start_Date"].dt.date == selected_start]
 
-        if selected_end != "All":
-            result = result[result["End_Date"].dt.date == selected_end]
+        if status != "All":
+            result = result[result["Status"] == status]
 
         st.markdown("---")
 
@@ -963,6 +963,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
