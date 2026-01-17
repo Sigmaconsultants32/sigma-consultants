@@ -221,6 +221,110 @@ if st.session_state.page == "Summary":
         proposals_df["End_Date"], errors="coerce"
     )
 
+    # =====================================================
+    # ================= STATUS FILTER =====================
+    # =====================================================
+    st.subheader("📌 Status Filter")
+
+    status_options = ["All"] + sorted(
+        proposals_df["Status"].dropna().unique().tolist()
+    )
+
+    selected_status = st.selectbox(
+        "Select Proposal Status",
+        status_options
+    )
+
+    if selected_status != "All":
+        status_filtered_df = proposals_df[
+            proposals_df["Status"] == selected_status
+        ].copy()
+    else:
+        status_filtered_df = proposals_df.copy()
+
+    if status_filtered_df.empty:
+        st.warning("No data available for selected status")
+        st.stop()
+
+    # =====================================================
+    # ================= END DATE FILTER ===================
+    # =====================================================
+    end_dates = sorted(status_filtered_df["End_Date"].dropna().unique())
+
+    if not end_dates:
+        st.info("No End Dates available for selected status")
+        st.stop()
+
+    selected_end_date = st.selectbox(
+        "Select End Date",
+        end_dates,
+        format_func=lambda x: x.strftime("%d-%m-%Y")
+    )
+
+    # ---------- FILTER DATA ----------
+    filtered_df = status_filtered_df[
+        status_filtered_df["End_Date"] == selected_end_date
+    ].copy()
+
+    if filtered_df.empty:
+        st.warning("No data for selected End Date")
+        st.stop()
+
+    # =====================================================
+    # ===== NORMALIZE RATE (INTEGER BASED GROUPING) =======
+    # =====================================================
+    filtered_df["Rate_Int"] = filtered_df["Rate"].round(0).astype(int)
+
+    # =====================================================
+    # ========== GROUP BY RATE + START DATE ================
+    # =====================================================
+    summary_df = (
+        filtered_df
+        .groupby(["Rate_Int", "Start_Date"], as_index=False)
+        .agg({
+            "Proposal_Cost": "sum",
+            "Final_Cost": "sum",
+            "Profit": "sum"
+        })
+        .sort_values(["Rate_Int", "Start_Date"])
+    )
+
+    # =====================================================
+    # ============ DISPLAY SUMMARY ========================
+    # =====================================================
+    for _, row in summary_df.iterrows():
+
+        inv = round(row["Proposal_Cost"], 2)
+        final_amt = round(row["Final_Cost"], 2)
+        profit = round(row["Profit"], 2)
+
+        st.markdown(
+            f"""
+**Start Date** : {row['Start_Date'].strftime('%d-%m-%Y')}  
+**Total Investment** : ₹ {inv:,.2f}  
+**Rate** : {row['Rate_Int']} %  
+**Total Final Amount** : ₹ {final_amt:,.2f}  
+**Total Profit** : 🟢 ₹ {profit:,.2f}
+"""
+        )
+
+        st.markdown("---")
+
+    # =====================================================
+    # ============ END DATE BASED SUMMARY =================
+    # =====================================================
+    st.markdown("---")
+    st.subheader("📅 End Date Based Summary")
+    st.caption("ℹ️ All amounts are shown in actual ₹ (rupees)")
+
+    # ---------- DATE CONVERSION ----------
+    proposals_df["Start_Date"] = pd.to_datetime(
+        proposals_df["Start_Date"], errors="coerce"
+    )
+    proposals_df["End_Date"] = pd.to_datetime(
+        proposals_df["End_Date"], errors="coerce"
+    )
+
     # ---------- END DATE DROPDOWN ----------
     end_dates = sorted(proposals_df["End_Date"].dropna().unique())
 
@@ -441,6 +545,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
