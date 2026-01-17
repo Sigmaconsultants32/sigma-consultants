@@ -747,37 +747,51 @@ if st.session_state.page == "ClientDashboard":
     st.dataframe(data, use_container_width=True)
 
 # =====================================================
-# ================= EXPORT ============================
+# ================= EXPORT DATA =======================
 # =====================================================
-if st.session_state.page == "Export":
 
+if st.session_state.page == "Export Data":
+    st.header("📤 Export Data")
+
+    # ---------- SAFETY CHECK ----------
+    if proposals_df.empty:
+        st.warning("No data available to export.")
+        st.stop()
+
+    # ---------- EXPORT FUNCTION ----------
     def export_excel():
-    import io
-    import pandas as pd
+        import io
+        import pandas as pd
 
-    output = io.BytesIO()
+        output = io.BytesIO()
 
-    # IMPORTANT: openpyxl only (Cloud safe)
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        proposals_df.to_excel(
-            writer,
-            index=False,
-            sheet_name="Proposals"
-        )
+        # Streamlit Cloud safe engine
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            proposals_df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Proposals"
+            )
 
-    output.seek(0)
-    return output
+        output.seek(0)
+        return output
 
-excel_file = export_excel()
+    # ---------- GENERATE FILE ----------
+    excel_file = export_excel()
 
-st.download_button(
-    label="⬇️ Export to Excel",
-    data=excel_file,
-    file_name="sigma_consultants_data.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    # ---------- DOWNLOAD BUTTON ----------
+    st.download_button(
+        label="⬇️ Download Excel",
+        data=excel_file,
+        file_name="sigma_consultants_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-
-
-
-
+    # ---------- OPTIONAL CSV BACKUP ----------
+    st.markdown("### 🔁 Alternative Format")
+    st.download_button(
+        label="⬇️ Download CSV",
+        data=proposals_df.to_csv(index=False),
+        file_name="sigma_consultants_data.csv",
+        mime="text/csv"
+    )
