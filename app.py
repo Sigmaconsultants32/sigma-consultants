@@ -132,4 +132,43 @@ if st.session_state.page == "Export Data":
         ],
         "Value": [
             len(export_df),
-            export_df["Pro]()_
+            export_df["Proposal_Cost"].sum(),
+            export_df["Final_Cost"].sum(),
+            export_df["Profit"].sum()
+        ]
+    })
+
+    # ---------- EXPORT FUNCTION ----------
+    def export_excel(data_df, summary_df):
+        output = io.BytesIO()
+
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            data_df.to_excel(writer, index=False, sheet_name="Data")
+            summary_df.to_excel(writer, index=False, sheet_name="Summary")
+
+            ws = writer.sheets["Data"]
+
+            # Style GRAND TOTAL row
+            last_row = ws.max_row
+            bold = Font(bold=True)
+            fill = PatternFill(
+                start_color="FFF4CCCC",
+                end_color="FFF4CCCC",
+                fill_type="solid"
+            )
+
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=last_row, column=col)
+                cell.font = bold
+                cell.fill = fill
+
+        output.seek(0)
+        return output
+
+    # ---------- DOWNLOAD ----------
+    st.download_button(
+        "⬇️ Download Excel (Data + Summary)",
+        data=export_excel(data_sheet, summary_sheet),
+        file_name="Sigma_Export_With_Summary.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
