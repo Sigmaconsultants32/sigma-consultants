@@ -203,9 +203,9 @@ if st.session_state.page == "Summary":
     open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
 
     if is_mobile:
-        card("Total Investment", f"₹ {total_inv:,.2f}")
-        card("Total Profit", f"₹ {total_profit:,.2f}")
-        card("Open Proposals", open_cnt)
+        card("Investment", f"₹ {total_inv:,.2f}")
+        card("Profit", f"₹ {total_profit:,.2f}")
+        card("Open", open_cnt)
     else:
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
@@ -217,7 +217,7 @@ if st.session_state.page == "Summary":
     # =====================================================
     st.markdown("---")
     st.subheader("📅 End Date Based Summary")
-    st.caption("ℹ️ All amounts are shown in actual ₹ (rupees)")
+    st.caption("ℹ️ Amounts shown in actual ₹ (rupees)")
 
     # ---------- DATE CONVERSION ----------
     proposals_df["Start_Date"] = pd.to_datetime(
@@ -230,16 +230,11 @@ if st.session_state.page == "Summary":
     # =====================================================
     # ================= STATUS FILTER =====================
     # =====================================================
-    st.subheader("📌 Status Filter")
-
     status_options = ["All"] + sorted(
         proposals_df["Status"].dropna().unique().tolist()
     )
 
-    selected_status = st.selectbox(
-        "Select Proposal Status",
-        status_options
-    )
+    selected_status = st.selectbox("Select Proposal Status", status_options)
 
     if selected_status != "All":
         status_filtered_df = proposals_df[
@@ -249,7 +244,7 @@ if st.session_state.page == "Summary":
         status_filtered_df = proposals_df.copy()
 
     if status_filtered_df.empty:
-        st.warning("No data available for selected status")
+        st.warning("No data for selected status")
         st.stop()
 
     # =====================================================
@@ -258,7 +253,7 @@ if st.session_state.page == "Summary":
     end_dates = sorted(status_filtered_df["End_Date"].dropna().unique())
 
     if not end_dates:
-        st.info("No End Dates available for selected status")
+        st.info("No End Dates available")
         st.stop()
 
     selected_end_date = st.selectbox(
@@ -267,7 +262,6 @@ if st.session_state.page == "Summary":
         format_func=lambda x: x.strftime("%d-%m-%Y")
     )
 
-    # ---------- FILTER DATA ----------
     filtered_df = status_filtered_df[
         status_filtered_df["End_Date"] == selected_end_date
     ].copy()
@@ -280,6 +274,27 @@ if st.session_state.page == "Summary":
     # ===== NORMALIZE RATE (INTEGER BASED GROUPING) =======
     # =====================================================
     filtered_df["Rate_Int"] = filtered_df["Rate"].round(0).astype(int)
+
+    # =====================================================
+    # ========== END DATE GRAND TOTALS ====================
+    # =====================================================
+    grand_inv = filtered_df["Proposal_Cost"].sum()
+    grand_final = filtered_df["Final_Cost"].sum()
+    grand_profit = filtered_df["Profit"].sum()
+
+    st.markdown("### 🔢 End Date Grand Totals")
+
+    if is_mobile:
+        card("Investment", f"₹ {grand_inv:,.2f}")
+        card("Final Amt", f"₹ {grand_final:,.2f}")
+        card("Profit", f"₹ {grand_profit:,.2f}")
+    else:
+        g1, g2, g3 = st.columns(3)
+        g1.metric("Total Investment", f"₹ {grand_inv:,.2f}")
+        g2.metric("Total Final Amount", f"₹ {grand_final:,.2f}")
+        g3.metric("Total Profit", f"₹ {grand_profit:,.2f}")
+
+    st.markdown("---")
 
     # =====================================================
     # ========== GROUP BY RATE + START DATE ================
@@ -296,23 +311,31 @@ if st.session_state.page == "Summary":
     )
 
     # =====================================================
-    # ============ DISPLAY SUMMARY ========================
+    # ============ COMPACT SUMMARY DISPLAY ================
     # =====================================================
     for _, row in summary_df.iterrows():
 
-        inv = round(row["Proposal_Cost"], 2)
-        final_amt = round(row["Final_Cost"], 2)
-        profit = round(row["Profit"], 2)
+        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
 
-        st.markdown(
-            f"""
-**Start Date** : {row['Start_Date'].strftime('%d-%m-%Y')}  
-**Total Investment** : ₹ {inv:,.2f}  
-**Rate** : {row['Rate_Int']} %  
-**Total Final Amount** : ₹ {final_amt:,.2f}  
-**Total Profit** : 🟢 ₹ {profit:,.2f}
+        if is_mobile:
+            st.markdown(
+                f"""
+**📅 {row['Start_Date'].strftime('%d-%m-%Y')} | {row['Rate_Int']} %**  
+💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
+📈 Final : ₹ {row['Final_Cost']:,.2f}  
+{profit_color} Profit : ₹ {row['Profit']:,.2f}
 """
-        )
+            )
+        else:
+            st.markdown(
+                f"""
+**Start Date** : {row['Start_Date'].strftime('%d-%m-%Y')}  
+**Rate** : {row['Rate_Int']} %  
+**Investment** : ₹ {row['Proposal_Cost']:,.2f}  
+**Final Amount** : ₹ {row['Final_Cost']:,.2f}  
+**Profit** : ₹ {row['Profit']:,.2f}
+"""
+            )
 
         st.markdown("---")
 
@@ -549,6 +572,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
