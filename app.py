@@ -187,6 +187,7 @@ if st.session_state.page == "Welcome":
             st.rerun()
             
 # =====================================================
+# =====================================================
 # ================= SUMMARY ===========================
 # =====================================================
 if st.session_state.page == "Summary":
@@ -194,75 +195,92 @@ if st.session_state.page == "Summary":
 
     if proposals_df.empty:
         st.info("No proposals available")
+        st.stop()
+
+    # ---------------- BASIC SUMMARY ----------------
+    total_inv = proposals_df["Proposal_Cost"].sum()
+    total_profit = proposals_df["Profit"].sum()
+    open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
+
+    if is_mobile:
+        card("Total Investment", f"₹ {total_inv:,.2f}")
+        card("Total Profit", f"₹ {total_profit:,.2f}")
+        card("Open Proposals", open_cnt)
     else:
-        total_inv = proposals_df["Proposal_Cost"].sum()
-        total_profit = proposals_df["Profit"].sum()
-        open_cnt = len(proposals_df[proposals_df["Status"]=="Open"])
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
+        c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
+        c3.metric("Open Proposals", open_cnt)
 
-        if is_mobile:
-            card("Total Investment", f"₹ {total_inv:,.2f}")
-            card("Total Profit", f"₹ {total_profit:,.2f}")
-            card("Open Proposals", open_cnt)
-        else:
-            c1,c2,c3 = st.columns(3)
-            c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
-            c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
-            c3.metric("Open Proposals", open_cnt)
+# =====================================================
+# ============ END DATE BASED SUMMARY =================
+# =====================================================
+    st.markdown("---")
+    st.subheader("📅 End Date Based Summary")
 
-st.markdown("## 📊 End Date Based Summary")
-
-# --- SAFETY CHECK ---
-if 'data' not in locals():
-    st.error("Database not loaded.")
-    st.stop()
-
-# --- DATE CONVERSION ---
-data["Start Date"] = pd.to_datetime(data["Start Date"], errors="coerce")
-data["End Date"] = pd.to_datetime(data["End Date"], errors="coerce")
-
-# --- END DATE DROPDOWN ---
-end_dates = sorted(data["End Date"].dropna().unique())
-
-selected_end_date = st.selectbox(
-    "Select End Date",
-    end_dates,
-    format_func=lambda x: x.strftime("%d-%m-%Y")
-)
-
-# --- FILTER DATA ---
-filtered_df = data[data["End Date"] == selected_end_date]
-
-# --- GROUP BY RATE + START DATE ---
-summary_df = filtered_df.groupby(
-    ["Rate", "Start Date"], as_index=False
-).agg({
-    "Proposal Amount": "sum",
-    "Final Amount": "sum",
-    "Profit": "sum"
-})
-
-st.markdown("---")
-
-# --- DISPLAY VERTICAL SUMMARY BOXES ---
-for _, row in summary_df.iterrows():
-    st.markdown(
-        f"""
-        <div style="
-            border:1px solid #ccc;
-            border-radius:10px;
-            padding:15px;
-            margin-bottom:15px;
-            background-color:#f9f9f9;">
-            
-            <b>Start Date</b> : {row['Start Date'].strftime('%d-%m-%Y')}<br>
-            <b>Total Investment</b> : ₹ {row['Proposal Amount']:,.2f}<br>
-            <b>Rate</b> : {row['Rate']} %<br>
-            <b>Total Final Amount</b> : ₹ {row['Final Amount']:,.2f}<br>
-            <b>Total Profit</b> : ₹ {row['Profit']:,.2f}
-        </div>
-        """,
-        unsafe_allow_html=True
+    # ---- DATE CONVERSION (SAFE) ----
+    proposals_df["Start_Date"] = pd.to_datetime(
+        proposals_df["Start_Date"], errors="coerce"
     )
+    proposals_df["End_Date"] = pd.to_datetime(
+        proposals_df["End_Date"], errors="coerce"
+    )
+
+    # ---- END DATE DROPDOWN ----
+    end_dates = sorted(proposals_df["End_Date"].dropna().unique())
+
+    if not end_dates:
+        st.info("No End Dates available")
+        st.stop()
+
+    selected_end_date = st.selectbox(
+        "Select End Date",
+        end_dates,
+        format_func=lambda x: x.strftime("%d-%m-%Y")
+    )
+
+    # ---- FILTER BY END DATE ----
+    filtered_df = proposals_df[
+        proposals_df["End_Date"] == selected_end_date
+    ]
+
+    if filtered_df.empty:
+        st.warning("No data for selected End Date")
+        st.stop()
+
+    # ---- GROUP BY RATE + START DATE ----
+    summary_df = (
+        filtered_df
+        .groupby(["Rate", "Start_Date"], as_index=False)
+        .agg({
+            "Proposal_Cost": "sum",
+            "Final_Amount": "sum",
+            "Profit": "sum"
+        })
+        .sort_values(["Rate", "Start_Date"])
+    )
+
+    # ---- DISPLAY SUMMARY BOXES ----
+    for _, row in summary_df.iterrows():
+        st.markdown(
+            f"""
+            <div style="
+                border:1px solid #d0d0d0;
+                border-radius:12px;
+                padding:16px;
+                margin-bottom:14px;
+                background-color:#fafafa;">
+                
+                <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
+                <b>Total Investment</b> : ₹ {row['Proposal_Cost']:,.2f}<br>
+                <b>Rate</b> : {row['Rate']} %<br>
+                <b>Total Final Amount</b> : ₹ {row['Final_Amount']:,.2f}<br>
+                <b>Total Profit</b> : 
+                <span style="color:green;"><b>₹ {row['Profit']:,.2f}</b></span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 # =====================================================
 # ================= ADD PROPOSAL ======================
@@ -497,6 +515,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
