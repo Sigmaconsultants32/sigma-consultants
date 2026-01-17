@@ -751,8 +751,8 @@ if st.session_state.page == "ClientDashboard":
 # =====================================================
 import io
 
-st.markdown("---")
-st.subheader("📤 Export Data")
+    st.markdown("---")
+    st.subheader("📤 Export Data")
 
 # ---------- SAFETY CHECK ----------
 if proposals_df.empty:
@@ -770,7 +770,7 @@ proposals_df["End_Date"] = pd.to_datetime(
 # =====================================================
 # ================= EXPORT FILTERS ====================
 # =====================================================
-st.markdown("### 🔎 Export Filters")
+    st.markdown("### 🔎 Export Filters")
 
 # 1️⃣ STATUS FILTER
 status_options = ["All"] + sorted(
@@ -894,9 +894,10 @@ def export_excel(df):
 # =====================================================
 # ============== DOWNLOAD BUTTON =======================
 # =====================================================
-st.download_button(
+    st.download_button(
     label="⬇️ Download Excel",
     data=export_excel(final_export_df),
     file_name="Sigma_Filtered_Export.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
