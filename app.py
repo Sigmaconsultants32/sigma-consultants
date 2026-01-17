@@ -577,6 +577,61 @@ proposals_df["End_Date"] = pd.to_datetime(
 )
 
 # =====================================================
+# ========== ONE-TAP MOBILE EXPORT PRESETS =============
+# =====================================================
+if is_mobile:
+    st.markdown("### ⚡ Quick Export (One-Tap)")
+
+    today = pd.Timestamp.today().normalize()
+    month_start = today.replace(day=1)
+    year_start = today.replace(month=1, day=1)
+
+    preset = st.radio(
+        "Choose Quick Export",
+        [
+            "📤 Today – Open",
+            "📤 This Month – All",
+            "📤 This Month – Open",
+            "📤 This Year – All",
+            "Manual Filters"
+        ],
+        index=4
+    )
+
+    if preset != "Manual Filters":
+
+        if preset == "📤 Today – Open":
+            export_df = proposals_df[
+                (proposals_df["Status"] == "Open") &
+                (proposals_df["Start_Date"] == today)
+            ].copy()
+
+        elif preset == "📤 This Month – All":
+            export_df = proposals_df[
+                (proposals_df["Start_Date"] >= month_start) &
+                (proposals_df["End_Date"] <= today)
+            ].copy()
+
+        elif preset == "📤 This Month – Open":
+            export_df = proposals_df[
+                (proposals_df["Status"] == "Open") &
+                (proposals_df["Start_Date"] >= month_start) &
+                (proposals_df["End_Date"] <= today)
+            ].copy()
+
+        elif preset == "📤 This Year – All":
+            export_df = proposals_df[
+                (proposals_df["Start_Date"] >= year_start) &
+                (proposals_df["End_Date"] <= today)
+            ].copy()
+
+        if export_df.empty:
+            st.warning("No data available for selected preset")
+            st.stop()
+
+        st.success("Preset applied ✔")
+
+# =====================================================
 # ================= EXPORT FILTERS ====================
 # =====================================================
 st.markdown("### 🔎 Export Filters")
@@ -735,4 +790,5 @@ st.download_button(
     file_name="Sigma_Advanced_Export.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
 
