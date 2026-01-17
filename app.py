@@ -542,7 +542,9 @@ if st.session_state.page == "Find":
                 "Client_Name","Proposal_ID","Rate",
                 "Start_Date","End_Date",
                 "Proposal_Cost","Final_Cost","Profit","Status"
-            ]]
+            ]].copy()
+
+            display_df["Rate"] = display_df["Rate"].round(0).astype(int)
             display_df["Start_Date"] = display_df["Start_Date"].dt.date
             display_df["End_Date"] = display_df["End_Date"].dt.date
             st.dataframe(display_df, use_container_width=True)
@@ -598,7 +600,7 @@ if st.session_state.page == "Find":
                     padding:12px;margin-bottom:10px;background:#f9f9f9">
 
                     <b>Proposal Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                    <b>Rate:</b> {r['Rate']} %<br>
+                    <b>Rate:</b> {int(round(r['Rate'], 0))} %<br>
                     <b>Final Amount:</b> ₹ {r['Final_Cost']:,.2f}<br>
                     <b>Profit:</b> ₹ {r['Profit']:,.2f}
 
@@ -609,8 +611,10 @@ if st.session_state.page == "Find":
         else:
             table = result[[
                 "Proposal_Cost","Rate","Final_Cost","Profit"
-            ]].round(2)
-            st.dataframe(table, use_container_width=True)
+            ]].copy()
+
+            table["Rate"] = table["Rate"].round(0).astype(int)
+            table = table.round(2)
 
     # =================================================
     # ========= BY START / END DATE MODE ===============
@@ -926,5 +930,6 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
