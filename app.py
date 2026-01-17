@@ -555,240 +555,244 @@ if st.session_state.page == "ClientDashboard":
     card("Open Proposals", len(data[data["Status"]=="Open"]))
 
 # =====================================================
-# ================= EXPORT DATA =======================
+# ================= EXPORT DATA PAGE ==================
 # =====================================================
-import io
-from openpyxl.styles import Font, PatternFill
+elif st.session_state.page == "Export Data":
 
-st.markdown("---")
-st.subheader("📤 Export Data")
+    import io
+    from openpyxl.styles import Font, PatternFill
 
-# ---------- SAFETY CHECK ----------
-if proposals_df.empty:
-    st.info("No data available for export")
-    st.stop()
+    st.header("📤 Export Data")
 
-# ---------- DATE CONVERSION ----------
-proposals_df["Start_Date"] = pd.to_datetime(
-    proposals_df["Start_Date"], errors="coerce"
-)
-proposals_df["End_Date"] = pd.to_datetime(
-    proposals_df["End_Date"], errors="coerce"
-)
+    # ---------- SAFETY CHECK ----------
+    if proposals_df.empty:
+        st.info("No data available for export")
+        st.stop()
 
-# =====================================================
-# ========== ONE-TAP MOBILE EXPORT PRESETS =============
-# =====================================================
-if is_mobile:
-    st.markdown("### ⚡ Quick Export (One-Tap)")
-
-    today = pd.Timestamp.today().normalize()
-    month_start = today.replace(day=1)
-    year_start = today.replace(month=1, day=1)
-
-    preset = st.radio(
-        "Choose Quick Export",
-        [
-            "📤 Today – Open",
-            "📤 This Month – All",
-            "📤 This Month – Open",
-            "📤 This Year – All",
-            "Manual Filters"
-        ],
-        index=4
+    # ---------- DATE CONVERSION ----------
+    proposals_df["Start_Date"] = pd.to_datetime(
+        proposals_df["Start_Date"], errors="coerce"
+    )
+    proposals_df["End_Date"] = pd.to_datetime(
+        proposals_df["End_Date"], errors="coerce"
     )
 
-    if preset != "Manual Filters":
+    # =====================================================
+    # ========== ONE-TAP MOBILE EXPORT PRESETS =============
+    # =====================================================
+    use_manual_filters = True
 
-        if preset == "📤 Today – Open":
+    if is_mobile:
+        st.markdown("### ⚡ Quick Export (One-Tap)")
+
+        today = pd.Timestamp.today().normalize()
+        month_start = today.replace(day=1)
+        year_start = today.replace(month=1, day=1)
+
+        preset = st.radio(
+            "Choose Quick Export",
+            [
+                "📤 Today – Open",
+                "📤 This Month – All",
+                "📤 This Month – Open",
+                "📤 This Year – All",
+                "Manual Filters"
+            ],
+            index=4
+        )
+
+        if preset != "Manual Filters":
+            use_manual_filters = False
+
+            if preset == "📤 Today – Open":
+                export_df = proposals_df[
+                    (proposals_df["Status"] == "Open") &
+                    (proposals_df["Start_Date"] == today)
+                ].copy()
+
+            elif preset == "📤 This Month – All":
+                export_df = proposals_df[
+                    (proposals_df["Start_Date"] >= month_start) &
+                    (proposals_df["End_Date"] <= today)
+                ].copy()
+
+            elif preset == "📤 This Month – Open":
+                export_df = proposals_df[
+                    (proposals_df["Status"] == "Open") &
+                    (proposals_df["Start_Date"] >= month_start) &
+                    (proposals_df["End_Date"] <= today)
+                ].copy()
+
+            elif preset == "📤 This Year – All":
+                export_df = proposals_df[
+                    (proposals_df["Start_Date"] >= year_start) &
+                    (proposals_df["End_Date"] <= today)
+                ].copy()
+
+            if export_df.empty:
+                st.warning("No data for selected preset")
+                st.stop()
+
+            st.success("Quick preset applied ✔")
+
+    # =====================================================
+    # ================= MANUAL FILTERS ===================
+    # =====================================================
+    if use_manual_filters:
+
+        st.markdown("### 🔎 Manual Export Filters")
+
+        # 1️⃣ STATUS FILTER
+        status_options = ["All"] + sorted(
+            proposals_df["Status"].dropna().unique().tolist()
+        )
+
+        export_status = st.selectbox("Select Status", status_options)
+
+        if export_status != "All":
             export_df = proposals_df[
-                (proposals_df["Status"] == "Open") &
-                (proposals_df["Start_Date"] == today)
+                proposals_df["Status"] == export_status
             ].copy()
+        else:
+            export_df = proposals_df.copy()
 
-        elif preset == "📤 This Month – All":
-            export_df = proposals_df[
-                (proposals_df["Start_Date"] >= month_start) &
-                (proposals_df["End_Date"] <= today)
-            ].copy()
+        if export_df.empty:
+            st.warning("No data for selected status")
+            st.stop()
 
-        elif preset == "📤 This Month – Open":
-            export_df = proposals_df[
-                (proposals_df["Status"] == "Open") &
-                (proposals_df["Start_Date"] >= month_start) &
-                (proposals_df["End_Date"] <= today)
-            ].copy()
+        # 2️⃣ DATE RANGE FILTER
+        min_date = export_df["Start_Date"].min().date()
+        max_date = export_df["End_Date"].max().date()
 
-        elif preset == "📤 This Year – All":
-            export_df = proposals_df[
-                (proposals_df["Start_Date"] >= year_start) &
-                (proposals_df["End_Date"] <= today)
+        date_range = st.date_input(
+            "Select Date Range (Start → End)",
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date
+        )
+
+        if len(date_range) != 2:
+            st.warning("Please select a valid date range")
+            st.stop()
+
+        start_date = pd.to_datetime(date_range[0])
+        end_date = pd.to_datetime(date_range[1])
+
+        export_df = export_df[
+            (export_df["Start_Date"] >= start_date) &
+            (export_df["End_Date"] <= end_date)
+        ].copy()
+
+        if export_df.empty:
+            st.warning("No data for selected date range")
+            st.stop()
+
+        # 3️⃣ CLIENT FILTER
+        client_options = ["All"] + sorted(
+            export_df["Client_Name"].dropna().unique().tolist()
+        )
+
+        export_client = st.selectbox("Select Client", client_options)
+
+        if export_client != "All":
+            export_df = export_df[
+                export_df["Client_Name"] == export_client
             ].copy()
 
         if export_df.empty:
-            st.warning("No data available for selected preset")
+            st.warning("No data for selected client")
             st.stop()
 
-        st.success("Preset applied ✔")
+    # =====================================================
+    # ========== PREPARE FINAL EXPORT DATA ================
+    # =====================================================
+    export_df["Rate"] = export_df["Rate"].round(0).astype(int)
 
-# =====================================================
-# ================= EXPORT FILTERS ====================
-# =====================================================
-st.markdown("### 🔎 Export Filters")
-
-# 1️⃣ STATUS FILTER
-status_options = ["All"] + sorted(
-    proposals_df["Status"].dropna().unique().tolist()
-)
-
-export_status = st.selectbox("Select Status", status_options)
-
-if export_status != "All":
-    export_df = proposals_df[
-        proposals_df["Status"] == export_status
-    ].copy()
-else:
-    export_df = proposals_df.copy()
-
-if export_df.empty:
-    st.warning("No data for selected status")
-    st.stop()
-
-# 2️⃣ DATE RANGE FILTER
-min_date = export_df["Start_Date"].min().date()
-max_date = export_df["End_Date"].max().date()
-
-date_range = st.date_input(
-    "Select Date Range (Start Date → End Date)",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
-)
-
-if len(date_range) != 2:
-    st.warning("Please select a valid date range")
-    st.stop()
-
-start_date, end_date = pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1])
-
-export_df = export_df[
-    (export_df["Start_Date"] >= start_date) &
-    (export_df["End_Date"] <= end_date)
-].copy()
-
-if export_df.empty:
-    st.warning("No data for selected date range")
-    st.stop()
-
-# 3️⃣ CLIENT FILTER
-client_options = ["All"] + sorted(
-    export_df["Client_Name"].dropna().unique().tolist()
-)
-
-export_client = st.selectbox("Select Client", client_options)
-
-if export_client != "All":
-    export_df = export_df[
-        export_df["Client_Name"] == export_client
+    final_export_df = export_df[
+        [
+            "Client_Name",
+            "Start_Date",
+            "Proposal_Cost",
+            "Rate",
+            "Final_Cost",
+            "Profit"
+        ]
     ].copy()
 
-if export_df.empty:
-    st.warning("No data for selected client")
-    st.stop()
+    final_export_df["Start_Date"] = final_export_df["Start_Date"].dt.strftime(
+        "%d-%m-%Y"
+    )
 
-# =====================================================
-# ========== PREPARE EXPORT DATA ======================
-# =====================================================
-export_df["Rate"] = export_df["Rate"].round(0).astype(int)
+    # =====================================================
+    # ========== GRAND TOTAL ROW ==========================
+    # =====================================================
+    grand_total = {
+        "Client_Name": "GRAND TOTAL",
+        "Start_Date": "",
+        "Proposal_Cost": final_export_df["Proposal_Cost"].sum(),
+        "Rate": "",
+        "Final_Cost": final_export_df["Final_Cost"].sum(),
+        "Profit": final_export_df["Profit"].sum()
+    }
 
-final_export_df = export_df[
-    [
-        "Client_Name",
-        "Start_Date",
-        "Proposal_Cost",
-        "Rate",
-        "Final_Cost",
-        "Profit"
-    ]
-].copy()
+    final_export_df = pd.concat(
+        [final_export_df, pd.DataFrame([grand_total])],
+        ignore_index=True
+    )
 
-final_export_df["Start_Date"] = final_export_df["Start_Date"].dt.strftime(
-    "%d-%m-%Y"
-)
+    # =====================================================
+    # ========== SUMMARY SHEET ============================
+    # =====================================================
+    summary_df = pd.DataFrame({
+        "Metric": [
+            "Total Records",
+            "Total Investment",
+            "Total Final Amount",
+            "Total Profit"
+        ],
+        "Value": [
+            len(export_df),
+            export_df["Proposal_Cost"].sum(),
+            export_df["Final_Cost"].sum(),
+            export_df["Profit"].sum()
+        ]
+    })
 
-# =====================================================
-# ========== GRAND TOTAL ROW ===========================
-# =====================================================
-grand_total = {
-    "Client_Name": "GRAND TOTAL",
-    "Start_Date": "",
-    "Proposal_Cost": final_export_df["Proposal_Cost"].sum(),
-    "Rate": "",
-    "Final_Cost": final_export_df["Final_Cost"].sum(),
-    "Profit": final_export_df["Profit"].sum()
-}
+    # =====================================================
+    # ============== EXCEL EXPORT FUNCTION ================
+    # =====================================================
+    def export_excel(data_df, summary_df):
+        output = io.BytesIO()
 
-final_export_df = pd.concat(
-    [final_export_df, pd.DataFrame([grand_total])],
-    ignore_index=True
-)
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            data_df.to_excel(writer, index=False, sheet_name="Data")
+            summary_df.to_excel(writer, index=False, sheet_name="Summary")
 
-# =====================================================
-# ========== SUMMARY SHEET =============================
-# =====================================================
-summary_df = pd.DataFrame({
-    "Metric": [
-        "Total Proposals",
-        "Total Investment",
-        "Total Final Amount",
-        "Total Profit"
-    ],
-    "Value": [
-        len(export_df),
-        export_df["Proposal_Cost"].sum(),
-        export_df["Final_Cost"].sum(),
-        export_df["Profit"].sum()
-    ]
-})
+            ws = writer.sheets["Data"]
 
-# =====================================================
-# ============== EXCEL EXPORT FUNCTION =================
-# =====================================================
-def export_excel(data_df, summary_df):
-    output = io.BytesIO()
+            # Style GRAND TOTAL row
+            last_row = ws.max_row
+            bold = Font(bold=True)
+            fill = PatternFill(
+                start_color="FFF4CCCC",
+                end_color="FFF4CCCC",
+                fill_type="solid"
+            )
 
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        data_df.to_excel(writer, index=False, sheet_name="Data")
-        summary_df.to_excel(writer, index=False, sheet_name="Summary")
+            for col in range(1, ws.max_column + 1):
+                cell = ws.cell(row=last_row, column=col)
+                cell.font = bold
+                cell.fill = fill
 
-        wb = writer.book
-        ws = writer.sheets["Data"]
+        output.seek(0)
+        return output
 
-        # ---------- STYLE GRAND TOTAL ROW ----------
-        last_row = ws.max_row
-        bold_font = Font(bold=True)
-        fill = PatternFill(
-            start_color="FFF4CCCC",
-            end_color="FFF4CCCC",
-            fill_type="solid"
-        )
-
-        for col in range(1, ws.max_column + 1):
-            cell = ws.cell(row=last_row, column=col)
-            cell.font = bold_font
-            cell.fill = fill
-
-    output.seek(0)
-    return output
-
-# =====================================================
-# ============== DOWNLOAD BUTTON =======================
-# =====================================================
-st.download_button(
-    label="⬇️ Download Excel (Advanced)",
-    data=export_excel(final_export_df, summary_df),
-    file_name="Sigma_Advanced_Export.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
-
+    # =====================================================
+    # ============== DOWNLOAD BUTTON =====================
+    # =====================================================
+    st.download_button(
+        label="⬇️ Download Excel",
+        data=export_excel(final_export_df, summary_df),
+        file_name="Sigma_Export.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
