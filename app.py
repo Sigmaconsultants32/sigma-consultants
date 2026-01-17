@@ -217,7 +217,7 @@ if st.session_state.page == "Summary":
     st.markdown("---")
     st.subheader("📅 End Date Based Summary")
 
-    # ---- DATE CONVERSION (SAFE & REQUIRED) ----
+    # ---- DATE CONVERSION ----
     proposals_df["Start_Date"] = pd.to_datetime(
         proposals_df["Start_Date"], errors="coerce"
     )
@@ -230,62 +230,60 @@ if st.session_state.page == "Summary":
 
     if not end_dates:
         st.info("No End Dates available")
-        st.stop()
+    else:
+        selected_end_date = st.selectbox(
+            "Select End Date",
+            end_dates,
+            format_func=lambda x: x.strftime("%d-%m-%Y")
+        )
 
-    selected_end_date = st.selectbox(
-        "Select End Date",
-        end_dates,
-        format_func=lambda x: x.strftime("%d-%m-%Y")
-    )
+        # ---- FILTER DATA ----
+        filtered_df = proposals_df[
+            proposals_df["End_Date"] == selected_end_date
+        ]
 
-    # ---- FILTER DATA BY END DATE ----
-    filtered_df = proposals_df[
-        proposals_df["End_Date"] == selected_end_date
-    ]
+        if filtered_df.empty:
+            st.warning("No data for selected End Date")
+        else:
+            # ---- GROUP BY RATE + START DATE ----
+            summary_df = (
+                filtered_df
+                .groupby(["Rate", "Start_Date"], as_index=False)
+                .agg({
+                    "Proposal_Cost": "sum",
+                    "Final_Cost": "sum",
+                    "Profit": "sum"
+                })
+                .sort_values(["Rate", "Start_Date"])
+            )
 
-    if filtered_df.empty:
-        st.warning("No data for selected End Date")
-        st.stop()
+            # ---- DISPLAY SUMMARY BOXES ----
+            for _, row in summary_df.iterrows():
 
-    # ---- GROUP BY RATE + START DATE ----
-    summary_df = (
-        filtered_df
-        .groupby(["Rate", "Start_Date"], as_index=False)
-        .agg({
-            "Proposal_Cost": "sum",
-            "Final_Cost": "sum",
-            "Profit": "sum"
-        })
-        .sort_values(["Rate", "Start_Date"])
-    )
+                rate_display = round(row["Rate"], 2)
+                inv = round(row["Proposal_Cost"], 2)
+                final_amt = round(row["Final_Cost"], 2)
+                profit = round(row["Profit"], 2)
 
-    # ---- DISPLAY VERTICAL SUMMARY BOXES ----
-for _, row in summary_df.iterrows():
-
-    rate_display = round(row["Rate"], 2)
-    inv = round(row["Proposal_Cost"], 2)
-    final_amt = round(row["Final_Cost"], 2)
-    profit = round(row["Profit"], 2)
-
-    st.markdown(
-        f"""
-        <div style="
-            border:1px solid #d0d0d0;
-            border-radius:12px;
-            padding:16px;
-            margin-bottom:14px;
-            background-color:#fafafa;">
-            
-            <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
-            <b>Total Investment</b> : ₹ {inv:,.2f}<br>
-            <b>Rate</b> : {rate_display:.2f} %<br>
-            <b>Total Final Amount</b> : ₹ {final_amt:,.2f}<br>
-            <b>Total Profit</b> :
-            <span style="color:green;"><b>₹ {profit:,.2f}</b></span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+                st.markdown(
+                    f"""
+                    <div style="
+                        border:1px solid #d0d0d0;
+                        border-radius:12px;
+                        padding:16px;
+                        margin-bottom:14px;
+                        background-color:#fafafa;">
+                        
+                        <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
+                        <b>Total Investment</b> : ₹ {inv:,.2f}<br>
+                        <b>Rate</b> : {rate_display:.2f} %<br>
+                        <b>Total Final Amount</b> : ₹ {final_amt:,.2f}<br>
+                        <b>Total Profit</b> :
+                        <span style="color:green;"><b>₹ {profit:,.2f}</b></span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 # =====================================================
 # ================= ADD PROPOSAL ======================
@@ -520,6 +518,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
