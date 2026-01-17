@@ -1,71 +1,95 @@
+# =====================================================
+# ================== IMPORTS ==========================
+# =====================================================
 import streamlit as st
 import pandas as pd
 import io
+from openpyxl.styles import Font, PatternFill
 
-def compact_proposal_card(row):
-    profit_icon = "🟢" if row["Profit"] >= 0 else "🔴"
+# =====================================================
+# ============== APP CONFIG ===========================
+# =====================================================
+st.set_page_config(
+    page_title="Sigma Consultants",
+    layout="wide"
+)
 
-    return f"""
-📅 {row['Start_Date'].strftime('%d-%m-%Y')}  
-👤 {row['Client_Name']}  
-💰 ₹ {row['Proposal_Cost']:,.0f} → ₹ {row['Final_Cost']:,.0f}  
-{profit_icon} Profit: ₹ {row['Profit']:,.0f}
-"""
-
-def is_mobile_view():
-    return st.session_state.get("is_mobile", False)
-
-# Simple toggle (for testing)
-if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = False
-
-with st.sidebar:
-    st.session_state.is_mobile = st.toggle("📱 Mobile View", value=st.session_state.is_mobile)
-
-is_mobile = is_mobile_view()
-
-st.set_page_config(page_title="Sigma Consultants", layout="wide")
-
-# ---------- PAGE STATE ----------
+# =====================================================
+# ============== SESSION STATE ========================
+# =====================================================
 if "page" not in st.session_state:
     st.session_state.page = "Dashboard"
 
-# ---------- SAMPLE DATA ----------
-# (Your real data will already exist – this is only for testing)
+# =====================================================
+# ============== DATA LOADING =========================
+# =====================================================
+# ⚠️ Replace this block with your real data source
 proposals_df = pd.DataFrame({
-    "Client_Name": ["Client A", "Client B", "Client C"],
-    "Start_Date": pd.to_datetime(["2024-01-01", "2024-02-01", "2024-03-01"]),
-    "End_Date": pd.to_datetime(["2024-06-01", "2024-07-01", "2024-08-01"]),
-    "Proposal_Cost": [100000, 200000, 150000],
-    "Rate": [10, 12, 10],
-    "Final_Cost": [110000, 224000, 165000],
-    "Profit": [10000, 24000, 15000],
-    "Status": ["Open", "Closed", "Open"]
+    "Client_Name": ["Client A", "Client B", "Client A", "Client C"],
+    "Start_Date": pd.to_datetime(["2024-01-01", "2024-01-10", "2024-02-01", "2024-02-15"]),
+    "End_Date": pd.to_datetime(["2024-06-01", "2024-06-01", "2024-07-01", "2024-07-01"]),
+    "Proposal_Cost": [100000, 200000, 150000, 120000],
+    "Rate": [10, 10, 12, 10],
+    "Final_Cost": [110000, 220000, 168000, 132000],
+    "Profit": [10000, 20000, 18000, 12000],
+    "Status": ["Open", "Closed", "Open", "Open"]
 })
 
-# ---------- SIDEBAR ----------
+# =====================================================
+# ============== SIDEBAR NAVIGATION ===================
+# =====================================================
 st.sidebar.title("📂 Sigma Consultants")
 
-if st.sidebar.button("Dashboard"):
+if st.sidebar.button("🏠 Dashboard"):
     st.session_state.page = "Dashboard"
 
-if st.sidebar.button("Export Data"):
+if st.sidebar.button("📊 Summary"):
+    st.session_state.page = "Summary"
+
+if st.sidebar.button("📤 Export Data"):
     st.session_state.page = "Export Data"
 
-# ---------- DASHBOARD ----------
+st.sidebar.markdown("---")
+st.sidebar.caption(f"Current Page: {st.session_state.page}")
+
+# =====================================================
+# ================== DASHBOARD ========================
+# =====================================================
 if st.session_state.page == "Dashboard":
+
     st.header("🏠 Dashboard")
-    st.write("This page is working.")
 
-# ---------- EXPORT DATA ----------
-if st.session_state.page == "Export Data":
+    total_inv = proposals_df["Proposal_Cost"].sum()
+    total_profit = proposals_df["Profit"].sum()
+    open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
 
-    from openpyxl.styles import Font, PatternFill
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
+    c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
+    c3.metric("Open Proposals", open_cnt)
+
+# =====================================================
+# ================== SUMMARY ==========================
+# =====================================================
+elif st.session_state.page == "Summary":
+
+    st.header("📊 Summary")
+
+    if proposals_df.empty:
+        st.info("No data available")
+        st.stop()
+
+    st.dataframe(proposals_df, use_container_width=True)
+
+# =====================================================
+# ================= EXPORT DATA =======================
+# =====================================================
+elif st.session_state.page == "Export Data":
 
     st.header("📤 Export Data")
 
     if proposals_df.empty:
-        st.info("No data available")
+        st.info("No data available for export")
         st.stop()
 
     # ---------- STATUS FILTER ----------
@@ -129,7 +153,7 @@ if st.session_state.page == "Export Data":
 
     data_sheet["Start_Date"] = data_sheet["Start_Date"].dt.strftime("%d-%m-%Y")
 
-    # ---------- GRAND TOTAL ROW ----------
+    # ---------- GRAND TOTAL ----------
     grand_total = {
         "Client_Name": "GRAND TOTAL",
         "Start_Date": "",
@@ -169,9 +193,8 @@ if st.session_state.page == "Export Data":
             summary_df.to_excel(writer, index=False, sheet_name="Summary")
 
             ws = writer.sheets["Data"]
-
-            # Style GRAND TOTAL row
             last_row = ws.max_row
+
             bold = Font(bold=True)
             fill = PatternFill(
                 start_color="FFF4CCCC",
@@ -191,8 +214,7 @@ if st.session_state.page == "Export Data":
     st.download_button(
         "⬇️ Download Excel (Data + Summary)",
         data=export_excel(data_sheet, summary_sheet),
-        file_name="Sigma_Export_With_Summary.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        file_name="Sigma_Export.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
     )
-
-
