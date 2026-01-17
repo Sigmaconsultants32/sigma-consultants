@@ -63,10 +63,15 @@ def load_clients():
             "Client_ID","Client_Name","Created_Date",
             "Is_Archived","Notes"
         ])
-        df.to_excel(CLIENT_FILE,index=False)
+        df.to_excel(CLIENT_FILE, index=False)
 
-    df.setdefault("Is_Archived", False)
-    df.setdefault("Notes", "")
+    # ✅ Pandas-safe defaults
+    if "Is_Archived" not in df.columns:
+        df["Is_Archived"] = False
+
+    if "Notes" not in df.columns:
+        df["Notes"] = ""
+
     return df
 
 def load_proposals():
@@ -222,3 +227,4 @@ if st.session_state.page == "Export":
         file_name="Sigma_Consultants_Data.xlsx",
         use_container_width=True
     )
+
