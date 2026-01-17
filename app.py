@@ -187,7 +187,6 @@ if st.session_state.page == "Welcome":
             st.rerun()
             
 # =====================================================
-# =====================================================
 # ================= SUMMARY ===========================
 # =====================================================
 if st.session_state.page == "Summary":
@@ -212,13 +211,13 @@ if st.session_state.page == "Summary":
         c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
         c3.metric("Open Proposals", open_cnt)
 
-# =====================================================
-# ============ END DATE BASED SUMMARY =================
-# =====================================================
+    # =====================================================
+    # ============ END DATE BASED SUMMARY =================
+    # =====================================================
     st.markdown("---")
     st.subheader("📅 End Date Based Summary")
 
-    # ---- DATE CONVERSION (SAFE) ----
+    # ---- DATE CONVERSION (SAFE & REQUIRED) ----
     proposals_df["Start_Date"] = pd.to_datetime(
         proposals_df["Start_Date"], errors="coerce"
     )
@@ -239,7 +238,7 @@ if st.session_state.page == "Summary":
         format_func=lambda x: x.strftime("%d-%m-%Y")
     )
 
-    # ---- FILTER BY END DATE ----
+    # ---- FILTER DATA BY END DATE ----
     filtered_df = proposals_df[
         proposals_df["End_Date"] == selected_end_date
     ]
@@ -254,13 +253,13 @@ if st.session_state.page == "Summary":
         .groupby(["Rate", "Start_Date"], as_index=False)
         .agg({
             "Proposal_Cost": "sum",
-            "Final_Amount": "sum",
+            "Final_Cost": "sum",
             "Profit": "sum"
         })
         .sort_values(["Rate", "Start_Date"])
     )
 
-    # ---- DISPLAY SUMMARY BOXES ----
+    # ---- DISPLAY VERTICAL SUMMARY BOXES ----
     for _, row in summary_df.iterrows():
         st.markdown(
             f"""
@@ -274,8 +273,8 @@ if st.session_state.page == "Summary":
                 <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
                 <b>Total Investment</b> : ₹ {row['Proposal_Cost']:,.2f}<br>
                 <b>Rate</b> : {row['Rate']} %<br>
-                <b>Total Final Amount</b> : ₹ {row['Final_Amount']:,.2f}<br>
-                <b>Total Profit</b> : 
+                <b>Total Final Amount</b> : ₹ {row['Final_Cost']:,.2f}<br>
+                <b>Total Profit</b> :
                 <span style="color:green;"><b>₹ {row['Profit']:,.2f}</b></span>
             </div>
             """,
@@ -515,6 +514,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
