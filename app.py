@@ -1,209 +1,134 @@
 # =====================================================
-# ================== IMPORTS ==========================
+# Sigma Consultants – Full CRM Production Build
 # =====================================================
+
 import streamlit as st
 import pandas as pd
-import io
-from openpyxl.styles import Font, PatternFill
+from datetime import datetime
+import os, io
 
-# =====================================================
-# ============== APP CONFIG ===========================
-# =====================================================
-st.set_page_config(
-    page_title="Sigma Consultants",
-    layout="wide"
-)
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
-# =====================================================
-# ============== SESSION STATE ========================
-# =====================================================
+# ---------------- MOBILE TOGGLE ----------------
+is_mobile = st.toggle("📱 Mobile View", value=True)
+
+def card(title, value):
+    st.markdown(
+        f"""
+        <div style="padding:14px;border-radius:12px;
+        background:#ffffff;margin-bottom:10px;
+        box-shadow:0 3px 8px rgba(0,0,0,0.08)">
+        <div style="font-size:13px;color:#555">{title}</div>
+        <div style="font-size:22px;font-weight:600">{value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ---------------- LOGIN ----------------
+PASSWORD = "sigma123"
+if "auth" not in st.session_state:
+    st.session_state.auth = False
+
+if not st.session_state.auth:
+    st.title("🔐 Sigma Consultants Login")
+    pwd = st.text_input("Enter Password", type="password")
+    if st.button("Login", use_container_width=True):
+        if pwd == PASSWORD:
+            st.session_state.auth = True
+            st.rerun()
+        else:
+            st.error("Incorrect password")
+    st.stop()
+
+# ---------------- FILES ----------------
+CLIENT_FILE = "clients.xlsx"
+PROPOSAL_FILE = "proposals.xlsx"
+
+# ---------------- LOADERS ----------------
+def load_clients():
+    if os.path.exists(CLIENT_FILE):
+        df = pd.read_excel(CLIENT_FILE)
+    else:
+        df = pd.DataFrame(columns=[
+            "Client_ID","Client_Name","Created_Date",
+            "Is_Archived","Notes"
+        ])
+        df.to_excel(CLIENT_FILE,index=False)
+
+    if "Is_Archived" not in df.columns:
+        df["Is_Archived"] = False
+    if "Notes" not in df.columns:
+        df["Notes"] = ""
+
+    return df
+
+def load_proposals():
+    if os.path.exists(PROPOSAL_FILE):
+        df = pd.read_excel(PROPOSAL_FILE)
+    else:
+        df = pd.DataFrame(columns=[
+            "Proposal_ID","Client_ID","Client_Name",
+            "Proposal_Cost","Rate","Final_Cost","Profit",
+            "Start_Date","End_Date","Status","Closing_Date"
+        ])
+        df.to_excel(PROPOSAL_FILE,index=False)
+
+    for c in ["Start_Date","End_Date","Closing_Date"]:
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce")
+    return df
+
+# ---------------- SESSION STATE ----------------
+if "clients_df" not in st.session_state:
+    st.session_state.clients_df = load_clients()
+
+if "proposals_df" not in st.session_state:
+    st.session_state.proposals_df = load_proposals()
+
+clients_df = st.session_state.clients_df
+proposals_df = st.session_state.proposals_df
+
+def save_clients(): clients_df.to_excel(CLIENT_FILE,index=False)
+def save_proposals(): proposals_df.to_excel(PROPOSAL_FILE,index=False)
+
+# ---------------- UTIL ----------------
+def new_client_id(): return f"SIG-C-{len(clients_df)+1:03d}"
+def new_proposal_id(): return f"SIG-P-{len(proposals_df)+1:03d}"
+
+# ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
-    st.session_state.page = "Dashboard"
-
-# =====================================================
-# ============== DATA LOADING =========================
-# =====================================================
-# ⚠️ Replace this block with your real data source
-proposals_df = pd.DataFrame({
-    "Client_Name": ["Client A", "Client B", "Client A", "Client C"],
-    "Start_Date": pd.to_datetime(["2024-01-01", "2024-01-10", "2024-02-01", "2024-02-15"]),
-    "End_Date": pd.to_datetime(["2024-06-01", "2024-06-01", "2024-07-01", "2024-07-01"]),
-    "Proposal_Cost": [100000, 200000, 150000, 120000],
-    "Rate": [10, 10, 12, 10],
-    "Final_Cost": [110000, 220000, 168000, 132000],
-    "Profit": [10000, 20000, 18000, 12000],
-    "Status": ["Open", "Closed", "Open", "Open"]
-})
-
-# =====================================================
-# ============== SIDEBAR NAVIGATION ===================
-# =====================================================
-st.sidebar.title("📂 Sigma Consultants")
-
-if st.sidebar.button("🏠 Dashboard"):
-    st.session_state.page = "Dashboard"
-
-if st.sidebar.button("📊 Summary"):
     st.session_state.page = "Summary"
 
-if st.sidebar.button("📤 Export Data"):
-    st.session_state.page = "Export Data"
+# ---------------- SIDEBAR ----------------
+with st.sidebar:
+    st.markdown("## 📂 Sigma Consultants")
 
-st.sidebar.markdown("---")
-st.sidebar.caption(f"Current Page: {st.session_state.page}")
+    if st.button("🏠 Summary", use_container_width=True):
+        st.session_state.page = "Summary"; st.rerun()
 
-# =====================================================
-# ================== DASHBOARD ========================
-# =====================================================
-if st.session_state.page == "Dashboard":
+    if st.button("➕ Add Proposal", use_container_width=True):
+        st.session_state.page = "AddProposal"; st.rerun()
 
-    st.header("🏠 Dashboard")
+    if st.button("🔍 Find Details", use_container_width=True):
+        st.session_state.page = "Find"; st.rerun()
 
-    total_inv = proposals_df["Proposal_Cost"].sum()
-    total_profit = proposals_df["Profit"].sum()
-    open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
+    if st.button("✏️ Edit Proposal", use_container_width=True):
+        st.session_state.page = "Edit"; st.rerun()
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
-    c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
-    c3.metric("Open Proposals", open_cnt)
+    if st.button("👤 Clients", use_container_width=True):
+        st.session_state.page = "Clients"; st.rerun()
 
-# =====================================================
-# ================== SUMMARY ==========================
-# =====================================================
-elif st.session_state.page == "Summary":
+    if st.button("📊 Client Dashboard", use_container_width=True):
+        st.session_state.page = "ClientDashboard"; st.rerun()
 
-    st.header("📊 Summary")
+    st.markdown("---")
+    if st.button("📥 Export Data", use_container_width=True):
+        st.session_state.page = "Export"
 
-    if proposals_df.empty:
-        st.info("No data available")
-        st.stop()
-
-    st.dataframe(proposals_df, use_container_width=True)
-
-# =====================================================
-# ================= EXPORT DATA =======================
-# =====================================================
-import io
-from openpyxl.styles import Font, PatternFill
-
-st.markdown("---")
-st.subheader("📤 Export Data")
-
-# ---------- SAFETY CHECK ----------
-if proposals_df.empty:
-    st.info("No data available for export")
-    st.stop()
-
-# ---------- DATE CONVERSION ----------
-proposals_df["Start_Date"] = pd.to_datetime(
-    proposals_df["Start_Date"], errors="coerce"
-)
-proposals_df["End_Date"] = pd.to_datetime(
-    proposals_df["End_Date"], errors="coerce"
-)
-
-# =====================================================
-# ================= EXPORT FILTERS ====================
-# =====================================================
-st.markdown("### 🔎 Export Filters")
-
-# 1️⃣ STATUS FILTER
-status_options = ["All"] + sorted(
-    proposals_df["Status"].dropna().unique().tolist()
-)
-
-export_status = st.selectbox("Select Status", status_options)
-
-if export_status != "All":
-    export_df = proposals_df[
-        proposals_df["Status"] == export_status
-    ].copy()
-else:
-    export_df = proposals_df.copy()
-
-if export_df.empty:
-    st.warning("No data for selected status")
-    st.stop()
-
-# 2️⃣ DATE RANGE FILTER
-min_date = export_df["Start_Date"].min().date()
-max_date = export_df["End_Date"].max().date()
-
-date_range = st.date_input(
-    "Select Date Range (Start Date → End Date)",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
-)
-
-if len(date_range) != 2:
-    st.warning("Please select a valid date range")
-    st.stop()
-
-start_date, end_date = pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1])
-
-export_df = export_df[
-    (export_df["Start_Date"] >= start_date) &
-    (export_df["End_Date"] <= end_date)
-].copy()
-
-if export_df.empty:
-    st.warning("No data for selected date range")
-    st.stop()
-
-# 3️⃣ CLIENT FILTER
-client_options = ["All"] + sorted(
-    export_df["Client_Name"].dropna().unique().tolist()
-)
-
-export_client = st.selectbox("Select Client", client_options)
-
-if export_client != "All":
-    export_df = export_df[
-        export_df["Client_Name"] == export_client
-    ].copy()
-
-if export_df.empty:
-    st.warning("No data for selected client")
-    st.stop()
-
-# =====================================================
-# ========== PREPARE EXPORT DATA ======================
-# =====================================================
-export_df["Rate"] = export_df["Rate"].round(0).astype(int)
-
-final_export_df = export_df[
-    [
-        "Client_Name",
-        "Start_Date",
-        "Proposal_Cost",
-        "Rate",
-        "Final_Cost",
-        "Profit"
-    ]
-].copy()
-
-final_export_df["Start_Date"] = final_export_df["Start_Date"].dt.strftime(
-    "%d-%m-%Y"
-)
-
-# =====================================================
-# ========== GRAND TOTAL ROW ===========================
-# =====================================================
-grand_total = {
-    "Client_Name": "GRAND TOTAL",
-    "Start_Date": "",
-    "Proposal_Cost": final_export_df["Proposal_Cost"].sum(),
-    "Rate": "",
-    "Final_Cost": final_export_df["Final_Cost"].sum(),
-    "Profit": final_export_df["Profit"].sum()
-}
-
-final_export_df = pd.concat(
-    [final_export_df, pd.DataFrame([grand_total])],
-    ignore_index=True
-)
+    if st.button("🚪 Logout", use_container_width=True):
+        st.session_state.auth = False; st.rerun()
 
 # =====================================================
 # ================= SUMMARY ===========================
@@ -211,140 +136,178 @@ final_export_df = pd.concat(
 if st.session_state.page == "Summary":
     st.header("📊 Summary")
 
-    # ---------- SAFETY CHECK ----------
     if proposals_df.empty:
         st.info("No proposals available")
-        st.stop()
-
-    # ---------- BASIC SUMMARY ----------
-    total_inv = proposals_df["Proposal_Cost"].sum()
-    total_profit = proposals_df["Profit"].sum()
-    open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
-
-    if is_mobile:
-        card("Total Investment", f"₹ {total_inv:,.2f}")
-        card("Total Profit", f"₹ {total_profit:,.2f}")
-        card("Open Proposals", open_cnt)
     else:
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
-        c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
-        c3.metric("Open Proposals", open_cnt)
+        total_inv = proposals_df["Proposal_Cost"].sum()
+        total_profit = proposals_df["Profit"].sum()
+        open_cnt = len(proposals_df[proposals_df["Status"]=="Open"])
 
-    # =====================================================
-    # ============ END DATE BASED SUMMARY =================
-    # =====================================================
-    st.markdown("---")
-    st.subheader("📅 End Date Based Summary")
-    st.caption("ℹ️ All amounts are shown in actual ₹ (rupees)")
+        if is_mobile:
+            card("Total Investment", f"₹ {total_inv:,.2f}")
+            card("Total Profit", f"₹ {total_profit:,.2f}")
+            card("Open Proposals", open_cnt)
+        else:
+            c1,c2,c3 = st.columns(3)
+            c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
+            c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
+            c3.metric("Open Proposals", open_cnt)
 
-    # ---------- DATE CONVERSION ----------
-    proposals_df["Start_Date"] = pd.to_datetime(
-        proposals_df["Start_Date"], errors="coerce"
-    )
-    proposals_df["End_Date"] = pd.to_datetime(
-        proposals_df["End_Date"], errors="coerce"
-    )
+# =====================================================
+# ================= ADD PROPOSAL ======================
+# =====================================================
+if st.session_state.page == "AddProposal":
 
-    # ---------- END DATE DROPDOWN ----------
-    end_dates = sorted(proposals_df["End_Date"].dropna().unique())
+    st.header("➕ Add New Proposal")
 
-    if not end_dates:
-        st.info("No End Dates available")
+    active_clients = clients_df[clients_df["Is_Archived"]==False]
+    if active_clients.empty:
+        st.warning("Add a client first")
         st.stop()
 
-    selected_end_date = st.selectbox(
-        "Select End Date",
-        end_dates,
-        format_func=lambda x: x.strftime("%d-%m-%Y")
+    cname = st.selectbox("Client Name", active_clients["Client_Name"])
+    start = st.date_input("Start Date", datetime.today())
+    end = st.date_input("End Date", datetime.today())
+    cost = st.number_input("Proposal Amount (₹)", step=1000.0, format="%.2f")
+    rate = st.number_input("Monthly Rate (%)", step=0.1, format="%.2f")
+
+    days = (end - start).days
+    months = days / 30 if days > 0 else 0
+    profit = cost * (rate/100) * months
+    final = cost + profit
+
+    st.markdown("### 💰 Auto Calculation")
+    st.write(f"Duration: {months:.2f} months")
+    st.write(f"Profit: ₹ {profit:,.2f}")
+    st.write(f"Final Amount: ₹ {final:,.2f}")
+
+    if st.button("💾 Save Proposal", use_container_width=True):
+        cid = active_clients.loc[
+            active_clients["Client_Name"]==cname,"Client_ID"
+        ].values[0]
+
+        proposals_df.loc[len(proposals_df)] = [
+            new_proposal_id(), cid, cname,
+            round(cost,2), round(rate,2),
+            round(final,2), round(profit,2),
+            start, end, "Open", ""
+        ]
+        save_proposals()
+        st.success("Proposal added successfully")
+        st.session_state.page = "Summary"
+        st.rerun()
+
+# =====================================================
+# ================= FIND DETAILS ======================
+# =====================================================
+if st.session_state.page == "Find":
+
+    st.header("🔍 Find Proposal Details")
+
+    col1,col2 = st.columns(2)
+    client = col1.selectbox("Client", ["All"]+sorted(proposals_df["Client_Name"].unique()))
+    status = col2.selectbox("Status", ["All","Open","Closed"])
+
+    col3,col4 = st.columns(2)
+    sdate = col3.date_input("Start Date From", value=None)
+    edate = col4.date_input("End Date To", value=None)
+
+    df = proposals_df.copy()
+    if client!="All": df=df[df["Client_Name"]==client]
+    if status!="All": df=df[df["Status"]==status]
+    if sdate: df=df[df["Start_Date"]>=pd.to_datetime(sdate)]
+    if edate: df=df[df["End_Date"]<=pd.to_datetime(edate)]
+
+    if df.empty:
+        st.info("No records found")
+    else:
+        for _,r in df.iterrows():
+            card("Client", r["Client_Name"])
+            card("Rate (%)", f"{r['Rate']:.2f}")
+            card("Proposal Amount", f"₹ {r['Proposal_Cost']:,.2f}")
+            card("Final Amount", f"₹ {r['Final_Cost']:,.2f}")
+            card("Profit", f"₹ {r['Profit']:,.2f}")
+
+# =====================================================
+# ================= EDIT PROPOSAL =====================
+# =====================================================
+if st.session_state.page == "Edit":
+
+    st.header("✏️ Edit Proposal")
+    pid = st.selectbox("Select Proposal", proposals_df["Proposal_ID"])
+    row = proposals_df[proposals_df["Proposal_ID"]==pid].iloc[0]
+
+    cost = st.number_input("Proposal Amount", value=float(row["Proposal_Cost"]))
+    rate = st.number_input("Rate (%)", value=float(row["Rate"]))
+    status = st.selectbox("Status", ["Open","Closed"], index=0 if row["Status"]=="Open" else 1)
+
+    if st.button("💾 Update", use_container_width=True):
+        proposals_df.loc[proposals_df["Proposal_ID"]==pid,
+            ["Proposal_Cost","Rate","Status"]] = [cost,rate,status]
+        save_proposals()
+        st.success("Updated successfully")
+
+# =====================================================
+# ================= CLIENTS ===========================
+# =====================================================
+if st.session_state.page == "Clients":
+
+    st.header("👤 Clients")
+
+    with st.expander("➕ Add Client"):
+        cname = st.text_input("Client Name")
+        if st.button("Add Client"):
+            clients_df.loc[len(clients_df)] = [
+                new_client_id(), cname, datetime.now(), False, ""
+            ]
+            save_clients()
+            st.success("Client added")
+            st.rerun()
+
+    for _,c in clients_df[clients_df["Is_Archived"]==False].iterrows():
+        st.subheader(c["Client_Name"])
+        st.write(f"Notes: {c['Notes']}")
+
+        note = st.text_area("Update Notes", value=c["Notes"], key=c["Client_ID"])
+        if st.button("Save Notes", key=f"note_{c['Client_ID']}"):
+            clients_df.loc[clients_df["Client_ID"]==c["Client_ID"],"Notes"]=note
+            save_clients()
+            st.success("Notes saved")
+
+        if st.button("📦 Archive Client", key=f"arc_{c['Client_ID']}"):
+            clients_df.loc[clients_df["Client_ID"]==c["Client_ID"],"Is_Archived"]=True
+            save_clients()
+            st.rerun()
+
+# =====================================================
+# ================= CLIENT DASHBOARD ==================
+# =====================================================
+if st.session_state.page == "ClientDashboard":
+
+    st.header("📊 Client Dashboard")
+    cname = st.selectbox("Client", clients_df["Client_Name"])
+    cid = clients_df.loc[clients_df["Client_Name"]==cname,"Client_ID"].values[0]
+    data = proposals_df[proposals_df["Client_ID"]==cid]
+
+    card("Total Investment", f"₹ {data['Proposal_Cost'].sum():,.2f}")
+    card("Total Profit", f"₹ {data['Profit'].sum():,.2f}")
+    card("Open Proposals", len(data[data["Status"]=="Open"]))
+
+# =====================================================
+# ================= EXPORT ============================
+# =====================================================
+if st.session_state.page == "Export":
+
+    def export_excel():
+        out = io.BytesIO()
+        with pd.ExcelWriter(out, engine="xlsxwriter") as w:
+            clients_df.to_excel(w, sheet_name="Clients", index=False)
+            proposals_df.to_excel(w, sheet_name="Proposals", index=False)
+        out.seek(0)
+        return out
+
+    st.download_button(
+        "📥 Download Excel Backup",
+        data=export_excel(),
+        file_name="Sigma_Consultants_Data.xlsx"
     )
-
-    # ---------- FILTER DATA ----------
-    filtered_df = proposals_df[
-        proposals_df["End_Date"] == selected_end_date
-    ]
-
-    if filtered_df.empty:
-        st.warning("No data for selected End Date")
-        st.stop()
-
-    # ---------- GROUP BY RATE + START DATE ----------
-    summary_df = (
-        filtered_df
-        .groupby(["Rate", "Start_Date"], as_index=False)
-        .agg({
-            "Proposal_Cost": "sum",
-            "Final_Cost": "sum",
-            "Profit": "sum"
-        })
-        .sort_values(["Rate", "Start_Date"])
-    )
-
-    # ---------- DISPLAY SUMMARY BOXES ----------
-    for _, row in summary_df.iterrows():
-
-        rate_display = round(row["Rate"], 2)
-        inv = round(row["Proposal_Cost"], 2)
-        final_amt = round(row["Final_Cost"], 2)
-        profit = round(row["Profit"], 2)
-
-        st.markdown(
-            f"""
-            <div style="
-                border:1px solid #d0d0d0;
-                border-radius:12px;
-                padding:16px;
-                margin-bottom:14px;
-                background-color:#fafafa;">
-                
-                <b>Start Date</b> : {row['Start_Date'].strftime('%d-%m-%Y')}<br>
-                <b>Total Investment</b> : ₹ {inv:,.2f}<br>
-                <b>Rate</b> : {rate_display:.2f} %<br>
-                <b>Total Final Amount</b> : ₹ {final_amt:,.2f}<br>
-                <b>Total Profit</b> :
-                <span style="color:green;"><b>₹ {profit:,.2f}</b></span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-# =====================================================
-# ============== EXCEL EXPORT FUNCTION =================
-# =====================================================
-def export_excel(data_df, summary_df):
-    output = io.BytesIO()
-
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        data_df.to_excel(writer, index=False, sheet_name="Data")
-        summary_df.to_excel(writer, index=False, sheet_name="Summary")
-
-        wb = writer.book
-        ws = writer.sheets["Data"]
-
-        # ---------- STYLE GRAND TOTAL ROW ----------
-        last_row = ws.max_row
-        bold_font = Font(bold=True)
-        fill = PatternFill(
-            start_color="FFF4CCCC",
-            end_color="FFF4CCCC",
-            fill_type="solid"
-        )
-
-        for col in range(1, ws.max_column + 1):
-            cell = ws.cell(row=last_row, column=col)
-            cell.font = bold_font
-            cell.fill = fill
-
-    output.seek(0)
-    return output
-
-# =====================================================
-# ============== DOWNLOAD BUTTON =======================
-# =====================================================
-st.download_button(
-    label="⬇️ Download Excel (Advanced)",
-    data=export_excel(final_export_df, summary_df),
-    file_name="Sigma_Advanced_Export.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
