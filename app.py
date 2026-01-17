@@ -560,6 +560,215 @@ if st.session_state.page == "Find":
         display_df["End_Date"] = display_df["End_Date"].dt.date
 
         st.dataframe(display_df, use_container_width=True)
+        # =============================================
+        # MODE 2 – BY CLIENT NAME (MOBILE)
+        # =============================================
+        if find_mode == "By Client Name":
+
+            status = st.selectbox("Status", ["All", "Open", "Closed"])
+            client = st.selectbox(
+                "Client Name",
+                sorted(proposals_df["Client_Name"].dropna().unique())
+            )
+
+            date_type = st.radio(
+                "Date Type",
+                ["Start Date", "End Date"],
+                horizontal=True
+            )
+
+            df = proposals_df.copy()
+            if status != "All":
+                df = df[df["Status"] == status]
+
+            df = df[df["Client_Name"] == client]
+
+            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+            dates = sorted(df[date_col].dropna().unique())
+
+            if not dates:
+                st.warning("No data found")
+                st.stop()
+
+            sel_date = st.selectbox(
+                f"Select {date_type}",
+                dates,
+                format_func=lambda x: x.strftime("%d-%m-%Y")
+            )
+
+            result = df[df[date_col] == sel_date]
+
+            st.markdown("### 📋 Details")
+
+            for _, r in result.iterrows():
+                st.markdown(
+                    f"""
+                    <div style="border:1px solid #ddd;
+                    border-radius:12px;
+                    padding:12px;
+                    margin-bottom:10px;
+                    background:#fafafa">
+
+                    <b>Proposal Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+                    <b>Rate:</b> {r['Rate']} %<br>
+                    <b>Final Amount:</b> ₹ {r['Final_Cost']:,.2f}<br>
+                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        # =============================================
+        # MODE 3 – BY START / END DATE (MOBILE)
+        # =============================================
+        if find_mode == "By Start / End Date":
+
+            status = st.selectbox("Status", ["All", "Open", "Closed"])
+            date_type = st.radio(
+                "Date Type",
+                ["Start Date", "End Date"],
+                horizontal=True
+            )
+
+            clients = sorted(proposals_df["Client_Name"].dropna().unique())
+            selected_clients = st.multiselect(
+                "Select Clients (empty = All)",
+                clients
+            )
+
+            df = proposals_df.copy()
+            if status != "All":
+                df = df[df["Status"] == status]
+
+            if selected_clients:
+                df = df[df["Client_Name"].isin(selected_clients)]
+
+            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+
+            summary = (
+                df.groupby([date_col, "Client_Name"], as_index=False)
+                .agg({
+                    "Proposal_Cost": "sum",
+                    "Final_Cost": "sum",
+                    "Profit": "sum"
+                })
+            )
+
+            if summary.empty:
+                st.info("No records found")
+                st.stop()
+
+            for _, r in summary.iterrows():
+                st.markdown(
+                    f"""
+                    <div style="border:1px solid #ddd;
+                    border-radius:12px;
+                    padding:12px;
+                    margin-bottom:10px;
+                    background:#f9f9f9">
+
+                    <b>Date:</b> {r[date_col].date()}<br>
+                    <b>Client:</b> {r['Client_Name']}<br>
+                    <b>Investment:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+                    <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
+                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            st.markdown("### 🔢 Grand Total")
+            st.metric("Investment", f"₹ {summary['Proposal_Cost'].sum():,.2f}")
+            st.metric("Final Amount", f"₹ {summary['Final_Cost'].sum():,.2f}")
+            st.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
+        # =============================================
+        # MODE 2 – BY CLIENT NAME (DESKTOP)
+        # =============================================
+        if find_mode == "By Client Name":
+
+            c1, c2 = st.columns(2)
+            status = c1.selectbox("Status", ["All", "Open", "Closed"])
+            client = c2.selectbox(
+                "Client Name",
+                sorted(proposals_df["Client_Name"].dropna().unique())
+            )
+
+            date_type = st.radio(
+                "Date Type",
+                ["Start Date", "End Date"],
+                horizontal=True
+            )
+
+            df = proposals_df.copy()
+            if status != "All":
+                df = df[df["Status"] == status]
+
+            df = df[df["Client_Name"] == client]
+
+            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+            dates = sorted(df[date_col].dropna().unique())
+
+            sel_date = st.selectbox(
+                f"Select {date_type}",
+                dates,
+                format_func=lambda x: x.strftime("%d-%m-%Y")
+            )
+
+            result = df[df[date_col] == sel_date][[
+                "Proposal_Cost", "Rate", "Final_Cost", "Profit"
+            ]]
+
+            st.dataframe(result.round(2), use_container_width=True)
+
+        # =============================================
+        # MODE 3 – BY START / END DATE (DESKTOP)
+        # =============================================
+        if find_mode == "By Start / End Date":
+
+            c1, c2 = st.columns(2)
+            status = c1.selectbox("Status", ["All", "Open", "Closed"])
+            date_type = c2.radio(
+                "Date Type",
+                ["Start Date", "End Date"],
+                horizontal=True
+            )
+
+            clients = sorted(proposals_df["Client_Name"].dropna().unique())
+            selected_clients = st.multiselect(
+                "Select Clients (empty = All)",
+                clients
+            )
+
+            df = proposals_df.copy()
+            if status != "All":
+                df = df[df["Status"] == status]
+
+            if selected_clients:
+                df = df[df["Client_Name"].isin(selected_clients)]
+
+            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+
+            summary = (
+                df.groupby([date_col, "Client_Name"], as_index=False)
+                .agg({
+                    "Proposal_Cost": "sum",
+                    "Final_Cost": "sum",
+                    "Profit": "sum"
+                })
+                .round(2)
+            )
+
+            summary[date_col] = summary[date_col].dt.date
+
+            st.dataframe(summary, use_container_width=True)
+
+            st.markdown("### 🔢 Grand Total")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Investment", f"₹ {summary['Proposal_Cost'].sum():,.2f}")
+            c2.metric("Final Amount", f"₹ {summary['Final_Cost'].sum():,.2f}")
+            c3.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
 
 
 # =====================================================
@@ -795,3 +1004,4 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
