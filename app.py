@@ -227,11 +227,38 @@ if st.session_state.page == "Summary":
         proposals_df["End_Date"], errors="coerce"
     )
 
-    # ---------- END DATE DROPDOWN ----------
-    end_dates = sorted(proposals_df["End_Date"].dropna().unique())
+    # =====================================================
+    # ================= STATUS FILTER =====================
+    # =====================================================
+    st.subheader("📌 Status Filter")
+
+    status_options = ["All"] + sorted(
+        proposals_df["Status"].dropna().unique().tolist()
+    )
+
+    selected_status = st.selectbox(
+        "Select Proposal Status",
+        status_options
+    )
+
+    if selected_status != "All":
+        status_filtered_df = proposals_df[
+            proposals_df["Status"] == selected_status
+        ]
+    else:
+        status_filtered_df = proposals_df.copy()
+
+    if status_filtered_df.empty:
+        st.warning("No data available for selected status")
+        st.stop()
+
+    # =====================================================
+    # ================= END DATE FILTER ===================
+    # =====================================================
+    end_dates = sorted(status_filtered_df["End_Date"].dropna().unique())
 
     if not end_dates:
-        st.info("No End Dates available")
+        st.info("No End Dates available for selected status")
         st.stop()
 
     selected_end_date = st.selectbox(
@@ -241,15 +268,17 @@ if st.session_state.page == "Summary":
     )
 
     # ---------- FILTER DATA ----------
-    filtered_df = proposals_df[
-        proposals_df["End_Date"] == selected_end_date
+    filtered_df = status_filtered_df[
+        status_filtered_df["End_Date"] == selected_end_date
     ]
 
     if filtered_df.empty:
         st.warning("No data for selected End Date")
         st.stop()
 
-    # ---------- GROUP BY RATE + START DATE ----------
+    # =====================================================
+    # ========== GROUP BY RATE + START DATE ================
+    # =====================================================
     summary_df = (
         filtered_df
         .groupby(["Rate", "Start_Date"], as_index=False)
@@ -261,7 +290,9 @@ if st.session_state.page == "Summary":
         .sort_values(["Rate", "Start_Date"])
     )
 
-    # ---------- DISPLAY SUMMARY BOXES ----------
+    # =====================================================
+    # ============ DISPLAY SUMMARY BOXES ===================
+    # =====================================================
     for _, row in summary_df.iterrows():
 
         rate_display = round(row["Rate"], 2)
@@ -522,6 +553,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
