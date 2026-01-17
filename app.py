@@ -804,37 +804,6 @@ if st.session_state.page == "Find":
             c3.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
 
 # =====================================================
-# ================= EDIT PROPOSAL =====================
-# =====================================================
-if st.session_state.page == "Edit":
-
-    st.header("✏️ Edit Proposal")
-
-    if proposals_df.empty:
-        st.warning("No proposals to edit")
-        st.stop()
-
-    pid = st.selectbox("Select Proposal ID", proposals_df["Proposal_ID"].unique())
-    row = proposals_df[proposals_df["Proposal_ID"] == pid].iloc[0]
-
-    if is_mobile:
-        cost = st.number_input("Proposal Cost (₹)", value=int(row["Proposal_Cost"]), step=1000)
-        rate = st.number_input("Rate (%)", value=float(row["Rate"]), step=0.1)
-        status = st.selectbox("Status", ["Active","Closed"], index=0 if row["Status"]=="Active" else 1)
-    else:
-        c1, c2 = st.columns(2)
-        cost = c1.number_input("Proposal Cost (₹)", value=int(row["Proposal_Cost"]), step=1000)
-        rate = c2.number_input("Rate (%)", value=float(row["Rate"]), step=0.1)
-        status = st.selectbox("Status", ["Active","Closed"], index=0 if row["Status"]=="Active" else 1)
-
-    if st.button("💾 Save Changes", use_container_width=True):
-        proposals_df.loc[proposals_df["Proposal_ID"] == pid, "Proposal_Cost"] = cost
-        proposals_df.loc[proposals_df["Proposal_ID"] == pid, "Rate"] = rate
-        proposals_df.loc[proposals_df["Proposal_ID"] == pid, "Status"] = status
-        save_proposals()
-        st.success("Proposal updated successfully")
-
-# =====================================================
 # ================= CLIENTS ===========================
 # =====================================================
 if st.session_state.page == "Clients":
@@ -1036,6 +1005,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
