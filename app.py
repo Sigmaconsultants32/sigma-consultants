@@ -131,6 +131,56 @@ with st.sidebar:
         st.session_state.auth = False; st.rerun()
 
 # =====================================================
+# ================= WELCOME SCREEN ====================
+# =====================================================
+if st.session_state.page == "Welcome":
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+
+        logo_path = "sigma_logo.png"
+
+        if os.path.exists(logo_path):
+            st.image(logo_path, use_container_width=True)
+        else:
+            st.markdown(
+                "<h2 style='text-align:center;'>Sigma Consultants</h2>",
+                unsafe_allow_html=True
+            )
+
+        st.markdown(
+            """
+            <div style="
+            text-align:center;
+            padding:20px;
+            background:#ffffff;
+            border-radius:16px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+            
+            <h3>Welcome</h3>
+            <p style="font-size:16px;color:#555">
+            Manage clients, proposals, profits, and follow-ups  
+            in one secure platform.
+            </p>
+
+            <p style="font-size:14px;color:#777">
+            Please choose an option from the menu to get started.
+            </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("🚀 Go to Dashboard", use_container_width=True):
+            st.session_state.page = "Summary"
+            st.rerun()
+
+# =====================================================
 # ================= SUMMARY ===========================
 # =====================================================
 if st.session_state.page == "Summary":
@@ -311,3 +361,4 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
