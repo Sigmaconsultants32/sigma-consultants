@@ -1031,31 +1031,134 @@ if st.session_state.page == "ClientDashboard":
         st.info("No active clients")
         st.stop()
 
+    # =================================================
+    # ============== CLIENT FILTER ====================
+    # =================================================
+    client_options = ["Select"] + sorted(active_clients["Client_Name"].unique())
+
     client = st.selectbox(
         "Select Client",
-        active_clients["Client_Name"]
+        client_options
     )
+
+    if client == "Select":
+        st.info("Please select a client to continue")
+        st.stop()
 
     client_id = active_clients.loc[
         active_clients["Client_Name"] == client,
         "Client_ID"
     ].values[0]
 
-    data = proposals_df[proposals_df["Client_ID"] == client_id]
+    client_data = proposals_df[
+        proposals_df["Client_ID"] == client_id
+    ].copy()
 
-    total_invest = data["Proposal_Cost"].sum()
-    total_profit = data["Profit"].sum()
-    open_props = len(data[data["Status"] == "Open"])
-    closed_props = len(data[data["Status"] == "Closed"])
+    if client_data.empty:
+        st.info("No proposals available for this client")
+        st.stop()
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
-    c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
-    c3.metric("Open Proposals", open_props)
-    c4.metric("Closed Proposals", closed_props)
+    # =================================================
+    # ============== STATUS FILTER ====================
+    # =================================================
+    status_options = ["Select", "All", "Open", "Closed"]
 
-    st.markdown("### 📄 Proposal Details")
-    st.dataframe(data, use_container_width=True)
+    status = st.selectbox(
+        "Select Status",
+        status_options
+    )
+
+    if status == "Select":
+        st.info("Please select status to view data")
+        st.stop()
+
+    if status != "All":
+        client_data = client_data[
+            client_data["Status"] == status
+        ]
+
+    if client_data.empty:
+        st.info("No records found for selected filters")
+        st.stop()
+
+    # =================================================
+    # ============== GRAND TOTALS =====================
+    # =================================================
+    total_invest = client_data["Proposal_Cost"].sum()
+    total_final = client_data["Final_Cost"].sum()
+    total_profit = client_data["Profit"].sum()
+    open_props = len(client_data[client_data["Status"] == "Open"])
+    closed_props = len(client_data[client_data["Status"] == "Closed"])
+
+    if is_mobile:
+        card("Investment", f"₹ {total_invest:,.2f}")
+        card("Final Amount", f"₹ {total_final:,.2f}")
+        card("Profit", f"₹ {total_profit:,.2f}")
+        card("Open", open_props)
+        card("Closed", closed_props)
+    else:
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
+        c2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
+        c3.metric("Total Profit", f"₹ {total_profit:,.2f}")
+        c4.metric("Open Proposals", open_props)
+        c5.metric("Closed Proposals", closed_props)
+
+    st.markdown("---")
+
+    # =================================================
+    # ============== DISPLAY DATA =====================
+    # =================================================
+    client_data = client_data.sort_values("Start_Date")
+
+    client_data["Start_Date"] = pd.to_datetime(
+        client_data["Start_Date"]
+    ).dt.strftime("%d/%m/%Y")
+
+    client_data["End_Date"] = pd.to_datetime(
+        client_data["End_Date"]
+    ).dt.strftime("%d/%m/%Y")
+
+    client_data["Rate"] = client_data["Rate"].round(0).astype(int)
+
+    # ---------------- MOBILE VIEW -------------------
+    if is_mobile:
+        for _, r in client_data.iterrows():
+            st.markdown(
+                f"""
+                <div style="
+                border:1px solid #ddd;
+                border-radius:12px;
+                padding:14px;
+                margin-bottom:12px;
+                background:#fafafa">
+
+                <b>Client:</b> {r['Client_Name']}<br>
+                <b>Start Date:</b> {r['Start_Date']}<br>
+                <b>End Date:</b> {r['End_Date']}<br>
+                <b>Proposal Cost:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+                <b>Final Cost:</b> ₹ {r['Final_Cost']:,.2f}<br>
+                <b>Profit:</b> ₹ {r['Profit']:,.2f}<br>
+                <b>Status:</b> {r['Status']}
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # ---------------- DESKTOP VIEW ------------------
+    else:
+        display_df = client_data[[
+            "Proposal_ID",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Final_Cost",
+            "Profit",
+            "Status"
+        ]]
+
+        st.dataframe(display_df, use_container_width=True)
 
 # =====================================================
 # ================= EXPORT DATA =======================
@@ -1106,6 +1209,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
