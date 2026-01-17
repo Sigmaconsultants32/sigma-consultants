@@ -466,148 +466,136 @@ if st.session_state.page == "Find":
         st.warning("No proposal data available")
         st.stop()
 
-    # ---------- FILTERS ----------
-    col1, col2 = st.columns(2)
-    client = col1.selectbox(
-        "Client Name",
-        ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+    # -------------------------------------------------
+    # MODE SELECTION
+    # -------------------------------------------------
+    find_mode = st.radio(
+        "Find Details Mode",
+        [
+            "Classic (Existing)",
+            "By Client Name",
+            "By Start / End Date"
+        ],
+        horizontal=True
     )
 
-    status = col2.selectbox(
-        "Status",
-        ["All", "Open", "Closed"]
-    )
+    # =================================================
+    # =============== CLASSIC MODE ====================
+    # =================================================
+    if find_mode == "Classic (Existing)":
 
-    col3, col4 = st.columns(2)
-    start_date = col3.date_input(
-        "Start Date (From)",
-        value=None
-    )
+        col1, col2 = st.columns(2)
+        client = col1.selectbox(
+            "Client Name",
+            ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+        )
 
-    end_date = col4.date_input(
-        "End Date (To)",
-        value=None
-    )
+        status = col2.selectbox(
+            "Status",
+            ["All", "Open", "Closed"]
+        )
 
-    # ---------- APPLY FILTERS ----------
-    result = proposals_df.copy()
+        col3, col4 = st.columns(2)
+        start_date = col3.date_input("Start Date (From)", value=None)
+        end_date = col4.date_input("End Date (To)", value=None)
 
-    if client != "All":
-        result = result[result["Client_Name"] == client]
+        result = proposals_df.copy()
 
-    if status != "All":
-        result = result[result["Status"] == status]
+        if client != "All":
+            result = result[result["Client_Name"] == client]
 
-    if start_date:
-        result = result[result["Start_Date"] >= pd.to_datetime(start_date)]
+        if status != "All":
+            result = result[result["Status"] == status]
 
-    if end_date:
-        result = result[result["End_Date"] <= pd.to_datetime(end_date)]
+        if start_date:
+            result = result[result["Start_Date"] >= pd.to_datetime(start_date)]
 
-    st.markdown("---")
-    st.subheader("📋 Follow-up Details")
+        if end_date:
+            result = result[result["End_Date"] <= pd.to_datetime(end_date)]
 
-    if result.empty:
-        st.info("No records found for selected criteria")
-        st.stop()
+        st.markdown("---")
+        if result.empty:
+            st.info("No records found")
+            st.stop()
 
-    # ---------- MOBILE VIEW (VERTICAL FOLLOW-UP CARDS) ----------
-    if is_mobile:
-        for _, r in result.sort_values("Start_Date").iterrows():
-            st.markdown(
-                f"""
-                <div style="
-                border:1px solid #ddd;
-                border-radius:12px;
-                padding:14px;
-                margin-bottom:12px;
-                background:#fafafa">
+        if is_mobile:
+            for _, r in result.sort_values("Start_Date").iterrows():
+                st.markdown(
+                    f"""
+                    <div style="border:1px solid #ddd;border-radius:12px;
+                    padding:12px;margin-bottom:10px;background:#fafafa">
 
-                <b>Client:</b> {r['Client_Name']}<br>
-                <b>Proposal ID:</b> {r['Proposal_ID']}<br>
-                <b>Status:</b> {r['Status']}<br>
-                <b>Rate (%):</b> {float(r['Rate']):.2f}%<br>
-                <b>Start Date:</b> {r['Start_Date'].date() if pd.notna(r['Start_Date']) else "-"}<br>
-                <b>End Date:</b> {r['End_Date'].date() if pd.notna(r['End_Date']) else "-"}<br>
-                <b>Proposal Amount:</b> ₹ {float(r['Proposal_Cost']):,.2f}<br>
-                <b>Final Amount:</b> ₹ {float(r['Final_Cost']):,.2f}<br>
-                <b>Profit:</b> ₹ {float(r['Profit']):,.2f}
+                    <b>Client:</b> {r['Client_Name']}<br>
+                    <b>Status:</b> {r['Status']}<br>
+                    <b>Start:</b> {r['Start_Date'].date()}<br>
+                    <b>End:</b> {r['End_Date'].date()}<br>
+                    <b>Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+                    <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
+                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
 
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        else:
+            display_df = result[[
+                "Client_Name","Proposal_ID","Rate",
+                "Start_Date","End_Date",
+                "Proposal_Cost","Final_Cost","Profit","Status"
+            ]]
+            display_df["Start_Date"] = display_df["Start_Date"].dt.date
+            display_df["End_Date"] = display_df["End_Date"].dt.date
+            st.dataframe(display_df, use_container_width=True)
 
-    # ---------- DESKTOP VIEW (FOLLOW-UP TABLE) ----------
-    else:
-        display_df = result[[
-            "Client_Name",
-            "Proposal_ID",
-            "Rate",
-            "Start_Date",
-            "End_Date",
-            "Proposal_Cost",
-            "Final_Cost",
-            "Profit",
-            "Status"
-        ]].sort_values("Start_Date")
+    # =================================================
+    # ============ BY CLIENT NAME MODE ================
+    # =================================================
+    if find_mode == "By Client Name":
 
-        display_df["Rate"] = display_df["Rate"].astype(float).round(2)
-        display_df["Proposal_Cost"] = display_df["Proposal_Cost"].astype(float).round(2)
-        display_df["Final_Cost"] = display_df["Final_Cost"].astype(float).round(2)
-        display_df["Profit"] = display_df["Profit"].astype(float).round(2)
-        display_df["Start_Date"] = display_df["Start_Date"].dt.date
-        display_df["End_Date"] = display_df["End_Date"].dt.date
+        st.subheader("🔎 Find Details Using Client Name")
 
-        st.dataframe(display_df, use_container_width=True)
-        # =============================================
-        # MODE 2 – BY CLIENT NAME (MOBILE)
-        # =============================================
-        if find_mode == "By Client Name":
+        status = st.selectbox("Status", ["All", "Open", "Closed"])
+        client = st.selectbox(
+            "Client Name",
+            sorted(proposals_df["Client_Name"].dropna().unique())
+        )
 
-            status = st.selectbox("Status", ["All", "Open", "Closed"])
-            client = st.selectbox(
-                "Client Name",
-                sorted(proposals_df["Client_Name"].dropna().unique())
-            )
+        date_type = st.radio(
+            "Date Type",
+            ["Start Date", "End Date"],
+            horizontal=True
+        )
 
-            date_type = st.radio(
-                "Date Type",
-                ["Start Date", "End Date"],
-                horizontal=True
-            )
+        df = proposals_df.copy()
 
-            df = proposals_df.copy()
-            if status != "All":
-                df = df[df["Status"] == status]
+        if status != "All":
+            df = df[df["Status"] == status]
 
-            df = df[df["Client_Name"] == client]
+        df = df[df["Client_Name"] == client]
 
-            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
-            dates = sorted(df[date_col].dropna().unique())
+        date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+        available_dates = sorted(df[date_col].dropna().unique())
 
-            if not dates:
-                st.warning("No data found")
-                st.stop()
+        if not available_dates:
+            st.info("No data found")
+            st.stop()
 
-            sel_date = st.selectbox(
-                f"Select {date_type}",
-                dates,
-                format_func=lambda x: x.strftime("%d-%m-%Y")
-            )
+        selected_date = st.selectbox(
+            f"Select {date_type}",
+            available_dates,
+            format_func=lambda x: x.strftime("%d-%m-%Y")
+        )
 
-            result = df[df[date_col] == sel_date]
+        result = df[df[date_col] == selected_date]
 
-            st.markdown("### 📋 Details")
+        st.markdown("### 📋 Proposal Details")
 
+        if is_mobile:
             for _, r in result.iterrows():
                 st.markdown(
                     f"""
-                    <div style="border:1px solid #ddd;
-                    border-radius:12px;
-                    padding:12px;
-                    margin-bottom:10px;
-                    background:#fafafa">
+                    <div style="border:1px solid #ddd;border-radius:12px;
+                    padding:12px;margin-bottom:10px;background:#f9f9f9">
 
                     <b>Proposal Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
                     <b>Rate:</b> {r['Rate']} %<br>
@@ -618,57 +606,69 @@ if st.session_state.page == "Find":
                     """,
                     unsafe_allow_html=True
                 )
+        else:
+            table = result[[
+                "Proposal_Cost","Rate","Final_Cost","Profit"
+            ]].round(2)
+            st.dataframe(table, use_container_width=True)
 
-        # =============================================
-        # MODE 3 – BY START / END DATE (MOBILE)
-        # =============================================
-        if find_mode == "By Start / End Date":
+    # =================================================
+    # ========= BY START / END DATE MODE ===============
+    # =================================================
+    if find_mode == "By Start / End Date":
 
-            status = st.selectbox("Status", ["All", "Open", "Closed"])
-            date_type = st.radio(
-                "Date Type",
-                ["Start Date", "End Date"],
-                horizontal=True
-            )
+        st.subheader("📅 Find Details Using Date & Clients")
 
-            clients = sorted(proposals_df["Client_Name"].dropna().unique())
-            selected_clients = st.multiselect(
-                "Select Clients (empty = All)",
-                clients
-            )
+        col1, col2 = st.columns(2)
+        status = col1.selectbox("Status", ["All", "Open", "Closed"])
+        date_type = col2.radio(
+            "Date Type",
+            ["Start Date", "End Date"],
+            horizontal=True
+        )
 
-            df = proposals_df.copy()
-            if status != "All":
-                df = df[df["Status"] == status]
+        clients = sorted(proposals_df["Client_Name"].dropna().unique())
+        selected_clients = st.multiselect(
+            "Select Clients (leave blank for All)",
+            clients
+        )
 
-            if selected_clients:
-                df = df[df["Client_Name"].isin(selected_clients)]
+        df = proposals_df.copy()
 
-            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+        if status != "All":
+            df = df[df["Status"] == status]
 
-            summary = (
-                df.groupby([date_col, "Client_Name"], as_index=False)
-                .agg({
-                    "Proposal_Cost": "sum",
-                    "Final_Cost": "sum",
-                    "Profit": "sum"
-                })
-            )
+        if selected_clients:
+            df = df[df["Client_Name"].isin(selected_clients)]
 
-            if summary.empty:
-                st.info("No records found")
-                st.stop()
+        date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
+        summary = (
+            df.groupby([date_col, "Client_Name"], as_index=False)
+            .agg({
+                "Proposal_Cost": "sum",
+                "Final_Cost": "sum",
+                "Profit": "sum"
+            })
+            .round(2)
+        )
+
+        if summary.empty:
+            st.info("No records found")
+            st.stop()
+
+        summary[date_col] = summary[date_col].dt.date
+
+        st.markdown("### 📊 Client-wise Summary")
+
+        if is_mobile:
             for _, r in summary.iterrows():
                 st.markdown(
                     f"""
-                    <div style="border:1px solid #ddd;
-                    border-radius:12px;
-                    padding:12px;
-                    margin-bottom:10px;
-                    background:#f9f9f9">
+                    <div style="border:1px solid #ddd;border-radius:12px;
+                    padding:12px;margin-bottom:10px;background:#fafafa">
 
-                    <b>Date:</b> {r[date_col].date()}<br>
+                    <b>Date:</b> {r[date_col]}<br>
                     <b>Client:</b> {r['Client_Name']}<br>
                     <b>Investment:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
                     <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
@@ -683,85 +683,8 @@ if st.session_state.page == "Find":
             st.metric("Investment", f"₹ {summary['Proposal_Cost'].sum():,.2f}")
             st.metric("Final Amount", f"₹ {summary['Final_Cost'].sum():,.2f}")
             st.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
-        # =============================================
-        # MODE 2 – BY CLIENT NAME (DESKTOP)
-        # =============================================
-        if find_mode == "By Client Name":
 
-            c1, c2 = st.columns(2)
-            status = c1.selectbox("Status", ["All", "Open", "Closed"])
-            client = c2.selectbox(
-                "Client Name",
-                sorted(proposals_df["Client_Name"].dropna().unique())
-            )
-
-            date_type = st.radio(
-                "Date Type",
-                ["Start Date", "End Date"],
-                horizontal=True
-            )
-
-            df = proposals_df.copy()
-            if status != "All":
-                df = df[df["Status"] == status]
-
-            df = df[df["Client_Name"] == client]
-
-            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
-            dates = sorted(df[date_col].dropna().unique())
-
-            sel_date = st.selectbox(
-                f"Select {date_type}",
-                dates,
-                format_func=lambda x: x.strftime("%d-%m-%Y")
-            )
-
-            result = df[df[date_col] == sel_date][[
-                "Proposal_Cost", "Rate", "Final_Cost", "Profit"
-            ]]
-
-            st.dataframe(result.round(2), use_container_width=True)
-
-        # =============================================
-        # MODE 3 – BY START / END DATE (DESKTOP)
-        # =============================================
-        if find_mode == "By Start / End Date":
-
-            c1, c2 = st.columns(2)
-            status = c1.selectbox("Status", ["All", "Open", "Closed"])
-            date_type = c2.radio(
-                "Date Type",
-                ["Start Date", "End Date"],
-                horizontal=True
-            )
-
-            clients = sorted(proposals_df["Client_Name"].dropna().unique())
-            selected_clients = st.multiselect(
-                "Select Clients (empty = All)",
-                clients
-            )
-
-            df = proposals_df.copy()
-            if status != "All":
-                df = df[df["Status"] == status]
-
-            if selected_clients:
-                df = df[df["Client_Name"].isin(selected_clients)]
-
-            date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
-
-            summary = (
-                df.groupby([date_col, "Client_Name"], as_index=False)
-                .agg({
-                    "Proposal_Cost": "sum",
-                    "Final_Cost": "sum",
-                    "Profit": "sum"
-                })
-                .round(2)
-            )
-
-            summary[date_col] = summary[date_col].dt.date
-
+        else:
             st.dataframe(summary, use_container_width=True)
 
             st.markdown("### 🔢 Grand Total")
@@ -769,7 +692,6 @@ if st.session_state.page == "Find":
             c1.metric("Investment", f"₹ {summary['Proposal_Cost'].sum():,.2f}")
             c2.metric("Final Amount", f"₹ {summary['Final_Cost'].sum():,.2f}")
             c3.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
-
 
 # =====================================================
 # ================= EDIT PROPOSAL =====================
@@ -1004,4 +926,5 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
