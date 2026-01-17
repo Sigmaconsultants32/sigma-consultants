@@ -418,46 +418,19 @@ if st.session_state.page == "Find":
 # =====================================================
 if st.session_state.page == "Edit":
 
-   st.header("✏️ Edit Client Details")
+    st.header("✏️ Edit Proposal")
+    pid = st.selectbox("Select Proposal", proposals_df["Proposal_ID"])
+    row = proposals_df[proposals_df["Proposal_ID"]==pid].iloc[0]
 
-client_name = st.selectbox("Select Client", df["Client Name"].unique())
+    cost = st.number_input("Proposal Amount", value=float(row["Proposal_Cost"]))
+    rate = st.number_input("Rate (%)", value=float(row["Rate"]))
+    status = st.selectbox("Status", ["Open","Closed"], index=0 if row["Status"]=="Open" else 1)
 
-client = df[df["Client Name"] == client_name].iloc[0]
-
-st.markdown("---")
-
-if is_mobile:
-    # MOBILE LAYOUT (VERTICAL)
-    amount = st.number_input("Investment Amount (₹)", value=int(client["Amount"]), step=1000)
-    rate = st.number_input("Monthly Profit Rate (%)", value=float(client["Rate"]), step=0.1)
-    duration = st.number_input("Duration (Months)", value=int(client["Duration"]))
-    status = st.selectbox("Status", ["Active", "Closed"], index=0 if client["Status"]=="Active" else 1)
-
-    with st.expander("Additional Details"):
-        remarks = st.text_area("Remarks", value=client.get("Remarks", ""))
-
-else:
-    # DESKTOP LAYOUT
-    col1, col2 = st.columns(2)
-    amount = col1.number_input("Investment Amount (₹)", value=int(client["Amount"]), step=1000)
-    rate = col2.number_input("Monthly Profit Rate (%)", value=float(client["Rate"]), step=0.1)
-
-    col3, col4 = st.columns(2)
-    duration = col3.number_input("Duration (Months)", value=int(client["Duration"]))
-    status = col4.selectbox("Status", ["Active", "Closed"], index=0 if client["Status"]=="Active" else 1)
-
-    remarks = st.text_area("Remarks", value=client.get("Remarks", ""))
-
-st.markdown("---")
-
-if st.button("💾 Save Changes", use_container_width=True):
-    df.loc[df["Client Name"] == client_name, "Amount"] = amount
-    df.loc[df["Client Name"] == client_name, "Rate"] = rate
-    df.loc[df["Client Name"] == client_name, "Duration"] = duration
-    df.loc[df["Client Name"] == client_name, "Status"] = status
-    df.loc[df["Client Name"] == client_name, "Remarks"] = remarks
-
-    st.success("Client details updated successfully")
+    if st.button("💾 Update", use_container_width=True):
+        proposals_df.loc[proposals_df["Proposal_ID"]==pid,
+            ["Proposal_Cost","Rate","Status"]] = [cost,rate,status]
+        save_proposals()
+        st.success("Updated successfully")
 
 # =====================================================
 # ================= CLIENTS ===========================
