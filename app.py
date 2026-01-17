@@ -527,7 +527,7 @@ if st.session_state.page == "Find":
 
         date_options = ["All"] + available_dates
 
-            selected_dates = st.multiselect(
+        selected_dates = st.multiselect(
             f"Select {date_type}(s)",
             date_options,
             default="All",
@@ -970,6 +970,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
