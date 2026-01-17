@@ -600,30 +600,28 @@ if st.session_state.page == "Clients":
 
     st.header("👤 Clients")
 
-    with st.expander("➕ Add Client"):
+    # -------- ADD NEW CLIENT --------
+    with st.expander("➕ Add New Client"):
         cname = st.text_input("Client Name")
-        if st.button("Add Client"):
-            clients_df.loc[len(clients_df)] = [
-                new_client_id(), cname, datetime.now(), False, ""
-            ]
-            save_clients()
-            st.success("Client added")
-            st.rerun()
+        if st.button("Add Client", use_container_width=True):
+            if cname.strip():
+                clients_df.loc[len(clients_df)] = [
+                    new_client_id(),
+                    cname.strip(),
+                    datetime.now()
+                ]
+                save_clients()
+                st.success("Client added successfully")
+                st.rerun()
+            else:
+                st.error("Client name cannot be empty")
 
-    for _,c in clients_df[clients_df["Is_Archived"]==False].iterrows():
-        st.subheader(c["Client_Name"])
-        st.write(f"Notes: {c['Notes']}")
-
-        note = st.text_area("Update Notes", value=c["Notes"], key=c["Client_ID"])
-        if st.button("Save Notes", key=f"note_{c['Client_ID']}"):
-            clients_df.loc[clients_df["Client_ID"]==c["Client_ID"],"Notes"]=note
-            save_clients()
-            st.success("Notes saved")
-
-        if st.button("📦 Archive Client", key=f"arc_{c['Client_ID']}"):
-            clients_df.loc[clients_df["Client_ID"]==c["Client_ID"],"Is_Archived"]=True
-            save_clients()
-            st.rerun()
+    # -------- CLIENT LIST --------
+    with st.expander("📋 Client List", expanded=True):
+        if clients_df.empty:
+            st.info("No clients available")
+        else:
+            st.dataframe(clients_df, use_container_width=True)
 
 # =====================================================
 # ================= CLIENT DASHBOARD ==================
@@ -657,6 +655,7 @@ if st.session_state.page == "Export":
         data=export_excel(),
         file_name="Sigma_Consultants_Data.xlsx"
     )
+
 
 
 
