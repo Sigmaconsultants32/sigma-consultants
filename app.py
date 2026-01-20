@@ -829,8 +829,8 @@ if st.session_state.page == "Find":
 
                 <b>Client:</b> {record['Client_Name']}<br>
                 <b>Status:</b> {record['Status']}<br>
-                <b>Start:</b> {fmt_date(record['Start_Date'])}.strftime("%d/%m/%Y")}<br>
-                <b>End:</b> {fmt_date(record['End_Date'])}.strftime("%d/%m/%Y")}<br>
+                <b>Start:</b> {fmt_date(record['Start_Date'])}<br>
+                <b>End:</b> {fmt_date(record['End_Date'])}<br>
                 <b>Amount:</b> ₹ {record['Proposal_Cost']:,.2f}<br>
                 <b>Rate:</b> {int(round(record['Rate'],0))} %<br>
                 <b>Final:</b> ₹ {record['Final_Cost']:,.2f}<br>
@@ -1334,6 +1334,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
