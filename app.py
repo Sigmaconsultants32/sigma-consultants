@@ -356,7 +356,7 @@ if st.session_state.page == "Summary":
         if is_mobile:
             st.markdown(
                 f"""
-**📅 {row['Start_Date'].strftime('%d-%m-%Y')} | {row['Rate_Int']} %**  
+**📅 fmt_date(row['Start_Date']) | {row['Rate_Int']} %**  
 💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
 {profit_color} Profit : ₹ {row['Profit']:,.2f}
@@ -552,8 +552,8 @@ if st.session_state.page == "Edit":
 
             <b>Client:</b> {row['Client_Name']}<br>
             <b>Status:</b> {row['Status']}<br>
-            <b>Start Date:</b> {row['Start_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
-            <b>End Date:</b> {row['End_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
+            <b>Start Date:</b> {rowfmt_date(start_date).strftime("%d/%m/%Y")}<br>
+            <b>End Date:</b> {rowfmt_date(end_date).strftime("%d/%m/%Y")}<br>
             <b>Proposal Amount:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
             <b>Rate:</b> {int(round(row['Rate'],0))} %<br>
             <b>Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
@@ -829,8 +829,8 @@ if st.session_state.page == "Find":
 
                 <b>Client:</b> {record['Client_Name']}<br>
                 <b>Status:</b> {record['Status']}<br>
-                <b>Start:</b> {record['Start_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
-                <b>End:</b> {record['End_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
+                <b>Start:</b> {fmt_date(record['Start_Date'])}.strftime("%d/%m/%Y")}<br>
+                <b>End:</b> {fmt_date(record['End_Date'])}.strftime("%d/%m/%Y")}<br>
                 <b>Amount:</b> ₹ {record['Proposal_Cost']:,.2f}<br>
                 <b>Rate:</b> {int(round(record['Rate'],0))} %<br>
                 <b>Final:</b> ₹ {record['Final_Cost']:,.2f}<br>
@@ -998,7 +998,7 @@ if st.session_state.page == "Find":
             st.info("No records found")
             st.stop()
 
-        summary[date_col] = summary[date_col].dt.date
+        summary[date_col] = summary[date_col].apply(fmt_date)
 
         st.markdown("### 📊 Client-wise Summary")
 
@@ -1241,13 +1241,8 @@ if st.session_state.page == "ClientDashboard":
     # =================================================
     client_data = client_data.sort_values("Start_Date")
 
-    client_data["Start_Date"] = pd.to_datetime(
-        client_data["Start_Date"]
-    ).dt.strftime("%d/%m/%Y")
-
-    client_data["End_Date"] = pd.to_datetime(
-        client_data["End_Date"]
-    ).dt.strftime("%d/%m/%Y")
+    client_data["Start_Date"] = client_data["Start_Date"].apply(fmt_date)
+    client_data["End_Date"] = client_data["End_Date"].apply(fmt_date)
 
     client_data["Rate"] = client_data["Rate"].round(0).astype(int)
 
@@ -1339,6 +1334,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
