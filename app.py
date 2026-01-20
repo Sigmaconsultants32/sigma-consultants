@@ -794,8 +794,8 @@ if st.session_state.page == "Find":
         p_rate = int(round(proposal_df["Rate"].iloc[0], 0))
 
         c1, c2, c3 = st.columns(3)
-        c1.text_input("Start Date", p_start.strftime("%d-%m-%Y"), disabled=True)
-        c2.text_input("End Date", p_end.strftime("%d-%m-%Y"), disabled=True)
+        c1.text_input("Start Date", p_start, disabled=True)
+        c2.text_input("End Date", p_end, disabled=True)
         c3.text_input("Rate (%)", p_rate, disabled=True)
 
         # -------------------------------------------------
@@ -1334,6 +1334,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
