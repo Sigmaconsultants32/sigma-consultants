@@ -7,6 +7,11 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
+def fmt_date(d):
+    if pd.isna(d):
+        return ""
+    return pd.to_datetime(d).strftime("%d-%b-%Y")
+
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
@@ -547,8 +552,8 @@ if st.session_state.page == "Edit":
 
             <b>Client:</b> {row['Client_Name']}<br>
             <b>Status:</b> {row['Status']}<br>
-            <b>Start Date:</b> {row['Start_Date'].date()}<br>
-            <b>End Date:</b> {row['End_Date'].date()}<br>
+            <b>Start Date:</b> {row['Start_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
+            <b>End Date:</b> {row['End_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
             <b>Proposal Amount:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
             <b>Rate:</b> {int(round(row['Rate'],0))} %<br>
             <b>Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
@@ -599,12 +604,12 @@ if st.session_state.page == "Edit":
 
             new_start = st.date_input(
                 "Start Date",
-                value=row["Start_Date"].date()
+                value=row["Start_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
             )
 
             new_end = st.date_input(
                 "End Date",
-                value=row["End_Date"].date()
+                value=row["End_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
             )
 
             new_status = st.selectbox(
@@ -629,12 +634,12 @@ if st.session_state.page == "Edit":
 
             new_start = c3.date_input(
                 "Start Date",
-                value=row["Start_Date"].date()
+                value=row["Start_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
             )
 
             new_end = c4.date_input(
                 "End Date",
-                value=row["End_Date"].date()
+                value=row["End_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
             )
 
             new_status = c5.selectbox(
@@ -784,8 +789,8 @@ if st.session_state.page == "Find":
         # -------------------------------------------------
         # STEP 3: AUTO START / END / RATE (READ ONLY)
         # -------------------------------------------------
-        p_start = proposal_df["Start_Date"].iloc[0].date()
-        p_end = proposal_df["End_Date"].iloc[0].date()
+        p_start = proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
+        p_end = proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
         p_rate = int(round(proposal_df["Rate"].iloc[0], 0))
 
         c1, c2, c3 = st.columns(3)
@@ -824,8 +829,8 @@ if st.session_state.page == "Find":
 
                 <b>Client:</b> {record['Client_Name']}<br>
                 <b>Status:</b> {record['Status']}<br>
-                <b>Start:</b> {record['Start_Date'].date()}<br>
-                <b>End:</b> {record['End_Date'].date()}<br>
+                <b>Start:</b> {record['Start_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
+                <b>End:</b> {record['End_Date'].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")}<br>
                 <b>Amount:</b> ₹ {record['Proposal_Cost']:,.2f}<br>
                 <b>Rate:</b> {int(round(record['Rate'],0))} %<br>
                 <b>Final:</b> ₹ {record['Final_Cost']:,.2f}<br>
@@ -1334,6 +1339,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
