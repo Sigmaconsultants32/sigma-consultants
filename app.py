@@ -750,28 +750,18 @@ if st.session_state.page == "Find":
         df = proposals_df.copy()
 
         # -------------------------------------------------
-        # STEP 1: CLIENT + STATUS FILTER
+        # STEP 1: STATUS FILTER
         # -------------------------------------------------
-        col1, col2 = st.columns(2)
-
-        selected_client = col1.selectbox(
-            "Client Name",
-            ["All"] + sorted(df["Client_Name"].dropna().unique())
-        )
-
-        selected_status = col2.selectbox(
+        status = st.selectbox(
             "Status",
             ["All", "Open", "Closed"]
         )
 
-        if selected_client != "All":
-            df = df[df["Client_Name"] == selected_client]
-
-        if selected_status != "All":
-            df = df[df["Status"] == selected_status]
+        if status != "All":
+            df = df[df["Status"] == status]
 
         if df.empty:
-            st.info("No proposals found for selected filters")
+            st.info("No proposals found for selected status")
             st.stop()
 
         # -------------------------------------------------
@@ -1334,6 +1324,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
