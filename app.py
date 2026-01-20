@@ -622,140 +622,182 @@ if st.session_state.page == "Edit":
         st.session_state.page = "Summary"
         st.rerun()
 
-# =====================================================
-# ================= FIND DETAILS ======================
-# =====================================================
-if st.session_state.page == "Find":
+# =================================================
+# =============== BY PROPOSAL MODE =================
+# =================================================
+if find_mode == "By Proposal":
 
-    st.header("🔍 Find Proposal Details")
+    st.subheader("📄 Find Details By Proposal")
 
-    if proposals_df.empty:
-        st.warning("No proposal data available")
+    df = proposals_df.copy()
+
+    # -------------------------------------------------
+    # STEP 1: BASIC FILTERS
+    # -------------------------------------------------
+    col1, col2 = st.columns(2)
+
+    selected_client = col1.selectbox(
+        "Client Name",
+        ["All"] + sorted(df["Client_Name"].dropna().unique())
+    )
+
+    selected_status = col2.selectbox(
+        "Status",
+        ["All", "Open", "Closed"]
+    )
+
+    if selected_client != "All":
+        df = df[df["Client_Name"] == selected_client]
+
+    if selected_status != "All":
+        df = df[df["Status"] == selected_status]
+
+    if df.empty:
+        st.info("No proposals found for selected Client / Status")
         st.stop()
 
     # -------------------------------------------------
-    # MODE SELECTION
+    # STEP 2: PROPOSAL ID SELECTION
     # -------------------------------------------------
-    find_mode = st.radio(
-        "Find Details Mode",
-        [
-            "By Proposal",
-            "By Client Name",
-            "By Start / End Date"
-        ],
-        horizontal=True
+    proposal_ids = sorted(df["Proposal_ID"].dropna().unique())
+
+    selected_proposal = st.selectbox(
+        "Select Proposal ID",
+        proposal_ids
     )
 
-    # =================================================
-    # =============== BY PROPOSAL MODE =================
-    # =================================================
-    if find_mode == "By Proposal":
+    proposal_df = df[df["Proposal_ID"] == selected_proposal]
 
-        st.subheader("📄 Find Details By Proposal")
+    # -------------------------------------------------
+    # STEP 3: AUTO SHOW START & END DATE (READ ONLY)
+    # -------------------------------------------------
+    p_start = proposal_df["Start_Date"].iloc[0].date()
+    p_end = proposal_df["End_Date"].iloc[0].date()
+    p_rate = int(round(proposal_df["Rate"].iloc[0], 0))
 
-        # ---------- BASIC FILTERS ----------
+    col1, col2, col3 = st.columns(3)
+
+    col1.text_input("Start Date", value=p_start.strftime("%d-%m-%Y"), disabled=True)
+    col2.text_input("End Date", value=p_end.strftime("%d-%m-%Y"), disabled=True)
+    col3.text_input("Rate (%)", value=p_rate, disabled=True)
+
+    # -------------------------------------------------
+    # STEP 4: CLIENT LIST UNDER THIS PROPOSAL
+    # -------------------------------------------------
+    proposal_clients = sorted(proposal_df["Client_Name"].unique())
+
+    selected_client_final = st.selectbox(
+        "Select Client Included in Proposal",
+        proposal_clients
+    )
+
+    final_df = proposal_df[proposal_df["Client_Name"] == selected_client_final]
+
+    if final_df.empty:
+        st.info("No data available for selected client")
+        st.stop()
+
+    record = final_df.iloc[0]
+
+    st.markdown("---")
+
+    # -------------------------------------------------
+    # STEP 5: DISPLAY RESULT
+    # -------------------------------------------------
+    if is_mobile:
+        st.markdown(
+            f"""
+            <div style="border:1px solid #ddd;
+            border-radius:12px;
+            padding:12px;
+            margin-bottom:10px;
+            background:#fafafa">
+
+            <b>Client:</b> {record['Client_Name']}<br>
+            <b>Status:</b> {record['Status']}<br>
+            <b>Start Date:</b> {record['Start_Date'].date()}<br>
+            <b>End Date:</b> {record['End_Date'].date()}<br>
+            <b>Proposal Amount:</b> ₹ {record['Proposal_Cost']:,.2f}<br>
+            <b>Rate:</b> {int(round(record['Rate'],0))} %<br>
+            <b>Final Amount:</b> ₹ {record['Final_Cost']:,.2f}<br>
+            <b>Profit:</b> ₹ {record['Profit']:,.2f}
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    else:
+        display_df = final_df[[
+            "Client_Name",
+            "Proposal_ID",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Rate",
+            "Final_Cost",
+            "Profit",
+            "Status"
+        ]].copy()
+
+        display_df["Rate"] = display_df["Rate"].round(0).astype(int)
+        display_df["Start_Date"] = display_df["Start_Date"].dt.date
+        display_df["End_Date"] = display_df["End_Date"].dt.date
+
+        st.dataframe(display_df, use_container_width=True)
+
+    # -------------------------------------------------
+    # STEP 6: EDIT PROPOSAL
+    # -------------------------------------------------
+    st.markdown("---")
+    edit_mode = st.checkbox("✏️ Edit Proposal")
+
+    if edit_mode:
+
+        st.warning("Editing Proposal Cost & Rate will affect calculations")
+
         col1, col2 = st.columns(2)
 
-        client = col1.selectbox(
-            "Client Name",
-            ["All"] + sorted(proposals_df["Client_Name"].dropna().unique())
+        new_cost = col1.number_input(
+            "Edit Proposal Amount",
+            min_value=0.0,
+            value=float(record["Proposal_Cost"]),
+            step=1000.0
         )
 
-        status = col2.selectbox(
-            "Status",
-            ["All", "Open", "Closed"]
+        new_rate = col2.number_input(
+            "Edit Rate (%)",
+            min_value=0.0,
+            value=float(record["Rate"]),
+            step=0.5
         )
 
-        # ---------- DATE TYPE SELECTION ----------
-        date_type = st.radio(
-            "Select Date Type",
-            ["Start Date", "End Date"],
-            horizontal=True
-        )
+        if st.button("💾 Save Changes"):
 
-        df = proposals_df.copy()
+            mask = (
+                (proposals_df["Proposal_ID"] == selected_proposal) &
+                (proposals_df["Client_Name"] == selected_client_final)
+            )
 
-        if client != "All":
-            df = df[df["Client_Name"] == client]
+            proposals_df.loc[mask, "Proposal_Cost"] = new_cost
+            proposals_df.loc[mask, "Rate"] = new_rate
 
-        if status != "All":
-            df = df[df["Status"] == status]
+            # Recalculate Final & Profit
+            duration_days = (
+                proposals_df.loc[mask, "End_Date"].iloc[0] -
+                proposals_df.loc[mask, "Start_Date"].iloc[0]
+            ).days
 
-        # ---------- DATE MULTISELECT ----------
-        date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+            final_amount = new_cost * (1 + (new_rate / 100) * (duration_days / 365))
+            profit = final_amount - new_cost
 
-        available_dates = sorted(
-            df[date_col].dropna().dt.date.unique()
-        )
+            proposals_df.loc[mask, "Final_Cost"] = final_amount
+            proposals_df.loc[mask, "Profit"] = profit
 
-        if not available_dates:
-            st.info("No dates available for selected filters")
-            st.stop()
+            st.success("Proposal updated successfully")
+            st.rerun()
 
-        date_options = ["All"] + available_dates
 
-        selected_dates = st.multiselect(
-            f"Select {date_type}(s)",
-            date_options,
-            default="All",
-            format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
-        )
-
-        # ---------- APPLY DATE FILTER ----------
-        if "All" not in selected_dates:
-            df = df[df[date_col].dt.date.isin(selected_dates)]
-
-        st.markdown("---")
-
-        if df.empty:
-            st.info("No records found")
-            st.stop()
-
-        # =================================================
-        # ================= DISPLAY =======================
-        # =================================================
-        if is_mobile:
-            for _, r in df.sort_values(date_col).iterrows():
-                st.markdown(
-                    f"""
-                    <div style="border:1px solid #ddd;
-                    border-radius:12px;
-                    padding:12px;
-                    margin-bottom:10px;
-                    background:#fafafa">
-
-                    <b>Client:</b> {r['Client_Name']}<br>
-                    <b>Status:</b> {r['Status']}<br>
-                    <b>{date_type}:</b> {r[date_col].date()}<br>
-                    <b>Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                    <b>Rate:</b> {int(round(r['Rate'], 0))} %<br>
-                    <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-        else:
-            display_df = df[[
-                "Client_Name",
-                "Proposal_ID",
-                "Rate",
-                "Start_Date",
-                "End_Date",
-                "Proposal_Cost",
-                "Final_Cost",
-                "Profit",
-                "Status"
-            ]].copy()
-
-            display_df["Rate"] = display_df["Rate"].round(0).astype(int)
-            display_df["Start_Date"] = display_df["Start_Date"].dt.date
-            display_df["End_Date"] = display_df["End_Date"].dt.date
-
-            st.dataframe(display_df, use_container_width=True)
-        
     # =================================================
     # ============ BY CLIENT NAME MODE ================
     # =================================================
@@ -1209,5 +1251,6 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
