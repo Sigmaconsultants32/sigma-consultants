@@ -210,6 +210,7 @@ if st.session_state.page == "Welcome":
 # ================= SUMMARY ===========================
 # =====================================================
 if st.session_state.page == "Summary":
+
     st.header("📊 Summary")
 
     # ---------- SAFETY CHECK ----------
@@ -239,7 +240,7 @@ if st.session_state.page == "Summary":
     st.subheader("📅 Date Based Summary")
     st.caption("ℹ️ Amounts shown in actual ₹ (rupees)")
 
-    # ---------- DATE CONVERSION ----------
+    # ---------- ENSURE DATETIME ----------
     proposals_df["Start_Date"] = pd.to_datetime(
         proposals_df["Start_Date"], errors="coerce"
     )
@@ -254,16 +255,18 @@ if st.session_state.page == "Summary":
         proposals_df["Status"].dropna().unique().tolist()
     )
 
-    selected_status = st.selectbox("Select Proposal Status", status_options)
+    selected_status = st.selectbox(
+        "Select Proposal Status",
+        status_options
+    )
 
+    status_df = proposals_df.copy()
     if selected_status != "All":
-        status_filtered_df = proposals_df[
-            proposals_df["Status"] == selected_status
-        ].copy()
-    else:
-        status_filtered_df = proposals_df.copy()
+        status_df = status_df[
+            status_df["Status"] == selected_status
+        ]
 
-    if status_filtered_df.empty:
+    if status_df.empty:
         st.warning("No data for selected status")
         st.stop()
 
@@ -279,7 +282,7 @@ if st.session_state.page == "Summary":
     date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
     available_dates = sorted(
-        status_filtered_df[date_col].dropna().dt.date.unique()
+        status_df[date_col].dropna().dt.date.unique()
     )
 
     if not available_dates:
@@ -292,10 +295,10 @@ if st.session_state.page == "Summary":
         f"Select {date_type}(s)",
         date_options,
         default="All",
-        format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
+        format_func=lambda x: x if x == "All" else x.strftime("%d-%b-%Y")
     )
 
-    filtered_df = status_filtered_df.copy()
+    filtered_df = status_df.copy()
 
     if "All" not in selected_dates:
         filtered_df = filtered_df[
@@ -347,33 +350,45 @@ if st.session_state.page == "Summary":
     )
 
     # =====================================================
-    # ============ COMPACT SUMMARY DISPLAY ================
+    # ============ PREPARE DISPLAY DATA ===================
     # =====================================================
-    for _, row in summary_df.iterrows():
+    display_df = summary_df.copy()
+    display_df["Start_Date"] = display_df["Start_Date"].apply(fmt_date)
 
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+    # =====================================================
+    # ============ SUMMARY DISPLAY ========================
+    # =====================================================
+    if is_mobile:
+        for _, row in display_df.iterrows():
+            profit_icon = "🟢" if row["Profit"] >= 0 else "🔴"
 
-        if is_mobile:
             st.markdown(
                 f"""
-**📅 fmt_date(row['Start_Date']) | {row['Rate_Int']} %**  
+**📅 {row['Start_Date']} | {row['Rate_Int']} %**  
 💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
-{profit_color} Profit : ₹ {row['Profit']:,.2f}
+{profit_icon} Profit : ₹ {row['Profit']:,.2f}
 """
             )
-        else:
-            st.markdown(
-                f"""
-**Start Date** : {row['Start_Date'].strftime('%d-%m-%Y')}  
-**Rate** : {row['Rate_Int']} %  
-**Investment** : ₹ {row['Proposal_Cost']:,.2f}  
-**Final Amount** : ₹ {row['Final_Cost']:,.2f}  
-**Profit** : ₹ {row['Profit']:,.2f}
-"""
-            )
+            st.markdown("---")
 
-        st.markdown("---")
+    else:
+        table_df = display_df[[
+            "Start_Date",
+            "Rate_Int",
+            "Proposal_Cost",
+            "Final_Cost",
+            "Profit"
+        ]].rename(columns={
+            "Start_Date": "Start Date",
+            "Rate_Int": "Rate (%)",
+            "Proposal_Cost": "Investment (₹)",
+            "Final_Cost": "Final Amount (₹)",
+            "Profit": "Profit (₹)"
+        })
+
+        st.dataframe(table_df, use_container_width=True)
+
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1324,6 +1339,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
