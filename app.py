@@ -789,8 +789,8 @@ if st.session_state.page == "Find":
         # -------------------------------------------------
         # STEP 3: AUTO START / END / RATE (READ ONLY)
         # -------------------------------------------------
-        p_start = proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
-        p_end = proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
+        p_start = fmt_date(proposal_df["Start_Date"].iloc[0])
+        p_end = fmt_date(proposal_df["End_Date"].iloc[0])
         p_rate = int(round(proposal_df["Rate"].iloc[0], 0))
 
         c1, c2, c3 = st.columns(3)
@@ -1334,6 +1334,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
