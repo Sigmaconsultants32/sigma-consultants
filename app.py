@@ -649,13 +649,13 @@ if st.session_state.page == "Edit":
 
             new_start = c3.date_input(
                 "Start Date",
-                value=row["Start_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
+                value=pd.to_datetime(row["Start_Date"]).date()
             )
 
             new_end = c4.date_input(
                 "End Date",
-                value=row["End_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
-            )
+                value=pd.to_datetime(row["End_Date"]).date()
+            )    
 
             new_status = c5.selectbox(
                 "Status",
