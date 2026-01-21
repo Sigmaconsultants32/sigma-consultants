@@ -238,14 +238,26 @@ with st.sidebar:
         st.session_state.auth = False; st.rerun()
 
 # =====================================================
+# =====================================================
 # ================= WELCOME SCREEN ====================
 # =====================================================
 if st.session_state.page == "Welcome":
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(BASE_DIR, "sigma_logo.png")
-
     st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("### Dashboard Overview")
+    st.caption("Administrative control panel")
+
+    st.markdown(
+        """
+        Manage client investments, proposals,
+        returns, and tracking from one place.
+        """
+    )
+
+    if st.button("➡️ Enter Dashboard", use_container_width=True):
+        st.session_state.page = "Summary"
+        st.rerun()
 
     # ================= MOBILE VIEW =================
     st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
@@ -1440,6 +1452,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
