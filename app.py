@@ -90,9 +90,6 @@ div.stButton > button {
 }
 
 /* ---------- LOGIN PAGE ---------- */
-section[data-testid="stSidebar"] {
-    display:none;
-}
 
 </style>
 """, unsafe_allow_html=True)
@@ -126,6 +123,15 @@ if not st.session_state.auth:
             st.rerun()
         else:
             st.error("❌ Incorrect password")
+
+    # Hide sidebar only on login page
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"] {
+        display:none;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     st.stop()
 
@@ -1003,13 +1009,30 @@ if st.session_state.page == "ClientDashboard":
 
     st.markdown("---")
 
-    # ---------- DISPLAY DATA ----------
-    client_data = client_data.sort_values("Start_Date")
+st.markdown("---")
 
-    client_data["Start_Date"] = client_data["Start_Date"].apply(fmt_date)
-    client_data["End_Date"] = client_data["End_Date"].apply(fmt_date)
-    client_data["Rate"] = client_data["Rate"].round(0).astype(int)
+    # ---------- MOBILE VIEW (CARDS) ----------
+    st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
+    for _, r in client_data.iterrows():
+        st.markdown(
+            f"""
+            <div style="border:1px solid #ddd;border-radius:12px;
+            padding:12px;margin-bottom:10px;background:#fafafa">
 
+            <b>Start:</b> {r['Start_Date']}<br>
+            <b>End:</b> {r['End_Date']}<br>
+            <b>Investment:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
+            <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
+            <b>Profit:</b> ₹ {r['Profit']:,.2f}<br>
+            <b>Status:</b> {r['Status']}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ---------- DESKTOP VIEW (TABLE) ----------
+    st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
     st.dataframe(
         client_data[
             [
@@ -1024,6 +1047,7 @@ if st.session_state.page == "ClientDashboard":
         ],
         use_container_width=True
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # ================= EXPORT DATA =======================
@@ -1074,6 +1098,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
