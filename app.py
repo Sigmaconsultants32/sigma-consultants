@@ -557,6 +557,9 @@ if st.session_state.page == "Edit":
     # =================================================
     # STEP 5: DISPLAY CURRENT DETAILS
     # =================================================
+    start_dt = rowfmt_date(row["Start_Date"])
+    end_dt   = rowfmt_date(row["End_Date"])
+
     if is_mobile:
         st.markdown(
             f"""
@@ -567,10 +570,10 @@ if st.session_state.page == "Edit":
 
             <b>Client:</b> {row['Client_Name']}<br>
             <b>Status:</b> {row['Status']}<br>
-            <b>Start Date:</b> {rowfmt_date(start_date).strftime("%d/%m/%Y")}<br>
-            <b>End Date:</b> {rowfmt_date(end_date).strftime("%d/%m/%Y")}<br>
+            <b>Start Date:</b> {start_dt.strftime("%d/%m/%Y") if start_dt else "-"}<br>
+            <b>End Date:</b> {end_dt.strftime("%d/%m/%Y") if end_dt else "-"}<br>
             <b>Proposal Amount:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-            <b>Rate:</b> {int(round(row['Rate'],0))} %<br>
+            <b>Rate:</b> {int(round(row['Rate'], 0))} %<br>
             <b>Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
             <b>Profit:</b> ₹ {row['Profit']:,.2f}
 
@@ -580,19 +583,21 @@ if st.session_state.page == "Edit":
         )
     else:
         st.dataframe(
-            pd.DataFrame([row])[[
-                "Client_Name",
-                "Proposal_ID",
-                "Start_Date",
-                "End_Date",
-                "Proposal_Cost",
-                "Rate",
-                "Final_Cost",
-                "Profit",
-                "Status"
-            ]],
+            pd.DataFrame([row])[
+                [
+                    "Client_Name",
+                    "Proposal_ID",
+                    "Start_Date",
+                    "End_Date",
+                    "Proposal_Cost",
+                    "Rate",
+                    "Final_Cost",
+                    "Profit",
+                    "Status"
+                ]
+            ],
             use_container_width=True
-        )
+        )    
 
     # =================================================
     # STEP 6: EDIT MODE
@@ -603,6 +608,9 @@ if st.session_state.page == "Edit":
     if edit_mode:
 
         st.warning("Editing will recalculate Final Amount & Profit")
+
+        start_date_val = rowfmt_date(row["Start_Date"]).date()
+        end_date_val   = rowfmt_date(row["End_Date"]).date()
 
         if is_mobile:
             proposal_cost = st.number_input(
@@ -619,12 +627,12 @@ if st.session_state.page == "Edit":
 
             new_start = st.date_input(
                 "Start Date",
-                value=row["Start_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
+                value=start_date_val
             )
 
             new_end = st.date_input(
                 "End Date",
-                value=row["End_Date"].strftime("%d-%m-%Y") .strftime("%d/%m/%Y")
+                value=end_date_val
             )
 
             new_status = st.selectbox(
@@ -632,6 +640,7 @@ if st.session_state.page == "Edit":
                 ["Open", "Closed"],
                 index=0 if row["Status"] == "Open" else 1
             )
+
         else:
             c1, c2, c3, c4, c5 = st.columns(5)
 
@@ -649,13 +658,13 @@ if st.session_state.page == "Edit":
 
             new_start = c3.date_input(
                 "Start Date",
-                value=pd.to_datetime(row["Start_Date"]).date()
+                value=start_date_val
             )
 
             new_end = c4.date_input(
                 "End Date",
-                value=pd.to_datetime(row["End_Date"]).date()
-            )    
+                value=end_date_val
+            )
 
             new_status = c5.selectbox(
                 "Status",
@@ -1339,6 +1348,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
