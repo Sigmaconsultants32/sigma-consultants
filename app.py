@@ -1047,7 +1047,7 @@ st.dataframe(
         ],
         use_container_width=True
     )
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
 # ================= EXPORT DATA =======================
@@ -1098,6 +1098,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
