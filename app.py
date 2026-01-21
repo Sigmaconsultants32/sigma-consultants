@@ -7,6 +7,15 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
+# ---------------- DEVICE DETECTION ----------------
+def is_mobile_device():
+    try:
+        ua = st.runtime.scriptrunner.get_script_run_ctx().request.headers.get("User-Agent", "")
+        ua = ua.lower()
+        return any(x in ua for x in ["iphone", "android", "mobile", "ipad"])
+    except:
+        return False
+
 # ---------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------
 def to_dt(d):
     """Always return pandas Timestamp or None"""
@@ -35,7 +44,6 @@ def is_mobile_device():
         return False
 
 # ---------------- MOBILE TOGGLE ----------------
-is_mobile = st.toggle("📱 Mobile View", value=True)
 
 def card(title, value):
     st.markdown(
@@ -1415,6 +1423,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
