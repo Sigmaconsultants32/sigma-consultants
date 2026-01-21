@@ -1033,17 +1033,17 @@ st.markdown('</div>', unsafe_allow_html=True)
 
     # ---------- DESKTOP VIEW (TABLE) ----------
 st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
-    st.dataframe(
-        client_data[
-            [
-                "Proposal_ID",
-                "Start_Date",
-                "End_Date",
-                "Proposal_Cost",
-                "Final_Cost",
-                "Profit",
-                "Status"
-            ]
+st.dataframe(
+    client_data[
+        [
+            "Proposal_ID",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Final_Cost",
+            "Profit",
+            "Status"
+           ]
         ],
         use_container_width=True
     )
@@ -1098,6 +1098,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
