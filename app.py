@@ -33,7 +33,7 @@ is_mobile = st.toggle("📱 Mobile View", value=True)
 def card(title, value):
     st.markdown(
         f"""
-        <div style="padding:14px;border-radius:12px;
+        <div style="padding:5px;border-radius:6px;
         background:#ffffff;margin-bottom:10px;
         box-shadow:0 3px 8px rgba(0,0,0,0.08)">
         <div style="font-size:13px;color:#555">{title}</div>
@@ -1426,6 +1426,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
