@@ -279,12 +279,12 @@ if st.session_state.page == "Welcome":
             """
         )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        # Primary admin action
-        if st.button("➡️ Enter Dashboard", use_container_width=True):
-            st.session_state.page = "Summary"
-            st.rerun()
+    # Primary admin action
+    if st.button("➡️ Enter Dashboard", use_container_width=True):
+        st.session_state.page = "Summary"
+        st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1452,6 +1452,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
