@@ -238,7 +238,6 @@ with st.sidebar:
         st.session_state.auth = False; st.rerun()
 
 # =====================================================
-# =====================================================
 # ================= WELCOME SCREEN ====================
 # =====================================================
 if st.session_state.page == "Welcome":
@@ -262,67 +261,6 @@ if st.session_state.page == "Welcome":
     st.markdown("<br>", unsafe_allow_html=True)
     st.caption("Use the sidebar menu to access modules")
 
-    # ================= MOBILE VIEW =================
-    st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
-    card("Investment", f"₹ {total:,.2f}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
-    st.metric("Investment", f"₹ {total:,.2f}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-        # Admin-style heading
-    st.markdown("### Dashboard Overview")
-    st.caption("Administrative control panel")
-
-    st.markdown(
-            """
-            This system allows you to manage client investments,  
-            proposals, returns, and status tracking in one place.
-            """
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Primary admin action
-    if st.button("➡️ Enter Dashboard", use_container_width=True):
-        st.session_state.page = "Summary"
-        st.rerun()
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # Subtle admin hint
-        st.caption("Use the sidebar menu to access modules")
-
-    # ================= DESKTOP VIEW =================
-    else:
-        col1, col2, col3 = st.columns([1, 2, 1])
-
-        with col2:
-
-            if os.path.exists(logo_path):
-                st.image(logo_path, use_container_width=True)
-            else:
-                st.header("Sigma Consultants")
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.markdown("### Dashboard Overview")
-            st.caption("Administrative control panel")
-
-            st.markdown(
-                """
-                Manage client records, investment proposals,  
-                profit calculations, and reporting from a single dashboard.
-                """
-            )
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            if st.button("➡️ Enter Dashboard", use_container_width=True):
-                st.session_state.page = "Summary"
-                st.rerun()
-
 # =====================================================
 # ================= SUMMARY ===========================
 # =====================================================
@@ -336,7 +274,7 @@ if st.session_state.page == "Summary":
     # ---- CALCULATIONS ----
     total_investment = proposals_df["Proposal_Cost"].sum()
     total_profit = proposals_df["Profit"].sum()
-
+    
     # ---- MOBILE VIEW ----
     st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
     card("Investment", f"₹ {total_investment:,.2f}")
@@ -440,18 +378,6 @@ if st.session_state.page == "Summary":
 
     st.markdown("### 📊 Proposal Stats")
 
-    if is_mobile:
-        card("Investment", f"₹ {total_inv:,.2f}")
-        card("Final Amount", f"₹ {total_final:,.2f}")
-        card("Profit", f"₹ {total_profit:,.2f}")
-    else:
-        p1, p2, p3 = st.columns(3)
-        p1.metric("Total Investment", f"₹ {total_inv:,.2f}")
-        p2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
-        p3.metric("Total Profit", f"₹ {total_profit:,.2f}")
-
-    st.markdown("---")
-
     # =====================================================
     # ========= GROUP BY RATE + START DATE ================
     # =====================================================
@@ -471,41 +397,6 @@ if st.session_state.page == "Summary":
     # =====================================================
     display_df = summary_df.copy()
     display_df["Start_Date"] = display_df["Start_Date"].apply(fmt_date)
-
-    # =====================================================
-    # ============ SUMMARY DISPLAY ========================
-    # =====================================================
-    if is_mobile:
-        for _, row in display_df.iterrows():
-            profit_icon = "🟢" if row["Profit"] >= 0 else "🔴"
-
-            st.markdown(
-                f"""
-**📅 {row['Start_Date']} | {row['Rate_Int']} %**  
-💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
-📈 Final : ₹ {row['Final_Cost']:,.2f}  
-{profit_icon} Profit : ₹ {row['Profit']:,.2f}
-"""
-            )
-            st.markdown("---")
-
-    else:
-        table_df = display_df[[
-            "Start_Date",
-            "Rate_Int",
-            "Proposal_Cost",
-            "Final_Cost",
-            "Profit"
-        ]].rename(columns={
-            "Start_Date": "Start Date",
-            "Rate_Int": "Rate (%)",
-            "Proposal_Cost": "Investment (₹)",
-            "Final_Cost": "Final Amount (₹)",
-            "Profit": "Profit (₹)"
-        })
-
-        st.dataframe(table_df, use_container_width=True)
-
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -561,22 +452,6 @@ if st.session_state.page == "AddProposal":
 
     st.markdown("---")
     st.subheader("💰 Auto Calculated")
-
-    if is_mobile:
-        st.markdown(f"""
-        <div style="border:1px solid #ddd;border-radius:12px;padding:14px;background:#fafafa">
-        <b>Duration:</b> {days} days ({months:.2f} months)<br>
-        <b>Profit:</b> ₹ {profit:,.2f}<br>
-        <b>Final Amount:</b> ₹ {final_cost:,.2f}
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Duration (Months)", f"{months:.2f}")
-        c2.metric("Profit (₹)", f"{profit:,.2f}")
-        c3.metric("Final Amount (₹)", f"{final_cost:,.2f}")
-
-    st.markdown("---")
 
     # ----------- SAVE -----------
     if st.button("💾 Save Proposal", use_container_width=True):
@@ -677,45 +552,6 @@ if st.session_state.page == "Edit":
     start_dt = to_dt(row["Start_Date"])
     end_dt   = to_dt(row["End_Date"])
 
-    if is_mobile:
-        st.markdown(
-            f"""
-            <div style="border:1px solid #ddd;
-            border-radius:12px;
-            padding:14px;
-            background:#fafafa">
-
-            <b>Client:</b> {row['Client_Name']}<br>
-            <b>Status:</b> {row['Status']}<br>
-            <b>Start Date:</b> {fmt_date(start_dt)}<br>
-            <b>End Date:</b> {fmt_date(end_dt)}<br>
-            <b>Proposal Amount:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-            <b>Rate:</b> {int(round(row['Rate'], 0))} %<br>
-            <b>Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
-            <b>Profit:</b> ₹ {row['Profit']:,.2f}
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.dataframe(
-            pd.DataFrame([row])[
-                [
-                    "Client_Name",
-                    "Proposal_ID",
-                    "Start_Date",
-                    "End_Date",
-                    "Proposal_Cost",
-                    "Rate",
-                    "Final_Cost",
-                    "Profit",
-                    "Status"
-                ]
-            ],
-            use_container_width=True
-        )    
-
     # =================================================
     # STEP 6: EDIT MODE
     # =================================================
@@ -728,55 +564,6 @@ if st.session_state.page == "Edit":
 
         start_date_val = to_date(row["Start_Date"])
         end_date_val   = to_date(row["End_Date"])
-
-        if is_mobile:
-            proposal_cost = st.number_input(
-                "Proposal Amount (₹)",
-                value=float(row["Proposal_Cost"]),
-                step=1000.0
-            )
-
-            rate = st.number_input(
-                "Rate (%)",
-                value=float(row["Rate"]),
-                step=0.5
-            )
-
-            new_start = st.date_input("Start Date",value=start_date_val)
-            new_end = st.date_input("End Date",value=end_date_val)
-
-            new_status = st.selectbox("Status",["Open", "Closed"],index=0 if row["Status"] == "Open" else 1)
-
-        else:
-            c1, c2, c3, c4, c5 = st.columns(5)
-
-            proposal_cost = c1.number_input(
-                "Proposal Amount (₹)",
-                value=float(row["Proposal_Cost"]),
-                step=1000.0
-            )
-
-            rate = c2.number_input(
-                "Rate (%)",
-                value=float(row["Rate"]),
-                step=0.5
-            )
-
-            new_start = c3.date_input(
-                "Start Date",
-                value=start_date_val
-            )
-
-            new_end = c4.date_input(
-                "End Date",
-                value=end_date_val
-            )
-
-            new_status = c5.selectbox(
-                "Status",
-                ["Open", "Closed"],
-                index=0 if row["Status"] == "Open" else 1
-            )
 
         # =================================================
         # STEP 7: AUTO CALCULATION
@@ -791,28 +578,7 @@ if st.session_state.page == "Edit":
         st.markdown("---")
         st.subheader("💰 Auto Calculated")
 
-        if is_mobile:
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ddd;
-                border-radius:12px;
-                padding:14px;
-                background:#fafafa">
-
-                <b>Duration:</b> {days} days ({months:.2f} months)<br>
-                <b>Profit:</b> ₹ {profit:,.2f}<br>
-                <b>Final Amount:</b> ₹ {final_cost:,.2f}
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            d1, d2, d3 = st.columns(3)
-            d1.metric("Duration (Months)", f"{months:.2f}")
-            d2.metric("Profit (₹)", f"{profit:,.2f}")
-            d3.metric("Final Amount (₹)", f"{final_cost:,.2f}")
-
+        
         # =================================================
         # STEP 8: SAVE
         # =================================================
@@ -938,45 +704,6 @@ if st.session_state.page == "Find":
         st.markdown("---")
 
         # -------------------------------------------------
-        # STEP 5: DISPLAY
-        # -------------------------------------------------
-        if is_mobile:
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ddd;
-                border-radius:12px;
-                padding:12px;
-                background:#fafafa">
-
-                <b>Client:</b> {record['Client_Name']}<br>
-                <b>Status:</b> {record['Status']}<br>
-                <b>Start:</b> {fmt_date(record['Start_Date'])}<br>
-                <b>End:</b> {fmt_date(record['End_Date'])}<br>
-                <b>Amount:</b> ₹ {record['Proposal_Cost']:,.2f}<br>
-                <b>Rate:</b> {int(round(record['Rate'],0))} %<br>
-                <b>Final:</b> ₹ {record['Final_Cost']:,.2f}<br>
-                <b>Profit:</b> ₹ {record['Profit']:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            st.dataframe(
-                final_df[[
-                    "Client_Name",
-                    "Proposal_ID",
-                    "Start_Date",
-                    "End_Date",
-                    "Proposal_Cost",
-                    "Rate",
-                    "Final_Cost",
-                    "Profit",
-                    "Status"
-                ]],
-                use_container_width=True
-            )
-
-        # -------------------------------------------------
         # STEP 6: EDIT
         # -------------------------------------------------
         st.markdown("---")
@@ -1050,30 +777,6 @@ if st.session_state.page == "Find":
 
         st.markdown("### 📋 Proposal Details")
 
-        if is_mobile:
-            for _, r in result.iterrows():
-                st.markdown(
-                    f"""
-                    <div style="border:1px solid #ddd;border-radius:12px;
-                    padding:12px;margin-bottom:10px;background:#f9f9f9">
-
-                    <b>Proposal Amount:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                    <b>Rate:</b> {int(round(r['Rate'], 0))} %<br>
-                    <b>Final Amount:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-        else:
-            table = result[[
-                "Proposal_Cost","Rate","Final_Cost","Profit"
-            ]].copy()
-
-            table["Rate"] = table["Rate"].round(0).astype(int)
-            table = table.round(2)
-
     # =================================================
     # ========= BY START / END DATE MODE ===============
     # =================================================
@@ -1122,38 +825,6 @@ if st.session_state.page == "Find":
         summary[date_col] = summary[date_col].apply(fmt_date)
 
         st.markdown("### 📊 Client-wise Summary")
-
-        if is_mobile:
-            for _, r in summary.iterrows():
-                st.markdown(
-                    f"""
-                    <div style="border:1px solid #ddd;border-radius:12px;
-                    padding:12px;margin-bottom:10px;background:#fafafa">
-
-                    <b>Date:</b> {r[date_col]}<br>
-                    <b>Client:</b> {r['Client_Name']}<br>
-                    <b>Investment:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                    <b>Final:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                    <b>Profit:</b> ₹ {r['Profit']:,.2f}
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            st.markdown("### 🔢 Grand Total")
-            st.metric("Investment", f"₹ {summary['Proposal_Cost'].sum():,.2f}")
-            st.metric("Final Amount", f"₹ {summary['Final_Cost'].sum():,.2f}")
-            st.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
-
-        else:
-            st.dataframe(summary, use_container_width=True)
-
-            st.markdown("### 🔢 Grand Total")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Investment", f"₹ {summary['Proposal_Cost'].sum():,.2f}")
-            c2.metric("Final Amount", f"₹ {summary['Final_Cost'].sum():,.2f}")
-            c3.metric("Profit", f"₹ {summary['Profit'].sum():,.2f}")
 
 # =====================================================
 # ================= CLIENTS ===========================
@@ -1341,20 +1012,6 @@ if st.session_state.page == "ClientDashboard":
     open_props = len(client_data[client_data["Status"] == "Open"])
     closed_props = len(client_data[client_data["Status"] == "Closed"])
 
-    if is_mobile:
-        card("Investment", f"₹ {total_invest:,.2f}")
-        card("Final Amount", f"₹ {total_final:,.2f}")
-        card("Profit", f"₹ {total_profit:,.2f}")
-        card("Open", open_props)
-        card("Closed", closed_props)
-    else:
-        c1, c2, c3, c4, c5 = st.columns(5)
-        c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
-        c2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
-        c3.metric("Total Profit", f"₹ {total_profit:,.2f}")
-        c4.metric("Open Proposals", open_props)
-        c5.metric("Closed Proposals", closed_props)
-
     st.markdown("---")
 
     # =================================================
@@ -1366,44 +1023,7 @@ if st.session_state.page == "ClientDashboard":
     client_data["End_Date"] = client_data["End_Date"].apply(fmt_date)
 
     client_data["Rate"] = client_data["Rate"].round(0).astype(int)
-
-    # ---------------- MOBILE VIEW -------------------
-    if is_mobile:
-        for _, r in client_data.iterrows():
-            st.markdown(
-                f"""
-                <div style="
-                border:1px solid #ddd;
-                border-radius:12px;
-                padding:14px;
-                margin-bottom:12px;
-                background:#fafafa">
-
-                <b>Client:</b> {r['Client_Name']}<br>
-                <b>Start Date:</b> {r['Start_Date']}<br>
-                <b>End Date:</b> {r['End_Date']}<br>
-                <b>Proposal Cost:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                <b>Final Cost:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                <b>Profit:</b> ₹ {r['Profit']:,.2f}<br>
-                <b>Status:</b> {r['Status']}
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-    # ---------------- DESKTOP VIEW ------------------
-    else:
-        display_df = client_data[[
-            "Proposal_ID",
-            "Start_Date",
-            "End_Date",
-            "Proposal_Cost",
-            "Final_Cost",
-            "Profit",
-            "Status"
-        ]]
-
+    
         st.dataframe(display_df, use_container_width=True)
 
 # =====================================================
@@ -1455,6 +1075,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
