@@ -181,49 +181,41 @@ if st.session_state.page == "Welcome":
     # ================= MOBILE VIEW =================
     if is_mobile:
 
-        st.markdown(
-            """
-            <div style="
-            max-width:420px;
-            margin:auto;
-            text-align:center;
-            padding:10px;
-            background:#ffffff;
-            border-radius:18px;
-            box-shadow:0 6px 16px rgba(0,0,0,0.10);
-            ">
-            """,
-            unsafe_allow_html=True
-        )
-
+        # Logo (full-width, natural)
         if os.path.exists(logo_path):
-            st.image(logo_path, width=220)
+            st.image(logo_path, use_container_width=True)
         else:
-            st.markdown("<h2>Sigma Consultants</h2>", unsafe_allow_html=True)
+            st.title("Sigma Consultants")
 
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Welcome text
         st.markdown(
             """
-            <h3 style="margin-top:14px;">Welcome 👋</h3>
-            <p style="font-size:15px;color:#555;margin-bottom:18px;">
-            Manage clients, proposals, profits,<br>
-            and follow-ups in one secure platform.
-            </p>
-            """,
-            unsafe_allow_html=True
+            ### 👋 Welcome
+
+            Manage **clients**, **proposals**, **profits**,  
+            and **follow-ups** — all in one secure platform.
+            """
         )
 
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Primary action
         if st.button("🚀 Go to Dashboard", use_container_width=True):
             st.session_state.page = "Summary"
             st.rerun()
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Subtle hint (mobile-friendly)
+        st.caption("Use the ☰ menu to navigate")
 
     # ================= DESKTOP VIEW =================
     else:
         col1, col2, col3 = st.columns([1, 2, 1])
 
         with col2:
-
             if os.path.exists(logo_path):
                 st.image(logo_path, use_container_width=True)
             else:
@@ -260,7 +252,6 @@ if st.session_state.page == "Welcome":
             if st.button("🚀 Go to Dashboard", use_container_width=True):
                 st.session_state.page = "Summary"
                 st.rerun()
-
 
 # =====================================================
 # ================= SUMMARY ===========================
@@ -1394,6 +1385,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
