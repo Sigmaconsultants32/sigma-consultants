@@ -187,7 +187,7 @@ if st.session_state.page == "Welcome":
             max-width:420px;
             margin:auto;
             text-align:center;
-            padding:22px;
+            padding:10px;
             background:#ffffff;
             border-radius:18px;
             box-shadow:0 6px 16px rgba(0,0,0,0.10);
@@ -1394,6 +1394,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
