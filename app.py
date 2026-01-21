@@ -7,48 +7,95 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
-# ---------------- DEVICE DETECTION ----------------
-def detect_mobile():
-    try:
-        ctx = st.runtime.scriptrunner.get_script_run_ctx()
-        if ctx and ctx.request:
-            ua = ctx.request.headers.get("User-Agent", "").lower()
-            return any(x in ua for x in ["iphone", "android", "mobile", "ipad"])
-    except:
-        pass
-    return False
-
 # ---------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------
 def to_dt(d):
-    """Always return pandas Timestamp or None"""
     if d is None or pd.isna(d):
         return None
     return pd.to_datetime(d, errors="coerce")
 
 def to_date(d):
-    """Always return python date or today"""
     dt = to_dt(d)
     return dt.date() if dt else datetime.today().date()
 
 def fmt_date(d):
-    """Always return display-safe string"""
     dt = to_dt(d)
     return dt.strftime("%d-%b-%Y") if dt else "-"
 
-# ---------------- MOBILE TOGGLE ----------------
-
+# ---------------- UI HELPERS ----------------
 def card(title, value):
     st.markdown(
         f"""
-        <div style="padding:5px;border-radius:6px;
-        background:#ffffff;margin-bottom:10px;
-        box-shadow:0 3px 8px rgba(0,0,0,0.08)">
-        <div style="font-size:13px;color:#555">{title}</div>
-        <div style="font-size:22px;font-weight:600">{value}</div>
+        <div class="mobile-card">
+            <div class="card-title">{title}</div>
+            <div class="card-value">{value}</div>
         </div>
         """,
         unsafe_allow_html=True
     )
+
+# ---------------- GLOBAL RESPONSIVE CSS ----------------
+st.markdown("""
+<style>
+
+/* ---------- GLOBAL ---------- */
+.block-container {
+    padding-top: 1.5rem;
+}
+
+/* ---------- BUTTON ---------- */
+div.stButton > button {
+    background-color:#ff0000;
+    color:white;
+    border-radius:10px;
+    height:48px;
+    font-size:16px;
+    font-weight:600;
+}
+
+/* ---------- MOBILE CARD ---------- */
+.mobile-card {
+    padding:10px;
+    border-radius:8px;
+    background:#ffffff;
+    margin-bottom:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.08);
+}
+.card-title {
+    font-size:13px;
+    color:#555;
+}
+.card-value {
+    font-size:20px;
+    font-weight:600;
+}
+
+/* ---------- RESPONSIVE CONTROL ---------- */
+@media (max-width: 768px) {
+
+    .desktop-only {
+        display:none !important;
+    }
+
+    .block-container {
+        padding-left:1rem;
+        padding-right:1rem;
+    }
+}
+
+@media (min-width: 769px) {
+
+    .mobile-only {
+        display:none !important;
+    }
+}
+
+/* ---------- LOGIN PAGE ---------- */
+section[data-testid="stSidebar"] {
+    display:none;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ---------------- LOGIN ----------------
 PASSWORD = "sigma123"
@@ -58,24 +105,6 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
-    # Hide sidebar & clean layout
-    st.markdown("""
-    <style>
-    section[data-testid="stSidebar"] { display: none; }
-    .block-container { padding-top: 2rem; }
-
-    div.stButton > button {
-        background-color:#ff0000;
-        color:white;
-        border-radius:10px;
-        height:48px;
-        font-size:18px;
-        font-weight:600;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Centered, minimal admin login
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
@@ -84,17 +113,11 @@ if not st.session_state.auth:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        pwd = st.text_input(
-            "Password",
-            type="password"
-        )
+        pwd = st.text_input("Password", type="password")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        login_clicked = st.button(
-            "Log in",
-            use_container_width=True
-        )
+        login_clicked = st.button("Log in", use_container_width=True)
 
     if login_clicked:
         if pwd == PASSWORD:
@@ -106,8 +129,9 @@ if not st.session_state.auth:
 
     st.stop()
 
-# ---------------- DEVICE FLAG ----------------
-is_mobile = detect_mobile()
+# ---------------- PAGE STATE ----------------
+if "page" not in st.session_state:
+    st.session_state.page = "Welcome"
 
 # ---------------- STYLES ----------------
 st.markdown("""
@@ -224,15 +248,13 @@ if st.session_state.page == "Welcome":
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ================= MOBILE VIEW =================
-    if is_mobile:
+    st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
+    card("Investment", f"₹ {total:,.2f}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-        # Logo (clean, top-aligned)
-        if os.path.exists(logo_path):
-            st.image(logo_path, use_container_width=True)
-        else:
-            st.header("Sigma Consultants")
-
-        st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
+    st.metric("Investment", f"₹ {total:,.2f}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
         # Admin-style heading
         st.markdown("### Dashboard Overview")
@@ -1418,6 +1440,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
