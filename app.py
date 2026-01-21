@@ -51,11 +51,11 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
-    # ---- Hide sidebar & reduce padding ----
+    # ---- Hide sidebar & clean padding ----
     st.markdown("""
     <style>
-    section[data-testid="stSidebar"] {display: none;}
-    .block-container {padding-top: 1rem;}
+    section[data-testid="stSidebar"] { display: none; }
+    .block-container { padding-top: 1rem; }
     div.stButton > button {
         background-color:#ff0000;
         color:white;
@@ -72,30 +72,37 @@ if not st.session_state.auth:
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # ---- Centered Login Card ----
+    # ---- Center layout ----
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
+        # ✅ SINGLE CARD STARTS HERE
         st.markdown(
             """
             <div style="
-            padding:28px 22px;
+            padding:30px 24px;
             background:#ffffff;
             border-radius:22px;
-            box-shadow:0 10px 30px rgba(0,0,0,0.25);
+            box-shadow:0 8px 24px rgba(0,0,0,0.18);
             text-align:center;
             ">
             """,
             unsafe_allow_html=True
         )
 
+        # ---- Logo ----
         if os.path.exists(logo_path):
             st.image(logo_path, width=200)
         else:
-            st.header("Sigma Consultants")
+            st.header("Sigma")
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        # ---- App Name ----
+        st.markdown(
+            "<h3 style='margin-top:10px;margin-bottom:22px;'>Sigma Consultants</h3>",
+            unsafe_allow_html=True
+        )
 
+        # ---- Password ----
         pwd = st.text_input(
             "Password",
             type="password"
@@ -103,10 +110,16 @@ if not st.session_state.auth:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        login_clicked = st.button("Log in", use_container_width=True)
+        # ---- Login Button ----
+        login_clicked = st.button(
+            "Log in",
+            use_container_width=True
+        )
 
+        # ✅ CARD ENDS HERE
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # ---- Authentication ----
     if login_clicked:
         if pwd == PASSWORD:
             st.session_state.auth = True
@@ -1426,6 +1439,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
