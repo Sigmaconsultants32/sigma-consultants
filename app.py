@@ -269,10 +269,10 @@ if st.session_state.page == "Welcome":
     st.markdown('</div>', unsafe_allow_html=True)
 
         # Admin-style heading
-        st.markdown("### Dashboard Overview")
-        st.caption("Administrative control panel")
+     st.markdown("### Dashboard Overview")
+     st.caption("Administrative control panel")
 
-        st.markdown(
+     st.markdown(
             """
             This system allows you to manage client investments,  
             proposals, returns, and status tracking in one place.
@@ -1452,6 +1452,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
