@@ -243,21 +243,24 @@ with st.sidebar:
 # =====================================================
 if st.session_state.page == "Welcome":
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     st.markdown("### Dashboard Overview")
     st.caption("Administrative control panel")
 
     st.markdown(
         """
-        Manage client investments, proposals,
-        returns, and tracking from one place.
+        This system allows you to manage client investments,
+        proposals, returns, and status tracking in one place.
         """
     )
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     if st.button("➡️ Enter Dashboard", use_container_width=True):
         st.session_state.page = "Summary"
         st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.caption("Use the sidebar menu to access modules")
 
     # ================= MOBILE VIEW =================
     st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
@@ -325,27 +328,27 @@ if st.session_state.page == "Welcome":
 # =====================================================
 if st.session_state.page == "Summary":
 
-    st.header("📊 Summary")
-
-    # ---------- SAFETY CHECK ----------
+    # ---- SAFETY CHECK ----
     if proposals_df.empty:
         st.info("No proposals available")
         st.stop()
 
-    # ---------- BASIC SUMMARY ----------
-    total_inv = proposals_df["Proposal_Cost"].sum()
+    # ---- CALCULATIONS ----
+    total_investment = proposals_df["Proposal_Cost"].sum()
     total_profit = proposals_df["Profit"].sum()
-    open_cnt = len(proposals_df[proposals_df["Status"] == "Open"])
 
-    if is_mobile:
-        card("Investment", f"₹ {total_inv:,.2f}")
-        card("Profit", f"₹ {total_profit:,.2f}")
-        card("Open", open_cnt)
-    else:
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Total Investment", f"₹ {total_inv:,.2f}")
-        c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
-        c3.metric("Open Proposals", open_cnt)
+    # ---- MOBILE VIEW ----
+    st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
+    card("Investment", f"₹ {total_investment:,.2f}")
+    card("Profit", f"₹ {total_profit:,.2f}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ---- DESKTOP VIEW ----
+    st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    c1.metric("Investment", f"₹ {total_investment:,.2f}")
+    c2.metric("Profit", f"₹ {total_profit:,.2f}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # =====================================================
     # ============ DATE BASED SUMMARY =====================
@@ -1452,6 +1455,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
