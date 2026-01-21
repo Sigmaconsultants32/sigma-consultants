@@ -51,23 +51,11 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
-    # ---- Hide sidebar + clean top spacing ----
+    # Hide sidebar
     st.markdown("""
     <style>
     section[data-testid="stSidebar"] { display: none; }
-    .block-container { padding-top: 1rem; }
-
-    /* Login container styling */
-    div[data-testid="stVerticalBlock"]:has(> div.login-box) {
-        background: white;
-        padding: 28px 22px;
-        border-radius: 22px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-        max-width: 420px;
-        margin: auto;
-    }
-
-    /* Red login button */
+    .block-container { padding-top: 2rem; }
     div.stButton > button {
         background-color:#ff0000;
         color:white;
@@ -82,32 +70,35 @@ if not st.session_state.auth:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(BASE_DIR, "sigma_logo.png")
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # ---- CENTERED LAYOUT (STREAMLIT-NATIVE) ----
+    col1, col2, col3 = st.columns([1, 2, 1])
 
-    # ---- REAL Streamlit container ----
-    with st.container():
-        st.markdown('<div class="login-box"></div>', unsafe_allow_html=True)
-
+    with col2:
         # Logo
         if os.path.exists(logo_path):
             st.image(logo_path, width=180)
         else:
             st.header("Sigma")
 
-        # Name
-        st.markdown("### Sigma Consultants")
+        # App name
+        st.markdown("## Sigma Consultants")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Password
-        pwd = st.text_input("Password", type="password")
+        pwd = st.text_input(
+            "Password",
+            type="password"
+        )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Login
-        login_clicked = st.button("Log in", use_container_width=True)
+        # Login button
+        login_clicked = st.button(
+            "Log in",
+            use_container_width=True
+        )
 
-    # ---- Auth ----
     if login_clicked:
         if pwd == PASSWORD:
             st.session_state.auth = True
@@ -1427,6 +1418,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
