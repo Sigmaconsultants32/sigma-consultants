@@ -1012,8 +1012,8 @@ if st.session_state.page == "ClientDashboard":
 st.markdown("---")
 
     # ---------- MOBILE VIEW (CARDS) ----------
-    st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
-    for _, r in client_data.iterrows():
+st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
+for _, r in client_data.iterrows():
         st.markdown(
             f"""
             <div style="border:1px solid #ddd;border-radius:12px;
@@ -1029,10 +1029,10 @@ st.markdown("---")
             """,
             unsafe_allow_html=True
         )
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
     # ---------- DESKTOP VIEW (TABLE) ----------
-    st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
+st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
     st.dataframe(
         client_data[
             [
@@ -1098,6 +1098,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
