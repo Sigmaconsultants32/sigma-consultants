@@ -181,75 +181,63 @@ if st.session_state.page == "Welcome":
     # ================= MOBILE VIEW =================
     if is_mobile:
 
-        # Logo (full-width, natural)
+        # Logo (clean, top-aligned)
         if os.path.exists(logo_path):
             st.image(logo_path, use_container_width=True)
         else:
-            st.title("Sigma Consultants")
+            st.header("Sigma Consultants")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Welcome text
+        # Admin-style heading
+        st.markdown("### Dashboard Overview")
+        st.caption("Administrative control panel")
+
         st.markdown(
             """
-            ### 👋 Welcome
-
-            Manage **clients**, **proposals**, **profits**,  
-            and **follow-ups** — all in one secure platform.
+            This system allows you to manage client investments,  
+            proposals, returns, and status tracking in one place.
             """
         )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Primary action
-        if st.button("🚀 Go to Dashboard", use_container_width=True):
+        # Primary admin action
+        if st.button("➡️ Enter Dashboard", use_container_width=True):
             st.session_state.page = "Summary"
             st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Subtle hint (mobile-friendly)
-        st.caption("Use the ☰ menu to navigate")
+        # Subtle admin hint
+        st.caption("Use the sidebar menu to access modules")
 
     # ================= DESKTOP VIEW =================
     else:
         col1, col2, col3 = st.columns([1, 2, 1])
 
         with col2:
+
             if os.path.exists(logo_path):
                 st.image(logo_path, use_container_width=True)
             else:
-                st.markdown(
-                    "<h2 style='text-align:center;'>Sigma Consultants</h2>",
-                    unsafe_allow_html=True
-                )
+                st.header("Sigma Consultants")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("### Dashboard Overview")
+            st.caption("Administrative control panel")
 
             st.markdown(
                 """
-                <div style="
-                text-align:center;
-                padding:24px;
-                background:#ffffff;
-                border-radius:16px;
-                box-shadow:0 4px 12px rgba(0,0,0,0.08)">
-                
-                <h3>Welcome</h3>
-                <p style="font-size:16px;color:#555">
-                Manage clients, proposals, profits, and follow-ups  
-                in one secure platform.
-                </p>
-
-                <p style="font-size:14px;color:#777">
-                Please choose an option from the menu to get started.
-                </p>
-                </div>
-                """,
-                unsafe_allow_html=True
+                Manage client records, investment proposals,  
+                profit calculations, and reporting from a single dashboard.
+                """
             )
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            if st.button("🚀 Go to Dashboard", use_container_width=True):
+            if st.button("➡️ Enter Dashboard", use_container_width=True):
                 st.session_state.page = "Summary"
                 st.rerun()
 
@@ -1385,6 +1373,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
