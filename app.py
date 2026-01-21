@@ -25,7 +25,14 @@ def fmt_date(d):
     return dt.strftime("%d-%b-%Y") if dt else "-"
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Sigma Consultants", layout="wide")
+# ---------------- DEVICE DETECTION ----------------
+def is_mobile_device():
+    try:
+        ua = st.runtime.scriptrunner.get_script_run_ctx().request.headers.get("User-Agent", "")
+        ua = ua.lower()
+        return any(x in ua for x in ["iphone", "android", "mobile", "ipad"])
+    except:
+        return False
 
 # ---------------- MOBILE TOGGLE ----------------
 is_mobile = st.toggle("📱 Mobile View", value=True)
@@ -51,11 +58,12 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
-    # Hide sidebar
+    # Hide sidebar & clean layout
     st.markdown("""
     <style>
     section[data-testid="stSidebar"] { display: none; }
     .block-container { padding-top: 2rem; }
+
     div.stButton > button {
         background-color:#ff0000;
         color:white;
@@ -67,25 +75,15 @@ if not st.session_state.auth:
     </style>
     """, unsafe_allow_html=True)
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(BASE_DIR, "sigma_logo.png")
-
-    # ---- CENTERED LAYOUT (STREAMLIT-NATIVE) ----
+    # Centered, minimal admin login
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        # Logo
-        if os.path.exists(logo_path):
-            st.image(logo_path, width=180)
-        else:
-            st.header("Sigma")
-
-        # App name
         st.markdown("## Sigma Consultants")
+        st.caption("Administrative Login")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Password
         pwd = st.text_input(
             "Password",
             type="password"
@@ -93,7 +91,6 @@ if not st.session_state.auth:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Login button
         login_clicked = st.button(
             "Log in",
             use_container_width=True
@@ -1418,6 +1415,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
