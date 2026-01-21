@@ -7,10 +7,22 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
-def rowfmt_date(d):
+# ---------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------
+def to_dt(d):
+    """Always return pandas Timestamp or None"""
     if d is None or pd.isna(d):
         return None
-    return pd.to_datetime(d)
+    return pd.to_datetime(d, errors="coerce")
+
+def to_date(d):
+    """Always return python date or today"""
+    dt = to_dt(d)
+    return dt.date() if dt else datetime.today().date()
+
+def fmt_date(d):
+    """Always return display-safe string"""
+    dt = to_dt(d)
+    return dt.strftime("%d-%b-%Y") if dt else "-"
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
@@ -557,8 +569,8 @@ if st.session_state.page == "Edit":
     # =================================================
     # STEP 5: DISPLAY CURRENT DETAILS
     # =================================================
-    start_dt = rowfmt_date(row["Start_Date"])
-    end_dt   = rowfmt_date(row["End_Date"])
+    start_dt = to_dt(row["Start_Date"])
+    end_dt   = to_dt(row["End_Date"])
 
     if is_mobile:
         st.markdown(
@@ -570,8 +582,8 @@ if st.session_state.page == "Edit":
 
             <b>Client:</b> {row['Client_Name']}<br>
             <b>Status:</b> {row['Status']}<br>
-            <b>Start Date:</b> {start_dt.strftime("%d/%m/%Y") if start_dt else "-"}<br>
-            <b>End Date:</b> {end_dt.strftime("%d/%m/%Y") if end_dt else "-"}<br>
+            <b>Start Date:</b> {fmt_date(start_dt)}<br>
+            <b>End Date:</b> {fmt_date(end_dt)}<br>
             <b>Proposal Amount:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
             <b>Rate:</b> {int(round(row['Rate'], 0))} %<br>
             <b>Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
@@ -609,8 +621,8 @@ if st.session_state.page == "Edit":
 
         st.warning("Editing will recalculate Final Amount & Profit")
 
-        start_date_val = rowfmt_date(row["Start_Date"]).date()
-        end_date_val   = rowfmt_date(row["End_Date"]).date()
+        start_date_val = to_date(row["Start_Date"])
+        end_date_val   = to_date(row["End_Date"])
 
         if is_mobile:
             proposal_cost = st.number_input(
@@ -625,21 +637,10 @@ if st.session_state.page == "Edit":
                 step=0.5
             )
 
-            new_start = st.date_input(
-                "Start Date",
-                value=start_date_val
-            )
+            new_start = st.date_input("Start Date",value=start_date_val)
+            new_end = st.date_input("End Date",value=end_date_val)
 
-            new_end = st.date_input(
-                "End Date",
-                value=end_date_val
-            )
-
-            new_status = st.selectbox(
-                "Status",
-                ["Open", "Closed"],
-                index=0 if row["Status"] == "Open" else 1
-            )
+            new_status = st.selectbox("Status",["Open", "Closed"],index=0 if row["Status"] == "Open" else 1)
 
         else:
             c1, c2, c3, c4, c5 = st.columns(5)
@@ -675,7 +676,8 @@ if st.session_state.page == "Edit":
         # =================================================
         # STEP 7: AUTO CALCULATION
         # =================================================
-        days = (pd.to_datetime(new_end) - pd.to_datetime(new_start)).days
+        days = (new_end - new_start).days
+        months = max(days, 0) / 30
         months = days / 30 if days > 0 else 0
 
         profit = proposal_cost * (rate / 100) * months
@@ -1348,6 +1350,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
