@@ -7,10 +7,10 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
-def fmt_date(d):
-    if pd.isna(d):
-        return ""
-    return pd.to_datetime(d).strftime("%d-%b-%Y")
+def rowfmt_date(d):
+    if d is None or pd.isna(d):
+        return None
+    return pd.to_datetime(d)
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
@@ -1348,6 +1348,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
