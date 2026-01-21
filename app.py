@@ -1014,17 +1014,31 @@ if st.session_state.page == "ClientDashboard":
 
     st.markdown("---")
 
-    # =================================================
-    # ============== DISPLAY DATA =====================
-    # =================================================
-    client_data = client_data.sort_values("Start_Date")
+# =================================================
+# ============== DISPLAY DATA =====================
+# =================================================
+client_data = client_data.sort_values("Start_Date")
 
-    client_data["Start_Date"] = client_data["Start_Date"].apply(fmt_date)
-    client_data["End_Date"] = client_data["End_Date"].apply(fmt_date)
+client_data["Start_Date"] = client_data["Start_Date"].apply(fmt_date)
+client_data["End_Date"] = client_data["End_Date"].apply(fmt_date)
 
-    client_data["Rate"] = client_data["Rate"].round(0).astype(int)
-    
-        st.dataframe(display_df, use_container_width=True)
+client_data["Rate"] = client_data["Rate"].round(0).astype(int)
+
+# ---- DESKTOP TABLE VIEW ----
+st.dataframe(
+    client_data[
+        [
+            "Proposal_ID",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Final_Cost",
+            "Profit",
+            "Status"
+        ]
+    ],
+    use_container_width=True
+)
 
 # =====================================================
 # ================= EXPORT DATA =======================
@@ -1075,6 +1089,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
