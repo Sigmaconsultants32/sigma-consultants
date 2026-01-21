@@ -51,19 +51,35 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
+    # ---- Hide sidebar & reduce padding ----
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"] {display: none;}
+    .block-container {padding-top: 1rem;}
+    div.stButton > button {
+        background-color:#ff0000;
+        color:white;
+        border-radius:10px;
+        height:48px;
+        font-size:18px;
+        font-weight:600;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(BASE_DIR, "sigma_logo.png")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # ================= MOBILE VIEW =================
-    if is_mobile:
+    # ---- Centered Login Card ----
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
         st.markdown(
             """
             <div style="
-            max-width:360px;
-            margin:auto;
-            padding:26px 22px;
+            padding:28px 22px;
             background:#ffffff;
             border-radius:22px;
             box-shadow:0 10px 30px rgba(0,0,0,0.25);
@@ -76,65 +92,21 @@ if not st.session_state.auth:
         if os.path.exists(logo_path):
             st.image(logo_path, width=200)
         else:
-            st.markdown("<h2>Sigma Consultants</h2>", unsafe_allow_html=True)
+            st.header("Sigma Consultants")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         pwd = st.text_input(
-            "",
-            type="password",
-            placeholder="Enter password"
+            "Password",
+            type="password"
         )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        login_clicked = st.button(
-            "Log in",
-            use_container_width=True
-        )
+        login_clicked = st.button("Log in", use_container_width=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= DESKTOP VIEW =================
-    else:
-        col1, col2, col3 = st.columns([1, 2, 1])
-
-        with col2:
-            st.markdown(
-                """
-                <div style="
-                padding:30px;
-                background:#ffffff;
-                border-radius:18px;
-                box-shadow:0 8px 24px rgba(0,0,0,0.15);
-                text-align:center;
-                ">
-                """,
-                unsafe_allow_html=True
-            )
-
-            if os.path.exists(logo_path):
-                st.image(logo_path, width=240)
-            else:
-                st.header("Sigma Consultants")
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            pwd = st.text_input(
-                "Password",
-                type="password"
-            )
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            login_clicked = st.button(
-                "Log in",
-                use_container_width=True
-            )
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    # ================= AUTH CHECK =================
     if login_clicked:
         if pwd == PASSWORD:
             st.session_state.auth = True
@@ -144,7 +116,6 @@ if not st.session_state.auth:
             st.error("❌ Incorrect password")
 
     st.stop()
-
 
 # ---------------- STYLES ----------------
 st.markdown("""
@@ -1455,6 +1426,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
