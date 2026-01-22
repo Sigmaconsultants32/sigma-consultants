@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
----------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------
+#---------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------#
 
 def to_dt(d):
 if d is None or pd.isna(d):
@@ -22,7 +22,7 @@ def fmt_date(d):
 dt = to_dt(d)
 return dt.strftime("%d-%b-%Y") if dt else "-"
 
----------------- UI HELPERS ----------------
+#---------------- UI HELPERS ----------------#
 
 def card(title, value):
 st.markdown(
@@ -35,7 +35,7 @@ f"""
 unsafe_allow_html=True
 )
 
----------------- GLOBAL RESPONSIVE CSS ----------------
+#---------------- GLOBAL RESPONSIVE CSS ----------------#
 
 st.markdown("""
 
@@ -1490,5 +1490,6 @@ st.download_button(
     file_name="sigma_consultants_data.csv",  
     mime="text/csv"  
 )
+
 
 
