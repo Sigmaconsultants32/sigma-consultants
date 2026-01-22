@@ -1,6 +1,6 @@
 # =====================================================
-Sigma Consultants  Full CRM Production Build
-=====================================================
+# Sigma Consultants – Full CRM Production Build
+# =====================================================
 
 import streamlit as st
 import pandas as pd
@@ -1490,4 +1490,5 @@ st.download_button(
     file_name="sigma_consultants_data.csv",  
     mime="text/csv"  
 )
+
 
