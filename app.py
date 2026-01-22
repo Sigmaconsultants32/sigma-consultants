@@ -1086,7 +1086,11 @@ if st.session_state.page == "ClientDashboard":
 
     # ---------- CLIENT FILTER ----------
     client_options = ["Select"] + sorted(active_clients["Client_Name"].unique())
-    client = st.selectbox("Select Client", client_options)
+    client = st.selectbox(
+    "Select Client",
+    client_options,
+    key="client_dashboard_client"
+    )
 
     if client == "Select":
         st.info("Please select a client to continue")
@@ -1234,6 +1238,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
