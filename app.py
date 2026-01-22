@@ -1011,9 +1011,11 @@ if st.session_state.page == "ClientDashboard":
 
 st.markdown("---")
 
-    # ---------- MOBILE VIEW (CARDS) ----------
+# ---------- MOBILE VIEW (CARDS) ----------
 st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
-for _, r in client_data.iterrows():
+
+if not client_data.empty:
+    for _, r in client_data.iterrows():
         st.markdown(
             f"""
             <div style="border:1px solid #ddd;border-radius:12px;
@@ -1029,6 +1031,9 @@ for _, r in client_data.iterrows():
             """,
             unsafe_allow_html=True
         )
+else:
+    st.info("No records found")
+
 st.markdown('</div>', unsafe_allow_html=True)
 
     # ---------- DESKTOP VIEW (TABLE) ----------
@@ -1098,6 +1103,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
