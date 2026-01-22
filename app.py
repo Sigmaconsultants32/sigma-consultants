@@ -1098,9 +1098,12 @@ else:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---------- DESKTOP VIEW (TABLE) ----------
+# =====================================================
+# ================= DESKTOP VIEW (TABLE) ===============
+# =====================================================
+
 st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
-st.dataframe(
+
 required_columns = [
     "Start_Date",
     "End_Date",
@@ -1109,8 +1112,17 @@ required_columns = [
     "Profit",
     "Status"
 ]
+
+available_columns = [c for c in required_columns if c in client_data.columns]
+
+if not client_data.empty and available_columns:
+    st.dataframe(
+        client_data[available_columns],
         use_container_width=True
     )
+else:
+    st.info("No data available to display")
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================
@@ -1162,6 +1174,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
