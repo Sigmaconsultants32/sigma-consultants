@@ -952,6 +952,10 @@ if st.session_state.page == "Clients":
 # =====================================================
 # ================= CLIENT DASHBOARD ==================
 # =====================================================
+
+# ---------- SAFE GLOBAL DEFAULT ----------
+client_data = pd.DataFrame()
+
 if st.session_state.page == "ClientDashboard":
 
     st.header("📊 Client Summary Dashboard")
@@ -997,12 +1001,14 @@ if st.session_state.page == "ClientDashboard":
     total_final = client_data["Final_Cost"].sum()
     total_profit = client_data["Profit"].sum()
 
+    # ---------- MOBILE TOTAL CARDS ----------
     st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
     card("Investment", f"₹ {total_invest:,.2f}")
     card("Final Amount", f"₹ {total_final:,.2f}")
     card("Profit", f"₹ {total_profit:,.2f}")
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # ---------- DESKTOP TOTAL METRICS ----------
     st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     c1.metric("Investment", f"₹ {total_invest:,.2f}")
@@ -1012,7 +1018,60 @@ if st.session_state.page == "ClientDashboard":
 
     st.markdown("---")
 
-st.markdown("---")
+# =====================================================
+# ================= MOBILE VIEW (CARDS) ===============
+# =====================================================
+
+st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
+
+if not client_data.empty:
+    for _, r in client_data.iterrows():
+        st.markdown(
+            f"""
+            <div style="border:1px solid #ddd;border-radius:12px;
+            padding:12px;margin-bottom:10px;background:#fafafa">
+
+            <b>Start:</b> {r.get('Start_Date', '')}<br>
+            <b>End:</b> {r.get('End_Date', '')}<br>
+            <b>Investment:</b> ₹ {r.get('Proposal_Cost', 0):,.2f}<br>
+            <b>Final:</b> ₹ {r.get('Final_Cost', 0):,.2f}<br>
+            <b>Profit:</b> ₹ {r.get('Profit', 0):,.2f}<br>
+            <b>Status:</b> {r.get('Status', '')}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+else:
+    st.info("No records found")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# =====================================================
+# ================= DESKTOP VIEW (TABLE) ===============
+# =====================================================
+
+st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
+
+required_columns = [
+    "Start_Date",
+    "End_Date",
+    "Proposal_Cost",
+    "Final_Cost",
+    "Profit",
+    "Status"
+]
+
+available_columns = [c for c in required_columns if c in client_data.columns]
+
+if not client_data.empty and available_columns:
+    st.dataframe(
+        client_data[available_columns],
+        use_container_width=True
+    )
+else:
+    st.info("No data available to display")
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------- MOBILE VIEW (CARDS) ----------
 st.markdown('<div class="mobile-only">', unsafe_allow_html=True)
@@ -1042,17 +1101,14 @@ st.markdown('</div>', unsafe_allow_html=True)
     # ---------- DESKTOP VIEW (TABLE) ----------
 st.markdown('<div class="desktop-only">', unsafe_allow_html=True)
 st.dataframe(
-    client_data[
-        [
-            "Proposal_ID",
-            "Start_Date",
-            "End_Date",
-            "Proposal_Cost",
-            "Final_Cost",
-            "Profit",
-            "Status"
-           ]
-        ],
+required_columns = [
+    "Start_Date",
+    "End_Date",
+    "Proposal_Cost",
+    "Final_Cost",
+    "Profit",
+    "Status"
+]
         use_container_width=True
     )
 st.markdown('</div>', unsafe_allow_html=True)
@@ -1106,6 +1162,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
