@@ -7,20 +7,19 @@ import pandas as pd
 from datetime import datetime
 import os, io
 
-#---------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------#
-
+# ---------------- DATE HELPERS (SINGLE SOURCE OF TRUTH) ----------------
 def to_dt(d):
-if d is None or pd.isna(d):
-return None
-return pd.to_datetime(d, errors="coerce")
+    if d is None or pd.isna(d):
+        return None
+    return pd.to_datetime(d, errors="coerce")
 
 def to_date(d):
-dt = to_dt(d)
-return dt.date() if dt else datetime.today().date()
+    dt = to_dt(d)
+    return dt.date() if dt else datetime.today().date()
 
 def fmt_date(d):
-dt = to_dt(d)
-return dt.strftime("%d-%b-%Y") if dt else "-"
+    dt = to_dt(d)
+    return dt.strftime("%d-%b-%Y") if dt else "-"
 
 #---------------- UI HELPERS ----------------#
 
@@ -1490,6 +1489,7 @@ st.download_button(
     file_name="sigma_consultants_data.csv",  
     mime="text/csv"  
 )
+
 
 
 
