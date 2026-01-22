@@ -185,6 +185,9 @@ def load_proposals():
             df[c] = pd.to_datetime(df[c], errors="coerce")
     return df
 
+# ---------------- GLOBAL SAFE DEFAULTS ----------------
+client_data = pd.DataFrame()
+
 # ---------------- SESSION STATE ----------------
 if "clients_df" not in st.session_state:
     st.session_state.clients_df = load_clients()
@@ -1103,6 +1106,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
