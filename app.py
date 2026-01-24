@@ -239,7 +239,7 @@ def calc(cost, rate, days):
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
-    st.session_state.page = "Summary"
+    st.session_state.page = "Summary" and not summary_df.empty:
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
@@ -439,38 +439,40 @@ if st.session_state.page == "Summary":
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-for _, row in summary_df.iterrows():
+if "summary_df" in locals() and not summary_df.empty:
 
-    profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+    for _, row in summary_df.iterrows():
 
-    date_str = (
-        row["DateOnly"].strftime("%d-%m-%Y")
-        if pd.notna(row["DateOnly"])
-        else "—"
-    )
+        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
 
-    rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
+        date_str = (
+            row["DateOnly"].strftime("%d-%m-%Y")
+            if pd.notna(row["DateOnly"])
+            else "—"
+        )
 
-    if is_mobile:
-        st.markdown(
-            f"""
+        rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
+
+        if is_mobile:
+            st.markdown(
+                f"""
 **📅 {date_str} | {rate} %**  
 💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
 {profit_color} Profit : ₹ {row['Profit']:,.2f}
 """
-        )
-    else:
-        st.markdown(
-            f"""
+            )
+        else:
+            st.markdown(
+                f"""
 **{date_str} | Rate {rate} %**  
 Investment : ₹ {row['Proposal_Cost']:,.2f}  
 Final Amount : ₹ {row['Final_Cost']:,.2f}  
 Profit : ₹ {row['Profit']:,.2f}
 """
-        )
+            )
 
-    st.markdown("---")
+        st.markdown("---")
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1426,6 +1428,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
