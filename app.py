@@ -738,7 +738,7 @@ if st.session_state.page == "Find":
     # =================================================
     # =============== BY PROPOSAL MODE =================
     # =================================================
-    if find_mode == "By Proposal":
+if find_mode == "By Proposal":
 
     st.subheader("📄 Find Details By Proposal")
 
@@ -851,7 +851,6 @@ if st.session_state.page == "Find":
             use_container_width=True
         )
 
-        
     # =================================================
     # ============ BY CLIENT NAME MODE ================
     # =================================================
@@ -1305,6 +1304,7 @@ if st.session_state.page == "Export Data":
         file_name="sigma_consultants_data.csv",
         mime="text/csv"
     )
+
 
 
 
