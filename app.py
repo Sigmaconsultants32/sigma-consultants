@@ -444,20 +444,20 @@ for _, row in summary_df.iterrows():
     profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
     date_str = row["DateOnly"].strftime("%d-%m-%Y")
 
-if is_mobile:
-    st.markdown(
-f"""
-<div class="ui-card">
-    <b>📅 Date:</b> {date_str}<br>
-    <b>📈 Rate:</b> {row['Rate_Int']} %<br><br>
+    if is_mobile:
+        st.markdown(
+    f"""
+    <div class="ui-card">
+        <b>📅 Date:</b> {date_str}<br>
+        <b>📈 Rate:</b> {row['Rate_Int']} %<br><br>
 
-    <b>💰 Investment:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-    <b>📊 Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
-    <b>{profit_color} Profit:</b> ₹ {row['Profit']:,.2f}
-</div>
-""",
-        unsafe_allow_html=True
-    )
+        <b>💰 Investment:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
+        <b>📊 Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
+        <b>{profit_color} Profit:</b> ₹ {row['Profit']:,.2f}
+    </div>
+    """,
+            unsafe_allow_html=True
+        )
 
     else:
         st.markdown(
@@ -1362,6 +1362,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
