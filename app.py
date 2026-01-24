@@ -448,20 +448,33 @@ if st.session_state.page == "Summary":
         profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
         date_str = row["DateOnly"].strftime("%d-%m-%Y")
 
-        if is_mobile:
-            st.markdown(
+    if is_mobile:
+        st.markdown(
     f"""
     <div class="ui-card">
-        <b>📅 Date:</b> {date_str}<br>
-        <b>📈 Rate:</b> {row['Rate_Int']} %<br><br>
+        <div style="font-weight:600;">📅 Date: {date_str}</div>
+        <div style="font-weight:600;">📈 Rate: {row['Rate_Int']} %</div>
 
-        <b>💰 Investment:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-        <b>📊 Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
-        <b>{profit_color} Profit:</b> ₹ {row['Profit']:,.2f}
+        <div style="margin-top:8px;">
+            💰 <span style="font-weight:600;">Investment:</span>
+            ₹ {row['Proposal_Cost']:,.2f}
+        </div>
+
+        <div>
+            📊 <span style="font-weight:600;">Final Amount:</span>
+            ₹ {row['Final_Cost']:,.2f}
+        </div>
+
+        <div>
+            {profit_color}
+            <span style="font-weight:600;">Profit:</span>
+            ₹ {row['Profit']:,.2f}
+        </div>
     </div>
     """,
-                unsafe_allow_html=True
-            )
+            unsafe_allow_html=True
+        )    
+
     else:
         st.markdown(
 f"""
@@ -1365,6 +1378,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
