@@ -611,6 +611,8 @@ if st.session_state.page == "Edit":
 
     proposal_df = df[df["Proposal_ID"] == proposal_id]
 
+    client_list = sorted(proposal_df["Client_Name"].unique())
+
     # =================================================
     # STEP 3: READ-ONLY MASTER DATA
     # =================================================
@@ -628,7 +630,7 @@ if st.session_state.page == "Edit":
     # =================================================
     client_name = st.selectbox(
         "Select Client Included in Proposal",
-        sorted(proposal_df["Client_Name"].unique())
+        client_list
     )
 
     row = proposal_df[
@@ -663,7 +665,7 @@ if st.session_state.page == "Edit":
         )
     else:
         st.dataframe(
-            pd.DataFrame([row])[[
+            pd.DataFrame([row])[[[
                 "Client_Name",
                 "Proposal_ID",
                 "Start_Date",
@@ -673,7 +675,7 @@ if st.session_state.page == "Edit":
                 "Final_Cost",
                 "Profit",
                 "Status"
-            ]],
+            ][0]]],
             use_container_width=True
         )
 
@@ -738,6 +740,16 @@ if st.session_state.page == "Edit":
             )
 
         # =================================================
+        # APPLY TO ALL CLIENTS OPTION
+        # =================================================
+        apply_all = False
+        if len(client_list) > 1:
+            apply_all = st.checkbox(
+                "Apply changes to all clients in this proposal",
+                help="Applies Start Date, End Date, Rate and Status to all clients"
+            )
+
+        # =================================================
         # STEP 7: SAFE AUTO CALCULATION
         # =================================================
         days = (pd.to_datetime(new_end) - pd.to_datetime(new_start)).days
@@ -779,29 +791,39 @@ if st.session_state.page == "Edit":
         # =================================================
         if st.button("💾 Save Changes", use_container_width=True):
 
-            mask = (
-                (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
-                (st.session_state.proposals_df["Client_Name"] == client_name)
-            )
+            if apply_all:
+                mask = (
+                    st.session_state.proposals_df["Proposal_ID"] == proposal_id
+                )
+            else:
+                mask = (
+                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+                    (st.session_state.proposals_df["Client_Name"] == client_name)
+                )
 
             st.session_state.proposals_df.loc[mask, [
-                "Proposal_Cost",
                 "Rate",
                 "Start_Date",
                 "End_Date",
-                "Final_Cost",
-                "Profit",
                 "Status",
                 "Closing_Date"
             ]] = [
-                round(proposal_cost, 2),
                 round(rate, 2),
                 pd.to_datetime(new_start),
                 pd.to_datetime(new_end),
-                round(final_cost, 2),
-                round(profit, 2),
                 new_status,
                 pd.Timestamp.today() if new_status == "Closed" else pd.NaT
+            ]
+
+            # Proposal cost + recalculation ONLY for selected client
+            st.session_state.proposals_df.loc[
+                (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+                (st.session_state.proposals_df["Client_Name"] == client_name),
+                ["Proposal_Cost", "Final_Cost", "Profit"]
+            ] = [
+                round(proposal_cost, 2),
+                round(final_cost, 2),
+                round(profit, 2)
             ]
 
             save_proposals()
@@ -1399,6 +1421,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
