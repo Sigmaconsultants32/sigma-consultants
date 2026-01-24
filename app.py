@@ -907,9 +907,7 @@ if st.session_state.page == "Find":
             "Profit"
         ]].copy()
 
-        display_df[["Proposal_Cost", "Final_Cost", "Profit"]] = display_df[
-            ["Proposal_Cost", "Final_Cost", "Profit"]
-        ].round(2)
+        display_df = display_df.round(2)
 
         # ---------- MOBILE VIEW ----------
         if is_mobile:
@@ -917,12 +915,11 @@ if st.session_state.page == "Find":
                 st.markdown(
                     f"""
                     <div style="
-                        border:1px solid #ddd;
-                        border-radius:14px;
+                        border:1px solid #e0e0e0;
+                        border-radius:12px;
                         padding:12px;
                         margin-bottom:10px;
                         background:#fafafa">
-                    
                         <b>Client:</b> {row['Client_Name']}<br>
                         <b>Proposal Cost:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
                         <b>Final Cost:</b> ₹ {row['Final_Cost']:,.2f}<br>
@@ -935,11 +932,15 @@ if st.session_state.page == "Find":
         # ---------- DESKTOP VIEW ----------
         else:
             st.dataframe(
-                display_df,
+                display_df.style.format({
+                    "Proposal_Cost": "₹ {:,.2f}",
+                    "Final_Cost": "₹ {:,.2f}",
+                    "Profit": "₹ {:,.2f}",
+                }),
                 use_container_width=True,
                 hide_index=True
-            )
-
+            )    
+    
     # =================================================
     # ============ BY CLIENT NAME MODE =================
     # =================================================
@@ -1398,6 +1399,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
