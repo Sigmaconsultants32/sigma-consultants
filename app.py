@@ -85,12 +85,6 @@ if not st.session_state.auth:
 st.markdown("""
 <style>
 
-/* General page cleanup */
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
-}
-
 /* Header underline */
 .header {
     border-bottom: 3px solid #1f77ff;
@@ -104,7 +98,7 @@ button[kind="primary"] {
     border-radius: 8px !important;
 }
 
-/* Card style (used in mobile & summary) */
+/* Card style */
 .ui-card {
     border: 1px solid #e0e0e0;
     border-radius: 14px;
@@ -113,7 +107,13 @@ button[kind="primary"] {
     background: #fafafa;
 }
 
-/* Center login box on wide screens */
+/* SAFE content padding (does not affect layout engine) */
+section.main > div {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+/* Login box width */
 .login-box {
     max-width: 420px;
     margin: auto;
@@ -121,7 +121,6 @@ button[kind="primary"] {
 
 </style>
 """, unsafe_allow_html=True)
-
 
 # ---------------- FILES ----------------
 CLIENT_FILE = "clients.xlsx"
@@ -1390,6 +1389,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
