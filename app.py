@@ -239,7 +239,7 @@ def calc(cost, rate, days):
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
-    st.session_state.page = "Summary" and not summary_df.empty:
+    if st.session_state.page == "Summary" and not summary_df.empty:
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
@@ -439,7 +439,7 @@ if st.session_state.page == "Summary":
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-if "summary_df" in locals() and not summary_df.empty:
+if st.session_state.page == "Summary" and "summary_df" in locals() and not summary_df.empty:
 
     for _, row in summary_df.iterrows():
 
@@ -1428,6 +1428,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
