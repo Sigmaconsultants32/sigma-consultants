@@ -436,36 +436,41 @@ if st.session_state.page == "Summary":
         .sort_values(["Rate_Int", "DateOnly"])
     )
 
-    # =====================================================
-    # ============ COMPACT SUMMARY DISPLAY ================
-    # =====================================================
-    for _, row in summary_df.iterrows():
+# =====================================================
+# ============ COMPACT SUMMARY DISPLAY ================
+# =====================================================
+for _, row in summary_df.iterrows():
 
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+    profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
 
-        date_str = row["DateOnly"].strftime("%d-%m-%Y")
+    date_str = (
+        row["DateOnly"].strftime("%d-%m-%Y")
+        if pd.notna(row["DateOnly"])
+        else "—"
+    )
 
-        if is_mobile:
-            st.markdown(
-                f"""
-**📅 {date_str} | {row['Rate_Int']} %**  
+    rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
+
+    if is_mobile:
+        st.markdown(
+            f"""
+**📅 {date_str} | {rate} %**  
 💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
 {profit_color} Profit : ₹ {row['Profit']:,.2f}
 """
-            )
-        else:
-            st.markdown(
-                f"""
-**Start Date** : {date_str}  
-**Rate** : {row['Rate_Int']} %  
-**Investment** : ₹ {row['Proposal_Cost']:,.2f}  
-**Final Amount** : ₹ {row['Final_Cost']:,.2f}  
-**Profit** : ₹ {row['Profit']:,.2f}
+        )
+    else:
+        st.markdown(
+            f"""
+**{date_str} | Rate {rate} %**  
+Investment : ₹ {row['Proposal_Cost']:,.2f}  
+Final Amount : ₹ {row['Final_Cost']:,.2f}  
+Profit : ₹ {row['Profit']:,.2f}
 """
-            )
+        )
 
-        st.markdown("---")
+    st.markdown("---")
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1421,6 +1426,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
