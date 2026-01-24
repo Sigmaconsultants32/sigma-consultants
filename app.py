@@ -845,6 +845,7 @@ if st.session_state.page == "Find":
 
         df = df_master.copy()
 
+        # ---------- STATUS FILTER ----------
         status = st.selectbox("Status", ["All", "Open", "Closed"])
         if status != "All":
             df = df[df["Status"] == status]
@@ -853,6 +854,7 @@ if st.session_state.page == "Find":
             st.info("No proposals found")
             st.stop()
 
+        # ---------- PROPOSAL SELECTION ----------
         proposal_id = st.selectbox(
             "Select Proposal ID",
             sorted(df["Proposal_ID"].unique())
@@ -860,45 +862,82 @@ if st.session_state.page == "Find":
 
         proposal_df = df[df["Proposal_ID"] == proposal_id]
 
+        # ---------- AUTO DETAILS ----------
         c1, c2, c3 = st.columns(3)
-        c1.text_input("Start Date", proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
-        c2.text_input("End Date", proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
-        c3.text_input("Rate (%)", int(round(proposal_df["Rate"].iloc[0], 0)), disabled=True)
-
-        client = st.selectbox(
-            "Select Client",
-            sorted(proposal_df["Client_Name"].unique())
+        c1.text_input(
+            "Start Date",
+            proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y"),
+            disabled=True
+        )
+        c2.text_input(
+            "End Date",
+            proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y"),
+            disabled=True
+        )
+        c3.text_input(
+            "Rate (%)",
+            int(round(proposal_df["Rate"].iloc[0], 0)),
+            disabled=True
         )
 
-        record = proposal_df[proposal_df["Client_Name"] == client].iloc[0]
+        # ---------- CLIENT FILTER (WITH ALL) ----------
+        client_list = ["All"] + sorted(proposal_df["Client_Name"].unique())
+
+        client = st.selectbox("Select Client", client_list)
+
+        if client != "All":
+            result_df = proposal_df[proposal_df["Client_Name"] == client]
+        else:
+            result_df = proposal_df.copy()
+
+        if result_df.empty:
+            st.warning("No data found")
+            st.stop()
 
         st.markdown("---")
 
-        if is_mobile:
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ddd;border-radius:12px;padding:12px;background:#fafafa">
-                <b>Client:</b> {record['Client_Name']}<br>
-                <b>Status:</b> {record['Status']}<br>
-                <b>Amount:</b> ₹ {record['Proposal_Cost']:,.2f}<br>
-                <b>Final:</b> ₹ {record['Final_Cost']:,.2f}<br>
-                <b>Profit:</b> ₹ {record['Profit']:,.2f}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            show = pd.DataFrame([record])
-            show["Start_Date"] = show["Start_Date"].dt.strftime("%d-%m-%Y")
-            show["End_Date"] = show["End_Date"].dt.strftime("%d-%m-%Y")
-            show["Rate"] = show["Rate"].round(0).astype(int)
+        # =================================================
+        # =============== DISPLAY RESULT ==================
+        # =================================================
 
+        display_df = result_df[[
+            "Client_Name",
+            "Proposal_Cost",
+            "Final_Cost",
+            "Profit"
+        ]].copy()
+
+        display_df[["Proposal_Cost", "Final_Cost", "Profit"]] = display_df[
+            ["Proposal_Cost", "Final_Cost", "Profit"]
+        ].round(2)
+
+        # ---------- MOBILE VIEW ----------
+        if is_mobile:
+            for _, row in display_df.iterrows():
+                st.markdown(
+                    f"""
+                    <div style="
+                        border:1px solid #ddd;
+                        border-radius:14px;
+                        padding:12px;
+                        margin-bottom:10px;
+                        background:#fafafa">
+                    
+                        <b>Client:</b> {row['Client_Name']}<br>
+                        <b>Proposal Cost:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
+                        <b>Final Cost:</b> ₹ {row['Final_Cost']:,.2f}<br>
+                        <b>Profit:</b> ₹ {row['Profit']:,.2f}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        # ---------- DESKTOP VIEW ----------
+        else:
             st.dataframe(
-                show[[
-                    "Client_Name","Proposal_ID","Start_Date","End_Date",
-                    "Proposal_Cost","Rate","Final_Cost","Profit","Status"
-                ]],
-                use_container_width=True
+                display_df,
+                use_container_width=True,
+                hide_index=True
             )
 
     # =================================================
@@ -1359,6 +1398,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
