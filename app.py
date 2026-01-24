@@ -11,7 +11,16 @@ import os, io
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
 # ---------------- MOBILE TOGGLE ----------------
-is_mobile = st.toggle("📱 Mobile View", value=True)
+if "is_mobile" not in st.session_state:
+    st.session_state.is_mobile = True
+
+st.session_state.is_mobile = st.toggle(
+    "📱 Mobile View",
+    value=st.session_state.is_mobile
+)
+
+is_mobile = st.session_state.is_mobile
+
 
 def card(title, value):
     st.markdown(
@@ -56,8 +65,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------- FILES ----------------
-CLIENT_FILE = "clients.xlsx"
-PROPOSAL_FILE = "proposals.xlsx"
+DATA_DIR = "data"
+os.makedirs(DATA_DIR, exist_ok=True)
+
+CLIENT_FILE = os.path.join(DATA_DIR, "clients.xlsx")
+PROPOSAL_FILE = os.path.join(DATA_DIR, "proposals.xlsx")
+
 
 # ---------------- LOADERS ----------------
 def load_clients():
@@ -438,9 +451,11 @@ if st.session_state.page == "AddProposal":
         st.stop()
 
     # ----------- INPUTS -----------
+    active_clients = clients_df[clients_df["Is_Archived"] == False]
+
     client_name = st.selectbox(
         "Client Name",
-        sorted(clients_df["Client_Name"].dropna().unique())
+        sorted(active_clients["Client_Name"].dropna().unique())
     )
 
     start_date = st.date_input(
@@ -1316,6 +1331,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
