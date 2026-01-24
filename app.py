@@ -65,12 +65,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------- FILES ----------------
-DATA_DIR = "data"
-os.makedirs(DATA_DIR, exist_ok=True)
-
-CLIENT_FILE = os.path.join(DATA_DIR, "clients.xlsx")
-PROPOSAL_FILE = os.path.join(DATA_DIR, "proposals.xlsx")
-
+CLIENT_FILE = "clients.xlsx"
+PROPOSAL_FILE = "proposals.xlsx"
 
 # ---------------- LOADERS ----------------
 def load_clients():
@@ -1331,6 +1327,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
