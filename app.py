@@ -439,7 +439,7 @@ if st.session_state.page == "Summary":
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-for _, row in summary_df.iterrows():
+    for _, row in summary_df.iterrows():
 
     profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
     date_str = row["DateOnly"].strftime("%d-%m-%Y")
@@ -1361,6 +1361,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
