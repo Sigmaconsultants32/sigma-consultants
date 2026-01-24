@@ -12,7 +12,7 @@ st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
 # ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = True
+    st.session_state.is_mobile = False
 
 st.session_state.is_mobile = st.toggle(
     "📱 Mobile View",
@@ -236,10 +236,9 @@ def calc(cost, rate, days):
 
     return round(final_amount, 2), round(profit, 2)
 
-
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
-    if st.session_state.page == "Summary" and not summary_df.empty:
+    st.session_state.page = "Welcome"
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
@@ -439,8 +438,16 @@ if st.session_state.page == "Summary":
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-if st.session_state.page == "Summary" and "summary_df" in locals() and not summary_df.empty:
+st.session_state.summary_df = summary_df
 
+if (
+    st.session_state.page == "Summary"
+    and "summary_df" in st.session_state
+    and not st.session_state.summary_df.empty
+):
+
+    summary_df = st.session_state.summary_df
+    
     for _, row in summary_df.iterrows():
 
         profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
@@ -672,7 +679,7 @@ if st.session_state.page == "Edit":
         )
     else:
         st.dataframe(
-            pd.DataFrame([row])[[[
+            pd.DataFrame([row])[[
                 "Client_Name",
                 "Proposal_ID",
                 "Start_Date",
@@ -682,7 +689,7 @@ if st.session_state.page == "Edit":
                 "Final_Cost",
                 "Profit",
                 "Status"
-            ][0]]],
+            ]],
             use_container_width=True
         )
 
@@ -1428,6 +1435,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
