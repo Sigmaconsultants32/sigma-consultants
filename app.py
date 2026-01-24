@@ -438,8 +438,6 @@ if st.session_state.page == "Summary":
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-st.session_state.summary_df = summary_df
-
 if (
     st.session_state.page == "Summary"
     and "summary_df" in st.session_state
@@ -1435,6 +1433,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
