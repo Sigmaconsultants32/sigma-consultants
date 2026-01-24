@@ -436,38 +436,38 @@ if st.session_state.page == "Summary":
         .sort_values(["Rate_Int", "DateOnly"])
     )
 
-# =====================================================
-# ============ COMPACT SUMMARY DISPLAY ================
-# =====================================================
+    # =====================================================
+    # ============ COMPACT SUMMARY DISPLAY ================
+    # =====================================================
     for _, row in summary_df.iterrows():
 
-    profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
-    date_str = row["DateOnly"].strftime("%d-%m-%Y")
+        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+        date_str = row["DateOnly"].strftime("%d-%m-%Y")
 
-    if is_mobile:
+        if is_mobile:
+            st.markdown(
+                f"""
+                <div class="ui-card">
+                    <b>📅 Date:</b> {date_str}<br>
+                    <b>📈 Rate:</b> {row['Rate_Int']} %<br><br>
+
+                    <b>💰 Investment:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
+                    <b>📊 Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
+                    <b>{profit_color} Profit:</b> ₹ {row['Profit']:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
         st.markdown(
             f"""
-            <div class="ui-card">
-                <b>📅 Date:</b> {date_str}<br>
-                <b>📈 Rate:</b> {row['Rate_Int']} %<br><br>
-
-                <b>💰 Investment:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-                <b>📊 Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
-                <b>{profit_color} Profit:</b> ₹ {row['Profit']:,.2f}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            f"""
-**Start Date** : {date_str}  
-**Rate** : {row['Rate_Int']} %  
-**Investment** : ₹ {row['Proposal_Cost']:,.2f}  
-**Final Amount** : ₹ {row['Final_Cost']:,.2f}  
-**Profit** : ₹ {row['Profit']:,.2f}
-"""
-        )
+    **Start Date** : {date_str}  
+    **Rate** : {row['Rate_Int']} %  
+    **Investment** : ₹ {row['Proposal_Cost']:,.2f}  
+    **Final Amount** : ₹ {row['Final_Cost']:,.2f}  
+    **Profit** : ₹ {row['Profit']:,.2f}
+    """
+            )
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1361,6 +1361,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
