@@ -42,27 +42,86 @@ if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    st.title("🔐 Sigma Consultants Login")
 
-    pwd = st.text_input("Enter Password", type="password")
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
-    if st.button("Login", use_container_width=True):
-        if pwd == PASSWORD:
-            st.session_state.auth = True
-            st.session_state.page = "Welcome"
-            st.rerun()
-        else:
-            st.error("Incorrect password")
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+
+    with col2:
+        st.markdown(
+            """
+            <div style="
+            border:1px solid #ddd;
+            border-radius:14px;
+            padding:28px;
+            background:#ffffff;
+            box-shadow:0 6px 18px rgba(0,0,0,0.08);
+            text-align:center;
+            ">
+            <h3 style="margin-bottom:20px;">🔐 Sigma Consultants</h3>
+            """,
+            unsafe_allow_html=True
+        )
+
+        pwd = st.text_input("Password", type="password")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        login_clicked = st.button("Login", use_container_width=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if login_clicked:
+            if pwd == PASSWORD:
+                st.session_state.auth = True
+                st.session_state.page = "Welcome"
+                st.rerun()
+            else:
+                st.error("Incorrect password")
 
     st.stop()
 
 # ---------------- STYLES ----------------
 st.markdown("""
 <style>
-.header {border-bottom:3px solid #1f77ff;margin-bottom:20px;padding-bottom:6px;}
-.btn-blue button {background:#1f77ff !important;color:white;}
+
+/* General page cleanup */
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+/* Header underline */
+.header {
+    border-bottom: 3px solid #1f77ff;
+    margin-bottom: 20px;
+    padding-bottom: 6px;
+}
+
+/* Primary buttons */
+button[kind="primary"] {
+    background-color: #1f77ff !important;
+    border-radius: 8px !important;
+}
+
+/* Card style (used in mobile & summary) */
+.ui-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background: #fafafa;
+}
+
+/* Center login box on wide screens */
+.login-box {
+    max-width: 420px;
+    margin: auto;
+}
+
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------------- FILES ----------------
 CLIENT_FILE = "clients.xlsx"
@@ -235,7 +294,7 @@ if st.session_state.page == "Welcome":
         logo_path = "sigma_logo.png"
 
         if os.path.exists(logo_path):
-            st.image(logo_path, use_container_width=True)
+            st.image(logo_path, width=220)
         else:
             st.markdown(
                 "<h2 style='text-align:center;'>Sigma Consultants</h2>",
@@ -249,16 +308,12 @@ if st.session_state.page == "Welcome":
             padding:20px;
             background:#ffffff;
             border-radius:16px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.08)">
-            
-            <h3>Welcome</h3>
-            <p style="font-size:16px;color:#555">
+            box-shadow:0 4px 12px rgba(0,0,0,0.08);
+            margin-top:15px;
+            ">
+            <p style="font-size:15px;color:#555">
             Manage clients, proposals, profits, and follow-ups<br>
             in one secure platform.
-            </p>
-
-            <p style="font-size:14px;color:#777">
-            Please choose an option from the menu to get started.
             </p>
             </div>
             """,
@@ -267,8 +322,16 @@ if st.session_state.page == "Welcome":
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("🚀 Go to Dashboard", use_container_width=True):
-            st.session_state.page = "Summary"
+        b1, b2, b3 = st.columns(3)
+
+        if b1.button("➕ Add Client", use_container_width=True):
+            st.session_state.page = "Clients"
+
+        if b2.button("➕ Add Proposal", use_container_width=True):
+            st.session_state.page = "AddProposal"
+
+        if b3.button("🔍 Find Details", use_container_width=True):
+            st.session_state.page = "Find"
 
 # =====================================================
 # ================= SUMMARY ===========================
@@ -1327,6 +1390,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
