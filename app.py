@@ -458,16 +458,16 @@ if st.session_state.page == "Summary":
                 """,
                 unsafe_allow_html=True
             )
-        else:
+    else:
         st.markdown(
             f"""
-    **Start Date** : {date_str}  
-    **Rate** : {row['Rate_Int']} %  
-    **Investment** : ₹ {row['Proposal_Cost']:,.2f}  
-    **Final Amount** : ₹ {row['Final_Cost']:,.2f}  
-    **Profit** : ₹ {row['Profit']:,.2f}
-    """
-            )
+**Start Date** : {date_str}  
+**Rate** : {row['Rate_Int']} %  
+**Investment** : ₹ {row['Proposal_Cost']:,.2f}  
+**Final Amount** : ₹ {row['Final_Cost']:,.2f}  
+**Profit** : ₹ {row['Profit']:,.2f}
+"""
+        )
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1361,6 +1361,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
