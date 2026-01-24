@@ -445,22 +445,24 @@ if st.session_state.page == "Summary":
 
     for _, row in summary_df.iterrows():
 
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+        profit_icon = "🟢" if row["Profit"] >= 0 else "🔴"
         date_str = row["DateOnly"].strftime("%d-%m-%Y")
 
-     if is_mobile:
-        with st.container():
-            st.markdown('<div class="ui-card">', unsafe_allow_html=True)
+        # ---------------- MOBILE VIEW ----------------
+        if is_mobile:
+            with st.container():
+                # outer card
+                st.markdown('<div class="ui-card">', unsafe_allow_html=True)
 
-            st.write(f"📅 **Date:** {date_str}")
-            st.write(f"📈 **Rate:** {row['Rate_Int']} %")
-            st.write(f"💰 **Investment:** ₹ {row['Proposal_Cost']:,.2f}")
-            st.write(f"📊 **Final Amount:** ₹ {row['Final_Cost']:,.2f}")
-            st.write(f"{profit_color} **Profit:** ₹ {row['Profit']:,.2f}")
+                st.write(f"📅 **Date:** {date_str}")
+                st.write(f"📈 **Rate:** {row['Rate_Int']} %")
+                st.write(f"💰 **Investment:** ₹ {row['Proposal_Cost']:,.2f}")
+                st.write(f"📊 **Final Amount:** ₹ {row['Final_Cost']:,.2f}")
+                st.write(f"{profit_icon} **Profit:** ₹ {row['Profit']:,.2f}")
 
-            st.markdown('</div>', unsafe_allow_html=True)
-    
+                st.markdown('</div>', unsafe_allow_html=True)
 
+    # ---------------- DESKTOP VIEW ----------------
     else:
         st.markdown(
 f"""
@@ -471,6 +473,7 @@ f"""
 **Profit** : ₹ {row['Profit']:,.2f}
 """
         )
+
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1364,6 +1367,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
