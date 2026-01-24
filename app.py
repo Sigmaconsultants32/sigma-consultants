@@ -45,39 +45,25 @@ if not st.session_state.auth:
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        st.markdown(
-            """
-            <div style="
-            border:1px solid #ddd;
-            border-radius:14px;
-            padding:28px;
-            background:#ffffff;
-            box-shadow:0 6px 18px rgba(0,0,0,0.08);
-            text-align:center;
-            ">
-            <h3 style="margin-bottom:20px;">🔐 Sigma Consultants</h3>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown("""
+        <div class="login-box ui-card">
+            <h3 style="text-align:center;margin-bottom:10px;">🔐 Sigma Consultants</h3>
+        """, unsafe_allow_html=True)
 
         pwd = st.text_input("Password", type="password")
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        login_clicked = st.button("Login", use_container_width=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        if login_clicked:
+        if st.button("Login", use_container_width=True, type="primary"):
             if pwd == PASSWORD:
                 st.session_state.auth = True
                 st.session_state.page = "Welcome"
                 st.rerun()
             else:
                 st.error("Incorrect password")
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.stop()
 
@@ -293,43 +279,27 @@ if st.session_state.page == "Welcome":
         logo_path = "sigma_logo.png"
 
         if os.path.exists(logo_path):
-            st.image(logo_path, width=220)
+            st.image(logo_path, width=180)
         else:
-            st.markdown(
-                "<h2 style='text-align:center;'>Sigma Consultants</h2>",
-                unsafe_allow_html=True
-            )
+            st.markdown("<h3 style='text-align:center;'>Sigma Consultants</h3>", unsafe_allow_html=True)
 
-        st.markdown(
-            """
-            <div style="
-            text-align:center;
-            padding:20px;
-            background:#ffffff;
-            border-radius:16px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.08);
-            margin-top:15px;
-            ">
-            <p style="font-size:15px;color:#555">
-            Manage clients, proposals, profits, and follow-ups<br>
-            in one secure platform.
+        st.markdown("""
+        <div class="ui-card" style="text-align:center;">
+            <p style="color:#555;">
+                Manage clients, proposals, profits & follow-ups
             </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        b1, b2, b3 = st.columns(3)
-
-        if b1.button("➕ Add Client", use_container_width=True):
+        if st.button("➕ Add Client", use_container_width=True, type="primary"):
             st.session_state.page = "Clients"
 
-        if b2.button("➕ Add Proposal", use_container_width=True):
+        if st.button("📄 Add Proposal", use_container_width=True):
             st.session_state.page = "AddProposal"
 
-        if b3.button("🔍 Find Details", use_container_width=True):
+        if st.button("🔍 Find Details", use_container_width=True):
             st.session_state.page = "Find"
 
 # =====================================================
@@ -466,36 +436,38 @@ if st.session_state.page == "Summary":
         .sort_values(["Rate_Int", "DateOnly"])
     )
 
-    # =====================================================
-    # ============ COMPACT SUMMARY DISPLAY ================
-    # =====================================================
-    for _, row in summary_df.iterrows():
+# =====================================================
+# ============ COMPACT SUMMARY DISPLAY ================
+# =====================================================
+for _, row in summary_df.iterrows():
 
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+    profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+    date_str = row["DateOnly"].strftime("%d-%m-%Y")
 
-        date_str = row["DateOnly"].strftime("%d-%m-%Y")
+    if is_mobile:
+        st.markdown(
+            f"""
+            <div class="ui-card">
+                <b>📅 Date:</b> {date_str}<br>
+                <b>📈 Rate:</b> {row['Rate_Int']} %<br><br>
 
-        if is_mobile:
-            st.markdown(
-                f"""
-**📅 {date_str} | {row['Rate_Int']} %**  
-💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
-📈 Final : ₹ {row['Final_Cost']:,.2f}  
-{profit_color} Profit : ₹ {row['Profit']:,.2f}
-"""
-            )
-        else:
-            st.markdown(
-                f"""
+                <b>💰 Investment:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
+                <b>📊 Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
+                <b>{profit_color} Profit:</b> ₹ {row['Profit']:,.2f}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f"""
 **Start Date** : {date_str}  
 **Rate** : {row['Rate_Int']} %  
 **Investment** : ₹ {row['Proposal_Cost']:,.2f}  
 **Final Amount** : ₹ {row['Final_Cost']:,.2f}  
 **Profit** : ₹ {row['Profit']:,.2f}
 """
-            )
-
-        st.markdown("---")
+        )
 
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
@@ -1389,6 +1361,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
