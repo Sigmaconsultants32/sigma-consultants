@@ -967,7 +967,8 @@ def render_find_mode_selector():
     return st.radio(
         "Find Details Mode",
         ["By Proposal", "By Client Name", "By Start / End Date"],
-        horizontal=True
+        horizontal=True,
+        key="find_mode_radio"
     )
 
 # -----------------------------------------------------
@@ -1535,6 +1536,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
