@@ -861,7 +861,7 @@ if st.session_state.page == "Find":
         if c in df_master.columns:
             df_master[c] = pd.to_datetime(df_master[c], errors="coerce")
 
-            def render_grand_total(total_invest, total_final, total_profit, is_mobile):
+def render_grand_total(total_invest, total_final, total_profit, is_mobile):
     
     if is_mobile:
         st.markdown(
@@ -1485,6 +1485,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
