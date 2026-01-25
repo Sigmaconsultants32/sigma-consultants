@@ -919,7 +919,7 @@ import pandas as pd
 import streamlit as st
 
 # -----------------------------------------------------
-# SAFETY
+# SAFETY FLAGS
 # -----------------------------------------------------
 is_mobile = st.session_state.get("is_mobile", False)
 
@@ -964,7 +964,7 @@ def render_grand_total(invest, final, profit, is_mobile):
         c3.metric("Profit", f"₹ {profit:,.2f}")
 
 # -----------------------------------------------------
-# MASTER DATA
+# MASTER DATA PREP
 # -----------------------------------------------------
 def get_master_df(df):
     df = df.copy()
@@ -991,14 +991,20 @@ def by_proposal(df):
     pid = st.selectbox("Proposal ID", sorted(df["Proposal_ID"].unique()), key="fp_pid")
     df = df[df["Proposal_ID"] == pid]
 
+    df = df.copy()
+
+    start = df["Start_Date"].iloc[0]
+    end = df["End_Date"].iloc[0]
+    rate = int(df["Rate"].iloc[0]) if pd.notna(df["Rate"].iloc[0]) else 0
+
     c1, c2, c3 = st.columns(3)
-    c1.text_input("Start", df["Start_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
-    c2.text_input("End", df["End_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
-    c3.text_input("Rate %", int(df["Rate"].iloc[0]), disabled=True)
+    c1.text_input("Start", start.strftime("%d-%m-%Y") if pd.notna(start) else "—", disabled=True)
+    c2.text_input("End", end.strftime("%d-%m-%Y") if pd.notna(end) else "—", disabled=True)
+    c3.text_input("Rate %", rate, disabled=True)
 
     client = st.selectbox(
         "Client",
-        ["All"] + sorted(df["Client_Name"].unique()),
+        ["All"] + sorted(df["Client_Name"].dropna().unique()),
         key="fp_client"
     )
 
@@ -1040,18 +1046,26 @@ def by_client(df):
     if status != "All":
         df = df[df["Status"] == status]
 
+    if df.empty:
+        st.info("No data available")
+        return
+
     client = st.selectbox(
         "Client Name",
         sorted(df["Client_Name"].dropna().unique()),
         key="fc_client"
     )
 
-    df = df[df["Client_Name"] == client]
+    df = df[df["Client_Name"] == client].copy()
 
     date_type = st.radio("Date Type", ["Start Date", "End Date"], key="fc_date_type")
     col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
     df = df.dropna(subset=[col])
+    if df.empty:
+        st.info("No records for selected date")
+        return
+
     df["D"] = df[col].dt.date
 
     d = st.selectbox("Date", sorted(df["D"].unique()), key="fc_date")
@@ -1096,7 +1110,11 @@ def by_date(df):
     date_type = st.radio("Date Type", ["Start Date", "End Date"], key="fd_date_type")
     col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
-    df = df.dropna(subset=[col])
+    df = df.dropna(subset=[col]).copy()
+    if df.empty:
+        st.info("No records")
+        return
+
     df["D"] = df[col].dt.date
 
     summary = df.groupby(["D", "Client_Name"], as_index=False).agg(
@@ -1133,16 +1151,17 @@ def by_date(df):
 # -----------------------------------------------------
 # PAGE CONTROLLER
 # -----------------------------------------------------
-if st.session_state.page == "Find":
+if st.session_state.get("page") == "Find":
 
     st.header("🔍 Find Proposal Details")
 
-    if proposals_df.empty:
+    if proposals_df is None or proposals_df.empty:
         st.warning("No proposal data available")
         st.stop()
 
     df_master = get_master_df(proposals_df)
-    find_mode = st.session_state.find_mode
+
+    find_mode = st.session_state.get("find_mode", "By Proposal")
 
     if find_mode == "By Proposal":
         by_proposal(df_master)
@@ -1493,45 +1512,6 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
