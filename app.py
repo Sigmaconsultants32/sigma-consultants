@@ -1032,20 +1032,35 @@ if st.session_state.page == "Find":
 
     if proposals_df.empty:
         st.warning("No proposal data available")
-    else:
-        df_master = get_master_df(proposals_df)
-        if "find_mode" not in st.session_state:
-            st.session_state.find_mode = "By Proposal"
+        st.stop()
 
-        find_mode = st.radio(
+    df_master = get_master_df(proposals_df)
+
+    # 🔐 CREATE RADIO ONLY ONCE
+    if "find_mode" not in st.session_state:
+        st.session_state.find_mode = "By Proposal"
+
+    if "find_mode_widget_created" not in st.session_state:
+        st.session_state.find_mode = st.radio(
             "Find Details Mode",
             ["By Proposal", "By Client Name", "By Start / End Date"],
             horizontal=True,
             key="find_mode_selector"
         )
+        st.session_state.find_mode_widget_created = True
+    else:
+        find_mode = st.session_state.find_mode
 
-        if find_mode == "By Proposal":
-            render_by_proposal(df_master, is_mobile)
+    find_mode = st.session_state.find_mode
+
+    if find_mode == "By Proposal":
+        render_by_proposal(df_master, is_mobile)
+
+    elif find_mode == "By Client Name":
+        render_by_client(df_master, is_mobile)
+
+    else:
+        render_by_date(df_master, is_mobile)
 
 # -----------------------------------------------------
 # COMPONENT : BY CLIENT NAME
@@ -1542,6 +1557,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
