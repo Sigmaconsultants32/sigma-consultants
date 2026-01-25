@@ -1051,8 +1051,6 @@ if st.session_state.page == "Find":
     else:
         find_mode = st.session_state.find_mode
 
-    find_mode = st.session_state.find_mode
-
     if find_mode == "By Proposal":
         render_by_proposal(df_master, is_mobile)
 
@@ -1557,6 +1555,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
