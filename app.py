@@ -501,25 +501,30 @@ if st.session_state.page == "Summary":
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
+
+summary_df = st.session_state.get("summary_df")
+
 if (
     st.session_state.page == "Summary"
-    and "summary_df" in st.session_state
-    and not st.session_state.summary_df.empty
+    and summary_df is not None
+    and not summary_df.empty
 ):
 
-    summary_df = st.session_state.summary_df
-    
     for _, row in summary_df.iterrows():
 
         profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
 
         date_str = (
             row["DateOnly"].strftime("%d-%m-%Y")
-            if pd.notna(row["DateOnly"])
+            if pd.notna(row.get("DateOnly"))
             else "—"
         )
 
-        rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
+        rate = (
+            int(row["Rate_Int"])
+            if "Rate_Int" in summary_df.columns and pd.notna(row["Rate_Int"])
+            else int(round(row["Rate"], 0))
+        )
 
         if is_mobile:
             st.markdown(
@@ -1488,6 +1493,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
