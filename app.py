@@ -961,17 +961,6 @@ def render_grand_total(total_invest, total_final, total_profit, is_mobile):
         c3.metric("Profit", f"₹ {total_profit:,.2f}")
 
 # -----------------------------------------------------
-# COMPONENT : MODE SELECTOR
-# -----------------------------------------------------
-def render_find_mode_selector():
-    return st.radio(
-        "Find Details Mode",
-        ["By Proposal", "By Client Name", "By Start / End Date"],
-        horizontal=True,
-        key="find_mode_radio"
-    )
-
-# -----------------------------------------------------
 # COMPONENT : BY PROPOSAL
 # -----------------------------------------------------
 def render_by_proposal(df_master, is_mobile):
@@ -1045,7 +1034,15 @@ if st.session_state.page == "Find":
         st.warning("No proposal data available")
     else:
         df_master = get_master_df(proposals_df)
-        find_mode = render_find_mode_selector()
+        if "find_mode" not in st.session_state:
+            st.session_state.find_mode = "By Proposal"
+
+        find_mode = st.radio(
+            "Find Details Mode",
+            ["By Proposal", "By Client Name", "By Start / End Date"],
+            horizontal=True,
+            key="find_mode_selector"
+        )
 
         if find_mode == "By Proposal":
             render_by_proposal(df_master, is_mobile)
@@ -1536,6 +1533,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
