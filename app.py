@@ -10,6 +10,56 @@ import os, io
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
+# =====================================================
+# ULTRA-COMPACT MOBILE CARD COMPONENT
+# =====================================================
+def mobile_card(title, rows, footer=None, highlight=False):
+    """
+    title     : Card title string
+    rows      : List of tuples -> [("Label", "Value"), ...]
+    footer    : Optional string
+    highlight : Light blue background if True
+    """
+
+    bg = "#e3f2fd" if highlight else "#ffffff"
+    border = "#90caf9" if highlight else "#e0e0e0"
+
+    rows_html = "".join([
+        f"""
+        <div style="display:flex;justify-content:space-between;
+                    font-size:13px;margin-bottom:2px;">
+            <span style="color:#555">{k}</span>
+            <span style="font-weight:600">{v}</span>
+        </div>
+        """ for k, v in rows
+    ])
+
+    footer_html = f"""
+        <div style="margin-top:6px;font-size:12px;color:#777">
+            {footer}
+        </div>
+    """ if footer else ""
+
+    st.markdown(
+        f"""
+        <div style="
+            border:1px solid {border};
+            border-radius:10px;
+            padding:8px 10px;
+            margin-bottom:8px;
+            background:{bg};
+            line-height:1.25;
+        ">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">
+                {title}
+            </div>
+            {rows_html}
+            {footer_html}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 # ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = False
@@ -859,6 +909,27 @@ if "page" not in st.session_state:
 is_mobile = st.session_state.get("is_mobile", False)
 
 # -----------------------------------------------------
+# ULTRA-COMPACT MOBILE CARD COMPONENT
+# -----------------------------------------------------
+def mobile_card(title, rows):
+    st.markdown(
+        f"""
+        <div style="
+            border:1px solid #e0e0e0;
+            border-radius:10px;
+            padding:8px 10px;
+            margin-bottom:8px;
+            background:#ffffff;
+            font-size:13px;
+            line-height:1.3;">
+            <b>{title}</b><br>
+            {''.join([f"<b>{k}:</b> {v}<br>" for k, v in rows])}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# -----------------------------------------------------
 # UTILITY : PREPARE MASTER DATA
 # -----------------------------------------------------
 def get_master_df(proposals_df):
@@ -874,21 +945,13 @@ def get_master_df(proposals_df):
 def render_grand_total(total_invest, total_final, total_profit, is_mobile):
 
     if is_mobile:
-        st.markdown(
-            f"""
-            <div style="
-                background:#e3f2fd;
-                border-radius:14px;
-                padding:14px;
-                margin-top:15px;
-                border:1px solid #90caf9">
-                <b>💠 Grand Total</b><br><br>
-                <b>Investment:</b> ₹ {total_invest:,.2f}<br>
-                <b>Final Amount:</b> ₹ {total_final:,.2f}<br>
-                <b>Profit:</b> ₹ {total_profit:,.2f}
-            </div>
-            """,
-            unsafe_allow_html=True
+        mobile_card(
+            title="💠 Grand Total",
+            rows=[
+                ("Investment", f"₹ {total_invest:,.2f}"),
+                ("Final Amount", f"₹ {total_final:,.2f}"),
+                ("Profit", f"₹ {total_profit:,.2f}")
+            ]
         )
     else:
         st.markdown("### 💠 Grand Total")
@@ -896,19 +959,6 @@ def render_grand_total(total_invest, total_final, total_profit, is_mobile):
         c1.metric("Investment", f"₹ {total_invest:,.2f}")
         c2.metric("Final Amount", f"₹ {total_final:,.2f}")
         c3.metric("Profit", f"₹ {total_profit:,.2f}")
-
-        st.markdown(
-            """
-            <style>
-            div[data-testid="metric-container"] {
-                background-color:#e3f2fd;
-                border-radius:12px;
-                padding:10px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
 
 # -----------------------------------------------------
 # COMPONENT : MODE SELECTOR
@@ -957,6 +1007,7 @@ def render_by_proposal(df_master, is_mobile):
         st.info("No data found")
         return
 
+    # -------- GRAND TOTAL --------
     render_grand_total(
         result["Proposal_Cost"].sum(),
         result["Final_Cost"].sum(),
@@ -964,11 +1015,39 @@ def render_by_proposal(df_master, is_mobile):
         is_mobile
     )
 
-    st.dataframe(
-        result[["Client_Name","Proposal_Cost","Final_Cost","Profit"]].round(2),
-        use_container_width=True,
-        hide_index=True
-    )
+    # -------- DISPLAY RESULT --------
+    if is_mobile:
+        for _, row in result.iterrows():
+            mobile_card(
+                title=row["Client_Name"],
+                rows=[
+                    ("Investment", f"₹ {row['Proposal_Cost']:,.2f}"),
+                    ("Final", f"₹ {row['Final_Cost']:,.2f}"),
+                    ("Profit", f"₹ {row['Profit']:,.2f}")
+                ]
+            )
+    else:
+        st.dataframe(
+            result[["Client_Name", "Proposal_Cost", "Final_Cost", "Profit"]].round(2),
+            use_container_width=True,
+            hide_index=True
+        )
+
+# -----------------------------------------------------
+# PAGE CONTROLLER
+# -----------------------------------------------------
+if st.session_state.page == "Find":
+
+    st.header("🔍 Find Proposal Details")
+
+    if proposals_df.empty:
+        st.warning("No proposal data available")
+    else:
+        df_master = get_master_df(proposals_df)
+        find_mode = render_find_mode_selector()
+
+        if find_mode == "By Proposal":
+            render_by_proposal(df_master, is_mobile)
 
 # -----------------------------------------------------
 # COMPONENT : BY CLIENT NAME
@@ -1005,6 +1084,7 @@ def render_by_client(df_master, is_mobile):
         st.info("No records found")
         return
 
+    # -------- GRAND TOTAL --------
     render_grand_total(
         result["Proposal_Cost"].sum(),
         result["Final_Cost"].sum(),
@@ -1012,11 +1092,24 @@ def render_by_client(df_master, is_mobile):
         is_mobile
     )
 
-    st.dataframe(
-        result[["Proposal_Cost","Rate","Final_Cost","Profit"]].round(2),
-        use_container_width=True,
-        hide_index=True
-    )
+    # -------- DISPLAY RESULT --------
+    if is_mobile:
+        for _, row in result.iterrows():
+            mobile_card(
+                title="Proposal Details",
+                rows=[
+                    ("Investment", f"₹ {row['Proposal_Cost']:,.2f}"),
+                    ("Rate", f"{int(round(row['Rate'], 0))}%"),
+                    ("Final", f"₹ {row['Final_Cost']:,.2f}"),
+                    ("Profit", f"₹ {row['Profit']:,.2f}")
+                ]
+            )
+    else:
+        st.dataframe(
+            result[["Proposal_Cost", "Rate", "Final_Cost", "Profit"]].round(2),
+            use_container_width=True,
+            hide_index=True
+        )
 
 # -----------------------------------------------------
 # COMPONENT : BY START / END DATE
@@ -1042,11 +1135,11 @@ def render_by_date(df_master, is_mobile):
     df["DateOnly"] = df[date_col].dt.date
 
     summary = (
-        df.groupby(["DateOnly","Client_Name"], as_index=False)
+        df.groupby(["DateOnly", "Client_Name"], as_index=False)
         .agg({
-            "Proposal_Cost":"sum",
-            "Final_Cost":"sum",
-            "Profit":"sum"
+            "Proposal_Cost": "sum",
+            "Final_Cost": "sum",
+            "Profit": "sum"
         })
         .round(2)
     )
@@ -1055,8 +1148,22 @@ def render_by_date(df_master, is_mobile):
         st.info("No records found")
         return
 
-    st.dataframe(summary, use_container_width=True, hide_index=True)
+    # -------- DISPLAY SUMMARY --------
+    if is_mobile:
+        for _, row in summary.iterrows():
+            mobile_card(
+                title=row["Client_Name"],
+                rows=[
+                    ("Date", row["DateOnly"].strftime("%d-%m-%Y")),
+                    ("Investment", f"₹ {row['Proposal_Cost']:,.2f}"),
+                    ("Final", f"₹ {row['Final_Cost']:,.2f}"),
+                    ("Profit", f"₹ {row['Profit']:,.2f}")
+                ]
+            )
+    else:
+        st.dataframe(summary, use_container_width=True, hide_index=True)
 
+    # -------- GRAND TOTAL --------
     render_grand_total(
         summary["Proposal_Cost"].sum(),
         summary["Final_Cost"].sum(),
@@ -1428,6 +1535,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
