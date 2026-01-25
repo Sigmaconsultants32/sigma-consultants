@@ -224,6 +224,9 @@ def load_proposals():
     return df
 
 # ================= SESSION STATE INIT =================
+if "summary_df" not in st.session_state:
+    st.session_state.summary_df = None
+
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 
@@ -233,8 +236,6 @@ if "find_mode" not in st.session_state:
 if "selected_proposal_id" not in st.session_state:
     st.session_state.selected_proposal_id = None
 
-if "summary_df" not in st.session_state:
-    st.session_state.summary_df = None
 # =====================================================
 
 # ---- Load data once per session ----
@@ -1487,6 +1488,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
