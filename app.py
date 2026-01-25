@@ -861,44 +861,44 @@ if st.session_state.page == "Find":
         if c in df_master.columns:
             df_master[c] = pd.to_datetime(df_master[c], errors="coerce")
 
-def render_grand_total(total_invest, total_final, total_profit, is_mobile):
+    def render_grand_total(total_invest, total_final, total_profit, is_mobile):
     
-    if is_mobile:
-        st.markdown(
-            f"""
-            <div style="
-                background:#e3f2fd;
-                border-radius:14px;
-                padding:14px;
-                margin-top:15px;
-                border:1px solid #90caf9">
-                <b>💠 Grand Total</b><br><br>
-                <b>Investment:</b> ₹ {total_invest:,.2f}<br>
-                <b>Final Amount:</b> ₹ {total_final:,.2f}<br>
-                <b>Profit:</b> ₹ {total_profit:,.2f}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown("### 💠 Grand Total")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Investment", f"₹ {total_invest:,.2f}")
-        c2.metric("Final Amount", f"₹ {total_final:,.2f}")
-        c3.metric("Profit", f"₹ {total_profit:,.2f}")
+        if is_mobile:
+            st.markdown(
+                f"""
+                <div style="
+                    background:#e3f2fd;
+                    border-radius:14px;
+                    padding:14px;
+                    margin-top:15px;
+                    border:1px solid #90caf9">
+                    <b>💠 Grand Total</b><br><br>
+                    <b>Investment:</b> ₹ {total_invest:,.2f}<br>
+                    <b>Final Amount:</b> ₹ {total_final:,.2f}<br>
+                    <b>Profit:</b> ₹ {total_profit:,.2f}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown("### 💠 Grand Total")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Investment", f"₹ {total_invest:,.2f}")
+            c2.metric("Final Amount", f"₹ {total_final:,.2f}")
+            c3.metric("Profit", f"₹ {total_profit:,.2f}")
 
-        st.markdown(
-            """
-            <style>
-            div[data-testid="metric-container"] {
-                background-color: #e3f2fd;
-                border-radius: 12px;
-                padding: 10px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+            st.markdown(
+                """
+                <style>
+                div[data-testid="metric-container"] {
+                    background-color: #e3f2fd;
+                    border-radius: 12px;
+                    padding: 10px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
 
     # -------------------------------------------------
     # MODE SELECTION
@@ -1485,6 +1485,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
