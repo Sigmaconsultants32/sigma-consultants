@@ -1031,34 +1031,23 @@ def render_by_date(df_master, is_mobile):
         st.info("No records found")
         return
 
+
+    # =================================================
+    # INTERNAL DATE FILTER BLOCK
+    # =================================================
     def date_block(block_id):
 
         st.markdown(f"### 🔍 Date Filter {block_id}")
 
-        col1, col2 = st.columns(2)
-
-        start_active = st.radio(
-            "Start Date",
-            ["Select"],
-            disabled=st.session_state.get(f"end_active_{block_id}", False),
-            key=f"start_radio_{block_id}"
+        # ✅ SINGLE RADIO (correct approach)
+        date_type = st.radio(
+            "Select Date Type",
+            ["Start Date", "End Date"],
+            horizontal=True,
+            key=f"date_type_{block_id}"
         )
 
-        end_active = st.radio(
-            "End Date",
-            ["Select"],
-            disabled=st.session_state.get(f"start_active_{block_id}", False),
-            key=f"end_radio_{block_id}"
-        )
-
-        if start_active == "Select":
-            st.session_state[f"start_active_{block_id}"] = True
-            st.session_state[f"end_active_{block_id}"] = False
-            date_col = "Start_Date"
-        else:
-            st.session_state[f"end_active_{block_id}"] = True
-            st.session_state[f"start_active_{block_id}"] = False
-            date_col = "End_Date"
+        date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
         df_local = df.dropna(subset=[date_col]).copy()
         df_local["DateOnly"] = df_local[date_col].dt.date
@@ -1068,7 +1057,7 @@ def render_by_date(df_master, is_mobile):
             return
 
         selected_date = st.selectbox(
-            "Select Date",
+            f"Select {date_type}",
             sorted(df_local["DateOnly"].unique()),
             key=f"date_select_{block_id}",
             format_func=lambda x: x.strftime("%d-%m-%Y")
@@ -1080,6 +1069,9 @@ def render_by_date(df_master, is_mobile):
             st.info("No records found")
             return
 
+        # -------------------------------
+        # GRAND TOTAL (ABOVE TABLE)
+        # -------------------------------
         render_grand_total(
             result["Proposal_Cost"].sum(),
             result["Final_Cost"].sum(),
@@ -1087,6 +1079,9 @@ def render_by_date(df_master, is_mobile):
             is_mobile
         )
 
+        # -------------------------------
+        # RESULT TABLE
+        # -------------------------------
         st.dataframe(
             result[
                 ["Client_Name", "Proposal_Cost", "Rate", "Final_Cost", "Profit"]
@@ -1095,8 +1090,14 @@ def render_by_date(df_master, is_mobile):
             hide_index=True
         )
 
+    # =================================================
+    # FIRST DATE FILTER
+    # =================================================
     date_block(1)
 
+    # =================================================
+    # ADDITIONAL DATE FILTER (➕)
+    # =================================================
     if "add_second_block" not in st.session_state:
         st.session_state.add_second_block = False
 
@@ -1471,6 +1472,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
