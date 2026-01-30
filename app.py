@@ -953,6 +953,7 @@ def render_by_client(df_master, is_mobile):
 
     st.subheader("🔎 Find Details Using Client Name")
 
+    # ---------- Status Filter ----------
     status = st.selectbox("Status", ["All", "Open", "Closed"])
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
 
@@ -960,23 +961,46 @@ def render_by_client(df_master, is_mobile):
         st.info("No records found")
         return
 
-    client = st.selectbox("Client Name", sorted(df["Client_Name"].dropna().unique()))
+    # ---------- Client Name Selector ----------
+    client_list = sorted(df["Client_Name"].dropna().unique().tolist())
+    client_list.insert(0, "Select Client Name")
+
+    client = st.selectbox("Client Name", client_list)
+
+    if client == "Select Client Name":
+        st.info("Please select a client name")
+        return
+
     df = df[df["Client_Name"] == client]
 
+    # ---------- Date Type ----------
     date_type = st.radio("Date Type", ["Start Date", "End Date"], horizontal=True)
     date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
     df = df.dropna(subset=[date_col])
     df["DateOnly"] = df[date_col].dt.date
 
+    if df.empty:
+        st.info("No dates available")
+        return
+
+    # ---------- Date Selector ----------
+    date_list = sorted(df["DateOnly"].unique().tolist())
+    date_list.insert(0, "Select Date")
+
     selected_date = st.selectbox(
         "Select Date",
-        sorted(df["DateOnly"].unique()),
-        format_func=lambda x: x.strftime("%d-%m-%Y")
+        date_list,
+        format_func=lambda x: x if isinstance(x, str) else x.strftime("%d-%m-%Y")
     )
+
+    if selected_date == "Select Date":
+        st.info("Please select a date")
+        return
 
     result = df[df["DateOnly"] == selected_date]
 
+    # ---------- Grand Total ----------
     render_grand_total(
         result["Proposal_Cost"].sum(),
         result["Final_Cost"].sum(),
@@ -984,12 +1008,13 @@ def render_by_client(df_master, is_mobile):
         is_mobile
     )
 
+    # ---------- Table ----------
     st.dataframe(
         result[["Proposal_Cost", "Rate", "Final_Cost", "Profit"]].round(2),
         use_container_width=True,
         hide_index=True
     )
-
+    
 # ================= BY DATE =================
 def render_by_date(df_master, is_mobile):
 
@@ -1483,6 +1508,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
