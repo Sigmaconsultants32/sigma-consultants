@@ -1041,8 +1041,9 @@ def render_by_date(df_master, is_mobile):
     # ADD BLOCK BUTTON
     # -------------------------------------------------
     if st.button("➕ Check Another Date"):
-        new_id = max(st.session_state.date_blocks) + 1
-        st.session_state.date_blocks.append(new_id)
+        st.session_state.date_blocks.append(
+            max(st.session_state.date_blocks) + 1
+        )
 
     st.divider()
 
@@ -1066,15 +1067,10 @@ def render_by_date(df_master, is_mobile):
         # ---- Date type selector
         date_type = st.radio(
             "Select Date Type",
-            ["Select", "Start Date", "End Date"],
+            ["Start Date", "End Date"],
             horizontal=True,
             key=f"date_type_{block_id}"
         )
-
-        if date_type == "Select":
-            st.info("Please select Start Date or End Date")
-            st.divider()
-            continue
 
         date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
@@ -1086,17 +1082,17 @@ def render_by_date(df_master, is_mobile):
             st.divider()
             continue
 
-        # ---- Date dropdown WITH Select option
-        date_options = ["Select"] + sorted(df_local["DateOnly"].unique())
+        # ✅ SAFE SELECT OPTION (None, not string)
+        date_options = [None] + sorted(df_local["DateOnly"].unique())
 
         selected_date = st.selectbox(
             f"Select {date_type}",
             date_options,
             key=f"date_select_{block_id}",
-            format_func=lambda x: x if x == "Select" else x.strftime("%d-%m-%Y")
+            format_func=lambda x: "Select" if x is None else x.strftime("%d-%m-%Y")
         )
 
-        if selected_date == "Select":
+        if selected_date is None:
             st.divider()
             continue
 
@@ -1473,6 +1469,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
