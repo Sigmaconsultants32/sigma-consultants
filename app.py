@@ -1145,6 +1145,39 @@ def render_by_date(df_master, is_mobile):
                 st.session_state.remove_block
             )
         st.session_state.remove_block = None
+
+# -----------------------------------------------------
+# PAGE CONTROLLER
+# -----------------------------------------------------
+if st.session_state.page == "Find":
+
+    st.header("🔍 Find Proposal Details")
+
+    # 🔐 SAFETY: proposals_df must exist
+    if "proposals_df" not in globals():
+        st.error("proposals_df is not available")
+        st.stop()
+
+    if proposals_df.empty:
+        st.warning("No proposal data available")
+        st.stop()
+
+    # Prepare master dataframe
+    df_master = get_master_df(proposals_df)
+
+    # Mode selector
+    find_mode = render_find_mode_selector()
+
+    # Route to correct component
+    if find_mode == "By Proposal":
+        render_by_proposal(df_master, is_mobile)
+
+    elif find_mode == "By Client Name":
+        render_by_client(df_master, is_mobile)
+
+    elif find_mode == "By Start / End Date":
+        render_by_date(df_master, is_mobile)
+
 # =====================================================
 # ================= CLIENTS ===========================
 # =====================================================
@@ -1487,6 +1520,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
