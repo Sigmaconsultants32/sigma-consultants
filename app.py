@@ -600,12 +600,16 @@ if st.session_state.page == "Edit":
     df = proposals_df.copy()
 
     # =================================================
-    # STEP 1: STATUS FILTER
+    # STEP 1: STATUS FILTER (WITH SELECT)
     # =================================================
     status_filter = st.selectbox(
         "Select Proposal Status",
-        ["Open", "Closed"]
+        ["Select", "Open", "Closed"]
     )
+
+    if status_filter == "Select":
+        st.info("Please select Proposal Status")
+        st.stop()
 
     df = df[df["Status"] == status_filter]
 
@@ -614,16 +618,20 @@ if st.session_state.page == "Edit":
         st.stop()
 
     # =================================================
-    # STEP 2: PROPOSAL ID FILTER
+    # STEP 2: PROPOSAL ID FILTER (WITH SELECT)
     # =================================================
+    proposal_id_list = ["Select Proposal ID"] + sorted(df["Proposal_ID"].unique())
+
     proposal_id = st.selectbox(
         "Select Proposal ID",
-        sorted(df["Proposal_ID"].unique())
+        proposal_id_list
     )
 
-    proposal_df = df[df["Proposal_ID"] == proposal_id]
+    if proposal_id == "Select Proposal ID":
+        st.info("Please select a Proposal ID")
+        st.stop()
 
-    client_list = sorted(proposal_df["Client_Name"].unique())
+    proposal_df = df[df["Proposal_ID"] == proposal_id]
 
     # =================================================
     # STEP 3: READ-ONLY MASTER DATA
@@ -638,12 +646,18 @@ if st.session_state.page == "Edit":
     c3.text_input("Rate (%)", int(round(rate_master, 0)), disabled=True)
 
     # =================================================
-    # STEP 4: CLIENT UNDER PROPOSAL
+    # STEP 4: CLIENT SELECTION (WITH SELECT)
     # =================================================
+    client_list = ["Select"] + sorted(proposal_df["Client_Name"].unique())
+
     client_name = st.selectbox(
         "Select Client Included in Proposal",
         client_list
     )
+
+    if client_name == "Select":
+        st.info("Please select a Client")
+        st.stop()
 
     row = proposal_df[
         proposal_df["Client_Name"] == client_name
@@ -677,7 +691,7 @@ if st.session_state.page == "Edit":
         )
     else:
         st.dataframe(
-            pd.DataFrame([row])[[
+            pd.DataFrame([row])[[ 
                 "Client_Name",
                 "Proposal_ID",
                 "Start_Date",
@@ -755,7 +769,7 @@ if st.session_state.page == "Edit":
         # APPLY TO ALL CLIENTS OPTION
         # =================================================
         apply_all = False
-        if len(client_list) > 1:
+        if len(client_list) > 2:
             apply_all = st.checkbox(
                 "Apply changes to all clients in this proposal",
                 help="Applies Start Date, End Date, Rate and Status to all clients"
@@ -827,7 +841,6 @@ if st.session_state.page == "Edit":
                 pd.Timestamp.today() if new_status == "Closed" else pd.NaT
             ]
 
-            # Proposal cost + recalculation ONLY for selected client
             st.session_state.proposals_df.loc[
                 (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
                 (st.session_state.proposals_df["Client_Name"] == client_name),
@@ -842,7 +855,7 @@ if st.session_state.page == "Edit":
 
             st.success("✅ Proposal updated successfully")
             st.session_state.page = "Summary"
-
+            
 # =====================================================
 # ================= FIND DETAILS PAGE =================
 # =====================================================
@@ -1508,6 +1521,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
