@@ -1031,16 +1031,27 @@ def render_by_date(df_master, is_mobile):
         st.info("No records found")
         return
 
-    # ---------------------------------------------
-    # SESSION INIT FOR MULTIPLE BLOCKS
-    # ---------------------------------------------
+    # -------------------------------------------------
+    # INIT BLOCKS
+    # -------------------------------------------------
     if "date_blocks" not in st.session_state:
         st.session_state.date_blocks = [1]
 
-    # ---------------------------------------------
-    # INTERNAL DATE BLOCK
-    # ---------------------------------------------
-    def date_block(block_id, removable=False):
+    # -------------------------------------------------
+    # ADD BLOCK BUTTON
+    # -------------------------------------------------
+    if st.button("➕ Check Another Date"):
+        new_id = max(st.session_state.date_blocks) + 1
+        st.session_state.date_blocks.append(new_id)
+
+    st.divider()
+
+    # -------------------------------------------------
+    # RENDER BLOCKS
+    # -------------------------------------------------
+    blocks_to_remove = []
+
+    for index, block_id in enumerate(st.session_state.date_blocks):
 
         header_col, btn_col = st.columns([6, 1])
 
@@ -1048,10 +1059,9 @@ def render_by_date(df_master, is_mobile):
             st.markdown(f"### 🔍 Date Filter {block_id}")
 
         with btn_col:
-            if removable:
+            if index != 0:
                 if st.button("❌", key=f"remove_{block_id}"):
-                    st.session_state.date_blocks.remove(block_id)
-                    st.rerun()
+                    blocks_to_remove.append(block_id)
 
         # ---- Date type selector
         date_type = st.radio(
@@ -1063,7 +1073,8 @@ def render_by_date(df_master, is_mobile):
 
         if date_type == "Select":
             st.info("Please select Start Date or End Date")
-            return
+            st.divider()
+            continue
 
         date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
@@ -1072,7 +1083,8 @@ def render_by_date(df_master, is_mobile):
 
         if df_local.empty:
             st.info("No dates available")
-            return
+            st.divider()
+            continue
 
         # ---- Date dropdown WITH Select option
         date_options = ["Select"] + sorted(df_local["DateOnly"].unique())
@@ -1085,15 +1097,17 @@ def render_by_date(df_master, is_mobile):
         )
 
         if selected_date == "Select":
-            return
+            st.divider()
+            continue
 
         result = df_local[df_local["DateOnly"] == selected_date]
 
         if result.empty:
             st.info("No records found")
-            return
+            st.divider()
+            continue
 
-        # ---- Grand Total ABOVE table
+        # ---- GRAND TOTAL ABOVE TABLE
         render_grand_total(
             result["Proposal_Cost"].sum(),
             result["Final_Cost"].sum(),
@@ -1109,20 +1123,13 @@ def render_by_date(df_master, is_mobile):
             hide_index=True
         )
 
-    # ---------------------------------------------
-    # RENDER ALL BLOCKS
-    # ---------------------------------------------
-    for i, block_id in enumerate(st.session_state.date_blocks):
-        date_block(block_id, removable=(i != 0))
         st.divider()
 
-    # ---------------------------------------------
-    # ADD NEW BLOCK
-    # ---------------------------------------------
-    if st.button("➕ Check Another Date"):
-        new_id = max(st.session_state.date_blocks) + 1
-        st.session_state.date_blocks.append(new_id)
-        st.rerun()
+    # -------------------------------------------------
+    # REMOVE BLOCKS (AFTER LOOP)
+    # -------------------------------------------------
+    for bid in blocks_to_remove:
+        st.session_state.date_blocks.remove(bid)
 
 # =====================================================
 # ================= CLIENTS ===========================
@@ -1466,6 +1473,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
