@@ -73,6 +73,56 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ================= SIDEBAR STYLING =================
+st.markdown(
+    """
+    <style>
+    /* Sidebar background */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0F4C81 0%, #09365E 100%);
+        padding-top: 20px;
+    }
+
+    /* Sidebar title */
+    .sidebar-title {
+        color: white;
+        font-size: 22px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    /* Menu button base */
+    .sidebar-btn button {
+        width: 100%;
+        background: transparent;
+        color: white;
+        border: none;
+        text-align: left;
+        padding: 12px 16px;
+        font-size: 15px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Hover effect */
+    .sidebar-btn button:hover {
+        background: rgba(255,255,255,0.15);
+        transform: translateX(4px);
+    }
+
+    /* Active page */
+    .sidebar-active button {
+        background: white;
+        color: #0F4C81;
+        font-weight: 700;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = False
@@ -303,30 +353,32 @@ def calc(cost, rate, days):
 if "page" not in st.session_state:
     st.session_state.page = "Welcome"
 
-# ---------------- SIDEBAR ----------------
 with st.sidebar:
-    st.markdown("## 📂 Sigma Consultants")
 
-    def nav(label, page_key):
-        if st.button(label, use_container_width=True):
-            st.session_state.page = page_key
+    st.markdown(
+        "<div class='sidebar-title'>📊 Sigma Consultants</div>",
+        unsafe_allow_html=True
+    )
 
-    nav("🏠 Summary", "Summary")
-    nav("➕ Add Proposal", "AddProposal")
-    nav("🔍 Find Details", "Find")
-    nav("✏️ Edit Proposal", "Edit")
-    nav("👤 Clients", "Clients")
-    nav("📊 Client Dashboard", "ClientDashboard")
+    def sidebar_button(label, page_name, icon):
+        is_active = st.session_state.page == page_name
+        css_class = "sidebar-btn sidebar-active" if is_active else "sidebar-btn"
+
+        st.markdown(f"<div class='{css_class}'>", unsafe_allow_html=True)
+        if st.button(f"{icon}  {label}", use_container_width=True):
+            st.session_state.page = page_name
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    sidebar_button("Dashboard", "Summary", "📈")
+    sidebar_button("Add Proposal", "AddProposal", "➕")
+    sidebar_button("Find Proposal", "Find", "🔍")
+    sidebar_button("Clients", "Clients", "👥")
+    sidebar_button("Reports", "Reports", "🧾")
 
     st.markdown("---")
 
-    nav("📥 Export Data", "Export")
-
-    st.markdown("---")
-    if st.button("🚪 Logout", use_container_width=True):
-        st.session_state.auth = False
-        st.session_state.page = "Summary"
-
+    sidebar_button("Settings", "Settings", "⚙️")
+    
 # =====================================================
 # ================= WELCOME SCREEN ====================
 # =====================================================
@@ -1624,6 +1676,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
