@@ -93,46 +93,52 @@ st.markdown(
 st.markdown(
     """
     <style>
-    /* Sidebar background */
+    /* ---------- SIDEBAR BACKGROUND ---------- */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0F4C81 20%, #09365E 80%);
+        background: linear-gradient(
+            180deg,
+            #FFBFAD 0%,
+            #FFA08A 100%
+        );
         padding-top: 20px;
     }
 
-    /* Sidebar title */
+    /* ---------- SIDEBAR TITLE ---------- */
     .sidebar-title {
-        color: white;
+        color: #4A1F14;
         font-size: 22px;
         font-weight: 700;
         text-align: center;
         margin-bottom: 20px;
     }
 
-    /* Menu button base */
+    /* ---------- MENU BUTTON BASE ---------- */
     .sidebar-btn button {
         width: 100%;
         background: transparent;
-        color: white;
+        color: #4A1F14;
         border: none;
         text-align: left;
         padding: 12px 16px;
         font-size: 15px;
-        border-radius: 10px;
+        border-radius: 12px;
         margin-bottom: 8px;
         transition: all 0.2s ease-in-out;
+        font-weight: 500;
     }
 
-    /* Hover effect */
+    /* ---------- HOVER EFFECT ---------- */
     .sidebar-btn button:hover {
-        background: rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.45);
         transform: translateX(4px);
     }
 
-    /* Active page */
+    /* ---------- ACTIVE PAGE ---------- */
     .sidebar-active button {
         background: white;
-        color: #0F4C81;
+        color: #FF6800;
         font-weight: 700;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
     }
     </style>
     """,
@@ -1690,6 +1696,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
