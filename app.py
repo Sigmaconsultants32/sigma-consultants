@@ -479,6 +479,9 @@ Profit : ₹ {row['Profit']:,.2f}
 
         st.markdown("---")
 
+# ===================================================== 
+# ================= ADD NEW PROPOSAL ================== 
+# =====================================================
 if st.session_state.page == "AddProposal":
 
     st.header("➕ Add New Proposal")
