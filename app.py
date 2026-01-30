@@ -517,7 +517,7 @@ if st.session_state.page == "AddProposal":
             st.session_state.start_date = datetime.today().date()
         if st.session_state.end_date is None:
             st.session_state.end_date = (
-                datetime.today() + timedelta(days=30)
+                pd.Timestamp.today() + pd.Timedelta(days=30)
             ).date()
     else:
         st.session_state.start_date = None
@@ -1561,6 +1561,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
