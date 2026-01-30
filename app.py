@@ -1017,29 +1017,37 @@ def render_by_client(df_master, is_mobile):
         hide_index=True
     )
 
-# -----------------------------------------------------
-# COMPONENT : BY START / END DATE (REVISED)
-# -----------------------------------------------------
 def render_by_date(df_master, is_mobile):
 
     st.subheader("📅 Find Details Using Start / End Date")
 
-    status = st.selectbox("Status", ["All", "Open", "Closed"], key="date_status")
+    # -----------------------------
+    # STATUS
+    # -----------------------------
+    status = st.selectbox(
+        "Status",
+        ["All", "Open", "Closed"],
+        key="date_status"
+    )
+
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
 
     if df.empty:
         st.info("No records found")
         return
 
-    # -------------------------------------------------
-    # INIT BLOCKS
-    # -------------------------------------------------
+    # -----------------------------
+    # INIT BLOCKS (ONCE)
+    # -----------------------------
     if "date_blocks" not in st.session_state:
         st.session_state.date_blocks = [1]
 
-    # -------------------------------------------------
-    # ADD BLOCK BUTTON
-    # -------------------------------------------------
+    if "remove_block" not in st.session_state:
+        st.session_state.remove_block = None
+
+    # -----------------------------
+    # ADD BLOCK
+    # -----------------------------
     if st.button("➕ Check Another Date"):
         st.session_state.date_blocks.append(
             max(st.session_state.date_blocks) + 1
@@ -1047,26 +1055,26 @@ def render_by_date(df_master, is_mobile):
 
     st.divider()
 
-    # -------------------------------------------------
+    # -----------------------------
     # RENDER BLOCKS
-    # -------------------------------------------------
-    blocks_to_remove = []
+    # -----------------------------
+    for i, block_id in enumerate(list(st.session_state.date_blocks)):
 
-    for index, block_id in enumerate(st.session_state.date_blocks):
+        col1, col2 = st.columns([6, 1])
 
-        header_col, btn_col = st.columns([6, 1])
-
-        with header_col:
+        with col1:
             st.markdown(f"### 🔍 Date Filter {block_id}")
 
-        with btn_col:
-            if index != 0:
+        with col2:
+            if i != 0:
                 if st.button("❌", key=f"remove_{block_id}"):
-                    blocks_to_remove.append(block_id)
+                    st.session_state.remove_block = block_id
 
-        # ---- Date type selector
+        # -------------------------
+        # DATE TYPE (NO "Select")
+        # -------------------------
         date_type = st.radio(
-            "Select Date Type",
+            "Date Type",
             ["Start Date", "End Date"],
             horizontal=True,
             key=f"date_type_{block_id}"
@@ -1082,7 +1090,9 @@ def render_by_date(df_master, is_mobile):
             st.divider()
             continue
 
-        # ✅ SAFE SELECT OPTION (None, not string)
+        # -------------------------
+        # DATE SELECT (SAFE)
+        # -------------------------
         date_options = [None] + sorted(df_local["DateOnly"].unique())
 
         selected_date = st.selectbox(
@@ -1096,6 +1106,9 @@ def render_by_date(df_master, is_mobile):
             st.divider()
             continue
 
+        # -------------------------
+        # RESULT
+        # -------------------------
         result = df_local[df_local["DateOnly"] == selected_date]
 
         if result.empty:
@@ -1103,7 +1116,9 @@ def render_by_date(df_master, is_mobile):
             st.divider()
             continue
 
-        # ---- GRAND TOTAL ABOVE TABLE
+        # -------------------------
+        # GRAND TOTAL
+        # -------------------------
         render_grand_total(
             result["Proposal_Cost"].sum(),
             result["Final_Cost"].sum(),
@@ -1121,12 +1136,15 @@ def render_by_date(df_master, is_mobile):
 
         st.divider()
 
-    # -------------------------------------------------
-    # REMOVE BLOCKS (AFTER LOOP)
-    # -------------------------------------------------
-    for bid in blocks_to_remove:
-        st.session_state.date_blocks.remove(bid)
-
+    # -----------------------------
+    # REMOVE BLOCK (AFTER RENDER)
+    # -----------------------------
+    if st.session_state.remove_block:
+        if st.session_state.remove_block in st.session_state.date_blocks:
+            st.session_state.date_blocks.remove(
+                st.session_state.remove_block
+            )
+        st.session_state.remove_block = None
 # =====================================================
 # ================= CLIENTS ===========================
 # =====================================================
@@ -1469,6 +1487,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
