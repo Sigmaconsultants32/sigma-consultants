@@ -11,9 +11,9 @@ import os, io
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
 # ================= BRAND THEME =================
-PRIMARY_COLOR = "#0F4C81"     # ← replace with logo primary
-SECONDARY_COLOR = "#EAF2FB"   # ← replace with logo secondary
-ACCENT_COLOR = "#1FA2FF"      # ← optional accent
+PRIMARY_COLOR = "#9DD3DB"     # Soft teal (main brand)
+SECONDARY_COLOR = "#FF6800"   # Orange (energy)
+ACCENT_COLOR = "#EE2929"      # Red (attention)
 
 st.markdown(
     f"""
@@ -23,49 +23,65 @@ st.markdown(
     .stApp {{
         background: linear-gradient(
             135deg,
-            {SECONDARY_COLOR} 0%,
-            #ffffff 60%
+            {PRIMARY_COLOR} 0%,
+            #ffffff 65%
         );
     }}
 
     /* ---------- PAGE CONTAINERS (CARDS) ---------- */
     section[data-testid="stVerticalBlock"] > div {{
-        background: rgba(255,255,255,0.92);
-        border-radius: 16px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 18px;
         padding: 18px;
-        margin-bottom: 16px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-        border-left: 6px solid {PRIMARY_COLOR};
+        margin-bottom: 18px;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+        border-left: 6px solid {SECONDARY_COLOR};
     }}
 
     /* ---------- HEADERS ---------- */
     h1, h2, h3 {{
-        color: {PRIMARY_COLOR};
+        color: #1f2937; /* dark text for readability */
         font-weight: 700;
     }}
 
-    /* ---------- BUTTONS ---------- */
+    /* ---------- PRIMARY BUTTONS ---------- */
     button[kind="primary"] {{
-        background: {PRIMARY_COLOR};
-        border-radius: 10px;
+        background: {SECONDARY_COLOR};
+        border-radius: 12px;
         font-weight: 600;
         border: none;
+        color: white;
     }}
 
     button[kind="primary"]:hover {{
         background: {ACCENT_COLOR};
+        color: white;
+    }}
+
+    /* ---------- SECONDARY BUTTONS ---------- */
+    button {{
+        border-radius: 10px;
     }}
 
     /* ---------- METRICS ---------- */
     div[data-testid="metric-container"] {{
-        border-radius: 12px;
-        padding: 12px;
+        border-radius: 14px;
+        padding: 14px;
         background: linear-gradient(
             145deg,
-            {SECONDARY_COLOR},
-            #ffffff
+            #ffffff,
+            {PRIMARY_COLOR}
         );
-        border: 1px solid #e6e6e6;
+        border: 1px solid #e5e7eb;
+    }}
+
+    /* ---------- SIDEBAR (MATCHING BRAND) ---------- */
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(
+            180deg,
+            {SECONDARY_COLOR} 0%,
+            {ACCENT_COLOR} 100%
+        );
     }}
 
     </style>
@@ -1674,6 +1690,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
