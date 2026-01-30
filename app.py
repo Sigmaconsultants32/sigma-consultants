@@ -486,39 +486,71 @@ if st.session_state.page == "AddProposal":
 
     st.header("➕ Add New Proposal")
 
-    if clients_df.empty:
+    # ---------- SAFETY CHECK ----------
+    if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
         st.warning("Please add a client before creating a proposal.")
         st.stop()
 
+    clients_df = st.session_state.clients_df
+    proposals_df = st.session_state.proposals_df
+
     # ---------- CLIENT DROPDOWN ----------
     active_clients = clients_df[clients_df["Is_Archived"] == False]
+
     client_options = ["— Select Client —"] + sorted(
-        active_clients["Client_Name"].dropna().unique().tolist()
+        active_clients["Client_Name"]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
     )
 
-    client_name = st.selectbox("Client Name", client_options)
+    client_name = st.selectbox(
+        "Client Name",
+        client_options,
+        key="add_client_name"
+    )
 
     # ---------- DATE DEFAULT LOGIC ----------
     if client_name != "— Select Client —":
-        st.session_state.setdefault("start_date", datetime.today().date())
-        st.session_state.setdefault(
-            "end_date",
-            (datetime.today() + timedelta(days=30)).date()
-        )
+        if st.session_state.start_date is None:
+            st.session_state.start_date = datetime.today().date()
+        if st.session_state.end_date is None:
+            st.session_state.end_date = (
+                datetime.today() + timedelta(days=30)
+            ).date()
     else:
         st.session_state.start_date = None
         st.session_state.end_date = None
 
-    start_date = st.date_input("Start Date", value=st.session_state.start_date)
-    end_date = st.date_input("End Date", value=st.session_state.end_date)
+    # ---------- DATE INPUT ----------
+    start_date = st.date_input(
+        "Start Date",
+        value=st.session_state.start_date,
+        key="add_start_date"
+    )
+
+    end_date = st.date_input(
+        "End Date",
+        value=st.session_state.end_date,
+        key="add_end_date"
+    )
 
     # ---------- FINANCIAL INPUTS ----------
     proposal_cost = st.number_input(
-        "Proposal Amount (₹)", min_value=0.0, step=1000.0, format="%.2f"
+        "Proposal Amount (₹)",
+        min_value=0.0,
+        step=1000.0,
+        format="%.2f",
+        key="add_cost"
     )
 
     rate = st.number_input(
-        "Monthly Rate (%)", min_value=0.0, step=0.10, format="%.2f"
+        "Monthly Rate (%)",
+        min_value=0.0,
+        step=0.10,
+        format="%.2f",
+        key="add_rate"
     )
 
     # ---------- VALIDATION ----------
@@ -535,7 +567,13 @@ if st.session_state.page == "AddProposal":
     # ---------- CALCULATION ----------
     if is_valid:
         days = (end_date - start_date).days
-        final_cost, profit = calc(proposal_cost, rate, days)
+
+        try:
+            final_cost, profit = calc(proposal_cost, rate, days)
+        except Exception as e:
+            st.error("Calculation error. Please check inputs.")
+            st.stop()
+
         months = days / 30
 
         st.markdown("---")
@@ -571,14 +609,23 @@ if st.session_state.page == "AddProposal":
         }
 
         st.session_state.proposals_df = pd.concat(
-            [st.session_state.proposals_df, pd.DataFrame([new_row])],
+            [proposals_df, pd.DataFrame([new_row])],
             ignore_index=True
         )
 
-        save_proposals()
+        try:
+            save_proposals()
+        except Exception:
+            st.error("Failed to save proposal. Please retry.")
+            st.stop()
+
+        # ---------- RESET FORM ----------
+        st.session_state.start_date = None
+        st.session_state.end_date = None
+
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
-        
+
 # =====================================================
 # ================= EDIT PROPOSAL =====================
 # =====================================================
@@ -1514,6 +1561,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
