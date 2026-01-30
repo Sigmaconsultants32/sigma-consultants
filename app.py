@@ -10,22 +10,17 @@ import os, io
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-image: url("https://images.unsplash.com/photo-1557683316-973673baf926");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }
+if st.session_state.page == "AddProposal":
+    bg_color = "#f0fdf4"
+else:
+    bg_color = "#f8fafc"
 
-    section[data-testid="stVerticalBlock"] > div {
-        background: rgba(255,255,255,0.88);
-        border-radius: 14px;
-        padding: 18px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-    }
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-color: {bg_color};
+    }}
     </style>
     """,
     unsafe_allow_html=True
@@ -1582,6 +1577,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
