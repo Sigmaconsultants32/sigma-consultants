@@ -847,8 +847,32 @@ if st.session_state.page == "Edit":
 # ================= FIND DETAILS PAGE =================
 # =====================================================
 
+# ================= IMPORTS =================
 import pandas as pd
 import streamlit as st
+
+# ================= UTILITIES =================
+def get_master_df(proposals_df):
+    df = proposals_df.copy()
+    for c in ["Start_Date", "End_Date", "Closing_Date"]:
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce")
+    return df
+
+def render_grand_total(...):
+    ...
+
+def render_find_mode_selector():
+    ...
+
+def render_by_proposal(...):
+    ...
+
+def render_by_client(...):
+    ...
+
+def render_by_date(...):
+    ...
 
 # -----------------------------------------------------
 # SAFETY INITIALIZATION
@@ -1548,6 +1572,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
