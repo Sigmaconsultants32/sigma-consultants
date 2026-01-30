@@ -843,6 +843,85 @@ if st.session_state.page == "Edit":
             st.success("✅ Proposal updated successfully")
             st.session_state.page = "Summary"
 
+# =====================================================
+# ================= FIND DETAILS PAGE =================
+# =====================================================
+
+import pandas as pd
+import streamlit as st
+
+# -----------------------------------------------------
+# SAFETY INITIALIZATION
+# -----------------------------------------------------
+if "page" not in st.session_state:
+    st.session_state.page = "Find"
+
+is_mobile = st.session_state.get("is_mobile", False)
+
+# -----------------------------------------------------
+# UTILITY : PREPARE MASTER DATA
+# -----------------------------------------------------
+def get_master_df(proposals_df):
+    df = proposals_df.copy()
+    for c in ["Start_Date", "End_Date", "Closing_Date"]:
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce")
+    return df
+
+# -----------------------------------------------------
+# COMPONENT : GRAND TOTAL
+# -----------------------------------------------------
+def render_grand_total(total_invest, total_final, total_profit, is_mobile):
+
+    if is_mobile:
+        st.markdown(
+            f"""
+            <div style="
+                background:#e3f2fd;
+                border-radius:14px;
+                padding:14px;
+                margin:15px 0;
+                border:1px solid #90caf9">
+                <b>💠 Grand Total</b><br><br>
+                <b>Investment:</b> ₹ {total_invest:,.2f}<br>
+                <b>Final Amount:</b> ₹ {total_final:,.2f}<br>
+                <b>Profit:</b> ₹ {total_profit:,.2f}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Investment", f"₹ {total_invest:,.2f}")
+        c2.metric("Final Amount", f"₹ {total_final:,.2f}")
+        c3.metric("Profit", f"₹ {total_profit:,.2f}")
+
+        st.markdown(
+            """
+            <style>
+            div[data-testid="metric-container"] {
+                background-color:#e3f2fd;
+                border-radius:12px;
+                padding:10px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+# -----------------------------------------------------
+# COMPONENT : MODE SELECTOR
+# -----------------------------------------------------
+def render_find_mode_selector():
+    return st.radio(
+        "Find Details Mode",
+        ["By Proposal", "By Client Name", "By Start / End Date"],
+        horizontal=True
+    )
+
+# ----------------------------------------------------- 
+# COMPONENT : BY PROPOSAL 
+# -----------------------------------------------------
 def render_by_proposal(df_master, is_mobile):
 
     st.subheader("📄 Find Details By Proposal")
@@ -1469,6 +1548,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
