@@ -10,36 +10,6 @@ import os, io
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
-st.markdown(
-    """
-    <style>
-    /* App background */
-    .stApp {
-        background: linear-gradient(
-            135deg,
-            #f5f7fa 0%,
-            #e4ebf5 100%
-        );
-    }
-
-    /* Card-like containers */
-    section[data-testid="stVerticalBlock"] > div {
-        background: rgba(255,255,255,0.85);
-        border-radius: 14px;
-        padding: 16px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-    }
-
-    /* Buttons */
-    button[kind="primary"] {
-        border-radius: 10px;
-        font-weight: 600;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = False
@@ -1591,6 +1561,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
