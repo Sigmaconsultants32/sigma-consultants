@@ -10,22 +10,6 @@ import os, io
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
 
-if st.session_state.page == "AddProposal":
-    bg_color = "#f0fdf4"
-else:
-    bg_color = "#f8fafc"
-
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-color: {bg_color};
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = False
@@ -1577,6 +1561,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
