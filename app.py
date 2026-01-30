@@ -79,7 +79,7 @@ st.markdown(
     <style>
     /* Sidebar background */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0F4C81 0%, #09365E 100%);
+        background: linear-gradient(180deg, #0F4C81 20%, #09365E 80%);
         padding-top: 20px;
     }
 
@@ -1674,6 +1674,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
