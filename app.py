@@ -896,7 +896,6 @@ def get_master_df(proposals_df):
 # COMPONENT : GRAND TOTAL
 # -----------------------------------------------------
 def render_grand_total(total_invest, total_final, total_profit, is_mobile):
-
     if is_mobile:
         st.markdown(
             f"""
@@ -1572,6 +1571,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
