@@ -479,9 +479,6 @@ Profit : ₹ {row['Profit']:,.2f}
 
         st.markdown("---")
 
-# =====================================================
-# ================= ADD NEW PROPOSAL ==================
-# =====================================================
 if st.session_state.page == "AddProposal":
 
     st.header("➕ Add New Proposal")
@@ -490,64 +487,55 @@ if st.session_state.page == "AddProposal":
         st.warning("Please add a client before creating a proposal.")
         st.stop()
 
-    # ----------- INPUTS -----------
+    # ---------- CLIENT DROPDOWN ----------
     active_clients = clients_df[clients_df["Is_Archived"] == False]
-
-    client_name = st.selectbox(
-        "Client Name",
-        sorted(active_clients["Client_Name"].dropna().unique())
+    client_options = ["— Select Client —"] + sorted(
+        active_clients["Client_Name"].dropna().unique().tolist()
     )
 
-    start_date = st.date_input(
-        "Start Date",
-        value=datetime.today()
-    )
+    client_name = st.selectbox("Client Name", client_options)
 
-    end_date = st.date_input(
-        "End Date",
-        value=datetime.today()
-    )
+    # ---------- DATE DEFAULT LOGIC ----------
+    if client_name != "— Select Client —":
+        st.session_state.setdefault("start_date", datetime.today().date())
+        st.session_state.setdefault(
+            "end_date",
+            (datetime.today() + timedelta(days=30)).date()
+        )
+    else:
+        st.session_state.start_date = None
+        st.session_state.end_date = None
 
+    start_date = st.date_input("Start Date", value=st.session_state.start_date)
+    end_date = st.date_input("End Date", value=st.session_state.end_date)
+
+    # ---------- FINANCIAL INPUTS ----------
     proposal_cost = st.number_input(
-        "Proposal Amount (₹)",
-        min_value=0.0,
-        step=1000.0,
-        format="%.2f"
+        "Proposal Amount (₹)", min_value=0.0, step=1000.0, format="%.2f"
     )
 
     rate = st.number_input(
-        "Monthly Rate (%)",
-        min_value=0.0,
-        step=0.10,
-        format="%.2f"
+        "Monthly Rate (%)", min_value=0.0, step=0.10, format="%.2f"
     )
 
-    # ----------- CALCULATIONS -----------
-    days = (end_date - start_date).days
+    # ---------- VALIDATION ----------
+    is_valid = (
+        client_name != "— Select Client —"
+        and start_date is not None
+        and end_date is not None
+        and end_date >= start_date
+    )
 
-    if days < 0:
-        st.error("End Date must be after Start Date")
-        st.stop()
+    if not is_valid:
+        st.info("Select Client and valid Start / End Dates to continue.")
 
-    final_cost, profit = calc(proposal_cost, rate, days)
-    months = days / 30
+    # ---------- CALCULATION ----------
+    if is_valid:
+        days = (end_date - start_date).days
+        final_cost, profit = calc(proposal_cost, rate, days)
+        months = days / 30
 
-    st.markdown("---")
-    st.subheader("💰 Auto Calculated")
-
-    if is_mobile:
-        st.markdown(
-            f"""
-            <div style="border:1px solid #ddd;border-radius:12px;
-            padding:14px;background:#fafafa">
-            <b>Duration:</b> {days} days ({months:.2f} months)<br>
-            <b>Profit:</b> ₹ {profit:,.2f}<br>
-            <b>Final Amount:</b> ₹ {final_cost:,.2f}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
+        st.markdown("---")
         c1, c2, c3 = st.columns(3)
         c1.metric("Duration (Months)", f"{months:.2f}")
         c2.metric("Profit (₹)", f"{profit:,.2f}")
@@ -555,9 +543,12 @@ if st.session_state.page == "AddProposal":
 
     st.markdown("---")
 
-    # ----------- SAVE -----------
-    if st.button("💾 Save Proposal", use_container_width=True):
-
+    # ---------- SAVE ----------
+    if st.button(
+        "💾 Save Proposal",
+        use_container_width=True,
+        disabled=not is_valid
+    ):
         client_row = clients_df.loc[
             clients_df["Client_Name"] == client_name
         ].iloc[0]
@@ -582,10 +573,9 @@ if st.session_state.page == "AddProposal":
         )
 
         save_proposals()
-
         st.success("✅ Proposal added successfully")
         st.session_state.page = "Summary"
-
+        
 # =====================================================
 # ================= EDIT PROPOSAL =====================
 # =====================================================
@@ -1521,6 +1511,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
