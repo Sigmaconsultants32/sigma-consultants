@@ -1031,21 +1031,39 @@ def render_by_date(df_master, is_mobile):
         st.info("No records found")
         return
 
+    # ---------------------------------------------
+    # SESSION INIT FOR MULTIPLE BLOCKS
+    # ---------------------------------------------
+    if "date_blocks" not in st.session_state:
+        st.session_state.date_blocks = [1]
 
-    # =================================================
-    # INTERNAL DATE FILTER BLOCK
-    # =================================================
-    def date_block(block_id):
+    # ---------------------------------------------
+    # INTERNAL DATE BLOCK
+    # ---------------------------------------------
+    def date_block(block_id, removable=False):
 
-        st.markdown(f"### 🔍 Date Filter {block_id}")
+        header_col, btn_col = st.columns([6, 1])
 
-        # ✅ SINGLE RADIO (correct approach)
+        with header_col:
+            st.markdown(f"### 🔍 Date Filter {block_id}")
+
+        with btn_col:
+            if removable:
+                if st.button("❌", key=f"remove_{block_id}"):
+                    st.session_state.date_blocks.remove(block_id)
+                    st.rerun()
+
+        # ---- Date type selector
         date_type = st.radio(
             "Select Date Type",
-            ["Start Date", "End Date"],
+            ["Select", "Start Date", "End Date"],
             horizontal=True,
             key=f"date_type_{block_id}"
         )
+
+        if date_type == "Select":
+            st.info("Please select Start Date or End Date")
+            return
 
         date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
 
@@ -1056,12 +1074,18 @@ def render_by_date(df_master, is_mobile):
             st.info("No dates available")
             return
 
+        # ---- Date dropdown WITH Select option
+        date_options = ["Select"] + sorted(df_local["DateOnly"].unique())
+
         selected_date = st.selectbox(
             f"Select {date_type}",
-            sorted(df_local["DateOnly"].unique()),
+            date_options,
             key=f"date_select_{block_id}",
-            format_func=lambda x: x.strftime("%d-%m-%Y")
+            format_func=lambda x: x if x == "Select" else x.strftime("%d-%m-%Y")
         )
+
+        if selected_date == "Select":
+            return
 
         result = df_local[df_local["DateOnly"] == selected_date]
 
@@ -1069,9 +1093,7 @@ def render_by_date(df_master, is_mobile):
             st.info("No records found")
             return
 
-        # -------------------------------
-        # GRAND TOTAL (ABOVE TABLE)
-        # -------------------------------
+        # ---- Grand Total ABOVE table
         render_grand_total(
             result["Proposal_Cost"].sum(),
             result["Final_Cost"].sum(),
@@ -1079,9 +1101,6 @@ def render_by_date(df_master, is_mobile):
             is_mobile
         )
 
-        # -------------------------------
-        # RESULT TABLE
-        # -------------------------------
         st.dataframe(
             result[
                 ["Client_Name", "Proposal_Cost", "Rate", "Final_Cost", "Profit"]
@@ -1090,45 +1109,20 @@ def render_by_date(df_master, is_mobile):
             hide_index=True
         )
 
-    # =================================================
-    # FIRST DATE FILTER
-    # =================================================
-    date_block(1)
-
-    # =================================================
-    # ADDITIONAL DATE FILTER (➕)
-    # =================================================
-    if "add_second_block" not in st.session_state:
-        st.session_state.add_second_block = False
-
-    if st.button("➕ Check Another Date"):
-        st.session_state.add_second_block = True
-
-    if st.session_state.add_second_block:
+    # ---------------------------------------------
+    # RENDER ALL BLOCKS
+    # ---------------------------------------------
+    for i, block_id in enumerate(st.session_state.date_blocks):
+        date_block(block_id, removable=(i != 0))
         st.divider()
-        date_block(2)
 
-# -----------------------------------------------------
-# PAGE CONTROLLER
-# -----------------------------------------------------
-if st.session_state.page == "Find":
-
-    st.header("🔍 Find Proposal Details")
-
-    if proposals_df.empty:
-        st.warning("No proposal data available")
-    else:
-        df_master = get_master_df(proposals_df)
-        find_mode = render_find_mode_selector()
-
-        if find_mode == "By Proposal":
-            render_by_proposal(df_master, is_mobile)
-
-        elif find_mode == "By Client Name":
-            render_by_client(df_master, is_mobile)
-
-        else:
-            render_by_date(df_master, is_mobile)
+    # ---------------------------------------------
+    # ADD NEW BLOCK
+    # ---------------------------------------------
+    if st.button("➕ Check Another Date"):
+        new_id = max(st.session_state.date_blocks) + 1
+        st.session_state.date_blocks.append(new_id)
+        st.rerun()
 
 # =====================================================
 # ================= CLIENTS ===========================
@@ -1472,6 +1466,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
