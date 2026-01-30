@@ -851,6 +851,12 @@ if st.session_state.page == "Edit":
 import pandas as pd
 import streamlit as st
 
+# ================= SAFETY INITIALIZATION =================
+if "page" not in st.session_state:
+    st.session_state.page = "Find"
+
+is_mobile = st.session_state.get("is_mobile", False)
+
 # ================= UTILITIES =================
 def get_master_df(proposals_df):
     df = proposals_df.copy()
@@ -859,42 +865,7 @@ def get_master_df(proposals_df):
             df[c] = pd.to_datetime(df[c], errors="coerce")
     return df
 
-def render_grand_total(...):
-    ...
-
-def render_find_mode_selector():
-    ...
-
-def render_by_proposal(...):
-    ...
-
-def render_by_client(...):
-    ...
-
-def render_by_date(...):
-    ...
-
-# -----------------------------------------------------
-# SAFETY INITIALIZATION
-# -----------------------------------------------------
-if "page" not in st.session_state:
-    st.session_state.page = "Find"
-
-is_mobile = st.session_state.get("is_mobile", False)
-
-# -----------------------------------------------------
-# UTILITY : PREPARE MASTER DATA
-# -----------------------------------------------------
-def get_master_df(proposals_df):
-    df = proposals_df.copy()
-    for c in ["Start_Date", "End_Date", "Closing_Date"]:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce")
-    return df
-
-# -----------------------------------------------------
-# COMPONENT : GRAND TOTAL
-# -----------------------------------------------------
+# ================= COMPONENT : GRAND TOTAL =================
 def render_grand_total(total_invest, total_final, total_profit, is_mobile):
     if is_mobile:
         st.markdown(
@@ -919,22 +890,7 @@ def render_grand_total(total_invest, total_final, total_profit, is_mobile):
         c2.metric("Final Amount", f"₹ {total_final:,.2f}")
         c3.metric("Profit", f"₹ {total_profit:,.2f}")
 
-        st.markdown(
-            """
-            <style>
-            div[data-testid="metric-container"] {
-                background-color:#e3f2fd;
-                border-radius:12px;
-                padding:10px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-# -----------------------------------------------------
-# COMPONENT : MODE SELECTOR
-# -----------------------------------------------------
+# ================= MODE SELECTOR =================
 def render_find_mode_selector():
     return st.radio(
         "Find Details Mode",
@@ -942,14 +898,11 @@ def render_find_mode_selector():
         horizontal=True
     )
 
-# ----------------------------------------------------- 
-# COMPONENT : BY PROPOSAL 
-# -----------------------------------------------------
+# ================= BY PROPOSAL =================
 def render_by_proposal(df_master, is_mobile):
 
     st.subheader("📄 Find Details By Proposal")
 
-    # ---------------- Status Filter ----------------
     status = st.selectbox("Status", ["All", "Open", "Closed"])
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
 
@@ -957,55 +910,31 @@ def render_by_proposal(df_master, is_mobile):
         st.info("No proposals found")
         return
 
-    # ---------------- Proposal Selector ----------------
     proposal_options = ["-- Select Proposal --"] + sorted(df["Proposal_ID"].unique())
+    proposal_id = st.selectbox("Select Proposal ID", proposal_options)
 
-    proposal_id = st.selectbox(
-        "Select Proposal ID",
-        proposal_options,
-        index=0
-    )
-
-    # ⛔ Stop here until user selects a proposal
     if proposal_id == "-- Select Proposal --":
-        st.info("Please select a Proposal ID to view details")
+        st.info("Please select a Proposal ID")
         return
 
     proposal_df = df[df["Proposal_ID"] == proposal_id]
 
-    # ---------------- Proposal Info ----------------
     c1, c2, c3 = st.columns(3)
-    c1.text_input(
-        "Start Date",
-        proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y"),
-        disabled=True
-    )
-    c2.text_input(
-        "End Date",
-        proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y"),
-        disabled=True
-    )
-    c3.text_input(
-        "Rate (%)",
-        int(round(proposal_df["Rate"].iloc[0], 0)),
-        disabled=True
-    )
+    c1.text_input("Start Date", proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
+    c2.text_input("End Date", proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
+    c3.text_input("Rate (%)", int(round(proposal_df["Rate"].iloc[0])), disabled=True)
 
-    # ---------------- Client Filter ----------------
     client = st.selectbox(
         "Select Client",
         ["All"] + sorted(proposal_df["Client_Name"].unique())
     )
 
-    result = proposal_df if client == "All" else proposal_df[
-        proposal_df["Client_Name"] == client
-    ]
+    result = proposal_df if client == "All" else proposal_df[proposal_df["Client_Name"] == client]
 
     if result.empty:
         st.info("No data found")
         return
 
-    # ---------------- Grand Total ----------------
     render_grand_total(
         result["Proposal_Cost"].sum(),
         result["Final_Cost"].sum(),
@@ -1013,16 +942,13 @@ def render_by_proposal(df_master, is_mobile):
         is_mobile
     )
 
-    # ---------------- Table ----------------
     st.dataframe(
         result[["Client_Name", "Proposal_Cost", "Final_Cost", "Profit"]].round(2),
         use_container_width=True,
         hide_index=True
     )
-    
-# -----------------------------------------------------
-# COMPONENT : BY CLIENT NAME
-# -----------------------------------------------------
+
+# ================= BY CLIENT NAME =================
 def render_by_client(df_master, is_mobile):
 
     st.subheader("🔎 Find Details Using Client Name")
@@ -1030,11 +956,11 @@ def render_by_client(df_master, is_mobile):
     status = st.selectbox("Status", ["All", "Open", "Closed"])
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
 
-    client = st.selectbox(
-        "Client Name",
-        sorted(df["Client_Name"].dropna().unique())
-    )
+    if df.empty:
+        st.info("No records found")
+        return
 
+    client = st.selectbox("Client Name", sorted(df["Client_Name"].dropna().unique()))
     df = df[df["Client_Name"] == client]
 
     date_type = st.radio("Date Type", ["Start Date", "End Date"], horizontal=True)
@@ -1051,10 +977,6 @@ def render_by_client(df_master, is_mobile):
 
     result = df[df["DateOnly"] == selected_date]
 
-    if result.empty:
-        st.info("No records found")
-        return
-
     render_grand_total(
         result["Proposal_Cost"].sum(),
         result["Final_Cost"].sum(),
@@ -1068,6 +990,7 @@ def render_by_client(df_master, is_mobile):
         hide_index=True
     )
 
+# ================= BY DATE =================
 def render_by_date(df_master, is_mobile):
 
     st.subheader("📅 Find Details Using Start / End Date")
@@ -1197,37 +1120,26 @@ def render_by_date(df_master, is_mobile):
             )
         st.session_state.remove_block = None
 
-# -----------------------------------------------------
-# PAGE CONTROLLER
-# -----------------------------------------------------
+# ================= PAGE CONTROLLER =================
 if st.session_state.page == "Find":
 
     st.header("🔍 Find Proposal Details")
 
-    # 🔐 SAFETY: proposals_df must exist
-    if "proposals_df" not in globals():
-        st.error("proposals_df is not available")
-        st.stop()
-
-    if proposals_df.empty:
+    if "proposals_df" not in globals() or proposals_df.empty:
         st.warning("No proposal data available")
         st.stop()
 
-    # Prepare master dataframe
     df_master = get_master_df(proposals_df)
 
-    # Mode selector
     find_mode = render_find_mode_selector()
 
-    # Route to correct component
     if find_mode == "By Proposal":
         render_by_proposal(df_master, is_mobile)
-
     elif find_mode == "By Client Name":
         render_by_client(df_master, is_mobile)
-
     elif find_mode == "By Start / End Date":
         render_by_date(df_master, is_mobile)
+
 
 # =====================================================
 # ================= CLIENTS ===========================
@@ -1571,6 +1483,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
