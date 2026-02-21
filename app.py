@@ -1030,6 +1030,49 @@ if st.session_state.page == "Edit":
 
             st.success("✅ Proposal updated successfully")
             st.session_state.page = "Summary"
+
+# =================================================
+# 🗑 DELETE CLIENT(S) FROM PROPOSAL
+# =================================================
+st.markdown("---")
+st.subheader("🗑 Delete Client(s) From This Proposal")
+
+# Only active (non-deleted) rows under this proposal
+active_rows = st.session_state.proposals_df[
+    (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+    (st.session_state.proposals_df["Is_Deleted"] == False)
+]
+
+client_delete_options = sorted(active_rows["Client_Name"].unique().tolist())
+
+if not client_delete_options:
+    st.info("No active clients available to delete.")
+else:
+
+    selected_clients = st.multiselect(
+        "Select Client Name(s) to Delete",
+        client_delete_options
+    )
+
+    confirm_delete = st.checkbox(
+        "I confirm I want to delete selected client(s) from this proposal"
+    )
+
+    if selected_clients and confirm_delete:
+        if st.button("🚨 Delete Selected Client(s)", use_container_width=True):
+
+            mask = (
+                (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+                (st.session_state.proposals_df["Client_Name"].isin(selected_clients))
+            )
+
+            st.session_state.proposals_df.loc[mask, "Is_Deleted"] = True
+            st.session_state.proposals_df.loc[mask, "Deleted_Date"] = pd.Timestamp.today()
+
+            save_proposals()
+
+            st.success(f"Deleted {len(selected_clients)} client(s) successfully")
+            st.session_state.page = "Summary"
             
 # =====================================================
 # ================= FIND DETAILS PAGE =================
@@ -1696,6 +1739,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
