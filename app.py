@@ -712,11 +712,26 @@ if st.session_state.page == "AddProposal":
         else:
             st.warning("Select client and enter valid amount.")
 
-    # ---------- DISPLAY ADDED CLIENTS ----------
+    # ---------- DISPLAY & MANAGE CLIENTS ----------
     if st.session_state.proposal_clients:
 
+        st.subheader("Added Clients")
+
+        for i, item in enumerate(st.session_state.proposal_clients):
+
+            col1, col2, col3, col4, col5 = st.columns([2,2,2,2,1])
+
+            col1.write(item["Client_Name"])
+            col2.write(f"₹ {item['Proposal_Cost']:,.2f}")
+            col3.write(f"₹ {item['Profit']:,.2f}")
+            col4.write(f"₹ {item['Final_Cost']:,.2f}")
+
+            if col5.button("❌", key=f"delete_{i}"):
+                st.session_state.proposal_clients.pop(i)
+                st.rerun()
+
+        # --- TOTAL ---
         df_preview = pd.DataFrame(st.session_state.proposal_clients)
-        st.dataframe(df_preview, use_container_width=True)
 
         total_amount = df_preview["Final_Cost"].sum()
         total_profit = df_preview["Profit"].sum()
@@ -725,9 +740,7 @@ if st.session_state.page == "AddProposal":
         c1, c2 = st.columns(2)
         c1.metric("Total Profit (₹)", f"{total_profit:,.2f}")
         c2.metric("Total Final Amount (₹)", f"{total_amount:,.2f}")
-
-    st.markdown("---")
-
+    
     # ---------- SAVE COMPLETE PROPOSAL ----------
     if st.button("💾 Save Complete Proposal"):
 
@@ -1706,6 +1719,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
