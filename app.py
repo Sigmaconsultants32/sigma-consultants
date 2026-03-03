@@ -623,16 +623,50 @@ if st.session_state.page == "AddProposal":
 
     # ---------- SAFETY CHECK ----------
     if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
-        st.warning("Please add a client before creating a proposal.")
+        st.warning("Please add a client first.")
         st.stop()
 
     clients_df = st.session_state.clients_df
     proposals_df = st.session_state.proposals_df
 
-    # ---------- CLIENT DROPDOWN ----------
+    # ---------- START DATE ----------
+    start_date = st.date_input(
+        "Start Date",
+        value=datetime.today().date(),
+        key="start_date_new"
+    )
+
+    # ---------- MONTH FILTER ----------
+    month_option = st.selectbox(
+        "Select Duration (Months)",
+        [1, 2, 3],
+        key="month_filter"
+    )
+
+    # ---------- AUTO END DATE ----------
+    end_date = (pd.to_datetime(start_date) + pd.DateOffset(months=month_option)).date()
+
+    st.write(f"**End Date:** {end_date}")
+
+    # ---------- RATE ----------
+    rate = st.number_input(
+        "Monthly Rate (%)",
+        min_value=0.0,
+        step=0.10,
+        format="%.2f",
+        key="rate_new"
+    )
+
+    st.markdown("---")
+    st.subheader("Add Clients To Proposal")
+
+    # ---------- SESSION STORAGE FOR MULTIPLE CLIENTS ----------
+    if "proposal_clients" not in st.session_state:
+        st.session_state.proposal_clients = []
+
     active_clients = clients_df[clients_df["Is_Archived"] == False]
 
-    client_options = ["— Select Client —"] + sorted(
+    client_options = sorted(
         active_clients["Client_Name"]
         .dropna()
         .astype(str)
@@ -640,125 +674,101 @@ if st.session_state.page == "AddProposal":
         .tolist()
     )
 
-    client_name = st.selectbox(
-        "Client Name",
-        client_options,
-        key="add_client_name"
-    )
+    col1, col2 = st.columns(2)
 
-    # ---------- DATE DEFAULT LOGIC ----------
-    if client_name != "— Select Client —":
-        if st.session_state.start_date is None:
-            st.session_state.start_date = datetime.today().date()
-        if st.session_state.end_date is None:
-            st.session_state.end_date = (
-                pd.Timestamp.today() + pd.Timedelta(days=30)
-            ).date()
-    else:
-        st.session_state.start_date = None
-        st.session_state.end_date = None
+    with col1:
+        selected_client = st.selectbox(
+            "Client Name",
+            ["Select Client"] + client_options,
+            key="client_select_multi"
+        )
 
-    # ---------- DATE INPUT ----------
-    start_date = st.date_input(
-        "Start Date",
-        value=st.session_state.start_date,
-        key="add_start_date"
-    )
+    with col2:
+        proposal_price = st.number_input(
+            "Proposal Amount (₹)",
+            min_value=0.0,
+            step=1000.0,
+            format="%.2f",
+            key="proposal_price_multi"
+        )
 
-    end_date = st.date_input(
-        "End Date",
-        value=st.session_state.end_date,
-        key="add_end_date"
-    )
+    # ---------- ADD CLIENT BUTTON ----------
+    if st.button("➕ Add Client To Proposal"):
 
-    # ---------- FINANCIAL INPUTS ----------
-    proposal_cost = st.number_input(
-        "Proposal Amount (₹)",
-        min_value=0.0,
-        step=1000.0,
-        format="%.2f",
-        key="add_cost"
-    )
+        if selected_client != "Select Client" and proposal_price > 0:
 
-    rate = st.number_input(
-        "Monthly Rate (%)",
-        min_value=0.0,
-        step=0.10,
-        format="%.2f",
-        key="add_rate"
-    )
+            days = month_option * 30
+            final_cost, profit = calc(proposal_price, rate, days)
 
-    # ---------- VALIDATION ----------
-    is_valid = (
-        client_name != "— Select Client —"
-        and start_date is not None
-        and end_date is not None
-        and end_date >= start_date
-    )
+            st.session_state.proposal_clients.append({
+                "Client_Name": selected_client,
+                "Proposal_Cost": proposal_price,
+                "Profit": profit,
+                "Final_Cost": final_cost
+            })
 
-    if not is_valid:
-        st.info("Select Client and valid Start / End Dates to continue.")
+            st.success(f"{selected_client} added successfully")
 
-    # ---------- CALCULATION ----------
-    if is_valid:
-        days = (end_date - start_date).days
+        else:
+            st.warning("Select client and enter valid amount.")
 
-        try:
-            final_cost, profit = calc(proposal_cost, rate, days)
-        except Exception as e:
-            st.error("Calculation error. Please check inputs.")
-            st.stop()
+    # ---------- DISPLAY ADDED CLIENTS ----------
+    if st.session_state.proposal_clients:
 
-        months = days / 30
+        df_preview = pd.DataFrame(st.session_state.proposal_clients)
+        st.dataframe(df_preview, use_container_width=True)
+
+        total_amount = df_preview["Final_Cost"].sum()
+        total_profit = df_preview["Profit"].sum()
 
         st.markdown("---")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Duration (Months)", f"{months:.2f}")
-        c2.metric("Profit (₹)", f"{profit:,.2f}")
-        c3.metric("Final Amount (₹)", f"{final_cost:,.2f}")
+        c1, c2 = st.columns(2)
+        c1.metric("Total Profit (₹)", f"{total_profit:,.2f}")
+        c2.metric("Total Final Amount (₹)", f"{total_amount:,.2f}")
 
     st.markdown("---")
 
-    # ---------- SAVE ----------
-    if st.button(
-        "💾 Save Proposal",
-        use_container_width=True,
-        disabled=not is_valid
-    ):
-        client_row = clients_df.loc[
-            clients_df["Client_Name"] == client_name
-        ].iloc[0]
+    # ---------- SAVE COMPLETE PROPOSAL ----------
+    if st.button("💾 Save Complete Proposal"):
 
-        new_row = {
-            "Proposal_ID": new_proposal_id(),
-            "Client_ID": client_row["Client_ID"],
-            "Client_Name": client_name,
-            "Proposal_Cost": round(proposal_cost, 2),
-            "Rate": round(rate, 2),
-            "Final_Cost": round(final_cost, 2),
-            "Profit": round(profit, 2),
-            "Start_Date": pd.to_datetime(start_date),
-            "End_Date": pd.to_datetime(end_date),
-            "Status": "Open",
-            "Closing_Date": pd.NaT
-        }
+        if not st.session_state.proposal_clients:
+            st.warning("Add at least one client.")
+            st.stop()
+
+        proposal_id = new_proposal_id()
+
+        rows = []
+        for item in st.session_state.proposal_clients:
+
+            client_row = clients_df.loc[
+                clients_df["Client_Name"] == item["Client_Name"]
+            ].iloc[0]
+
+            rows.append({
+                "Proposal_ID": proposal_id,
+                "Client_ID": client_row["Client_ID"],
+                "Client_Name": item["Client_Name"],
+                "Proposal_Cost": round(item["Proposal_Cost"], 2),
+                "Rate": round(rate, 2),
+                "Profit": round(item["Profit"], 2),
+                "Final_Cost": round(item["Final_Cost"], 2),
+                "Start_Date": pd.to_datetime(start_date),
+                "End_Date": pd.to_datetime(end_date),
+                "Status": "Open",
+                "Closing_Date": pd.NaT
+            })
 
         st.session_state.proposals_df = pd.concat(
-            [proposals_df, pd.DataFrame([new_row])],
+            [proposals_df, pd.DataFrame(rows)],
             ignore_index=True
         )
 
-        try:
-            save_proposals()
-        except Exception:
-            st.error("Failed to save proposal. Please retry.")
-            st.stop()
+        save_proposals()
 
-        # ---------- RESET FORM ----------
-        st.session_state.start_date = None
-        st.session_state.end_date = None
+        # RESET
+        st.session_state.proposal_clients = []
 
-        st.success("✅ Proposal added successfully")
+        st.success("✅ Proposal Saved Successfully")
         st.session_state.page = "Summary"
 
 # =====================================================
@@ -1696,6 +1706,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
