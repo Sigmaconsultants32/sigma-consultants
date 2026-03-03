@@ -1002,7 +1002,7 @@ if st.session_state.page == "Edit":
         months = days / 30
 
         st.markdown("---")
-        st.subheader("💰 Auto Calculated")
+        st.subheader("💰 Proposal Details")
 
         if is_mobile:
             st.markdown(
@@ -1785,6 +1785,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
