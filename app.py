@@ -1074,7 +1074,7 @@ if st.session_state.page == "Edit":
         # DELETE OPTIONS
         # =================================================
         st.markdown("---")
-        st.subheader("⚠️ Delete Options")
+        st.subheader("⚠️ Remove Details")
 
         col_del1, col_del2 = st.columns(2)
 
@@ -1785,6 +1785,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
