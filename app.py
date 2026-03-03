@@ -437,10 +437,10 @@ if st.session_state.page == "Welcome":
             st.session_state.page = "Find"
 
 # =====================================================
-# ================= SUMMARY ===========================
+# ================= Home ==============================
 # =====================================================
-if st.session_state.page == "Summary":
-    st.header("📊 Summary")
+if st.session_state.page == "Home":
+    st.header("📊 Home")
 
     # ---------- SAFETY CHECK ----------
     if proposals_df.empty:
@@ -1785,6 +1785,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
