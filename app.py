@@ -383,7 +383,7 @@ with st.sidebar:
         if st.button(label, use_container_width=True):
             st.session_state.page = page_key
 
-    nav("🏠 Summary", "Summary")
+    nav("🏠 Summary", "Home")
     nav("➕ Add Proposal", "AddProposal")
     nav("🔍 Find Details", "Find")
     nav("✏️ Edit Proposal", "Edit")
@@ -1785,6 +1785,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
