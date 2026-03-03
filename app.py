@@ -1070,55 +1070,55 @@ if st.session_state.page == "Edit":
             st.success("✅ Proposal updated successfully")
             st.session_state.page = "Summary"
 
-            # =================================================
-            # DELETE OPTIONS
-            # =================================================
-            st.markdown("---")
-            st.subheader("⚠️ Delete Options")
+        # =================================================
+        # DELETE OPTIONS
+        # =================================================
+        st.markdown("---")
+        st.subheader("⚠️ Delete Options")
 
-            col_del1, col_del2 = st.columns(2)
+        col_del1, col_del2 = st.columns(2)
 
-            # -----------------------------
-            # DELETE SELECTED CLIENT
-            # -----------------------------
-            with col_del1:
-                if st.button("🗑 Delete This Client", use_container_width=True):
+        # -----------------------------
+        # DELETE SELECTED CLIENT
+        # -----------------------------
+        with col_del1:
+            if st.button("🗑 Delete This Client", use_container_width=True):
 
-                    mask = (
-                        (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
-                        (st.session_state.proposals_df["Client_Name"] == client_name)
-                    )
+                mask = (
+                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+                    (st.session_state.proposals_df["Client_Name"] == client_name)
+                )
 
-                    st.session_state.proposals_df = (
-                        st.session_state.proposals_df.loc[~mask]
-                    )
+                st.session_state.proposals_df = (
+                    st.session_state.proposals_df.loc[~mask]
+                )
 
-                    save_proposals()
+                save_proposals()
 
-                    st.success(f"Client '{client_name}' deleted from proposal.")
-                    st.session_state.page = "Summary"
-                    st.rerun()
+                st.success(f"Client '{client_name}' deleted from proposal.")
+                st.session_state.page = "Summary"
+                st.rerun()
 
 
-            # -----------------------------
-            # DELETE ENTIRE PROPOSAL
-            # -----------------------------
-            with col_del2:
+        # -----------------------------
+        # DELETE ENTIRE PROPOSAL
+        # -----------------------------
+        with col_del2:
             if st.button("❌ Delete Entire Proposal", use_container_width=True):
 
                 mask = (
                     st.session_state.proposals_df["Proposal_ID"] == proposal_id
                 )
 
-                    st.session_state.proposals_df = (
-                        st.session_state.proposals_df.loc[~mask]
-                    )
+                st.session_state.proposals_df = (
+                    st.session_state.proposals_df.loc[~mask]
+                )
 
-                    save_proposals()
+                save_proposals()
 
-                    st.success(f"Proposal '{proposal_id}' deleted completely.")
-                    st.session_state.page = "Summary"
-                    st.rerun()
+                st.success(f"Proposal '{proposal_id}' deleted completely.")
+                st.session_state.page = "Summary"
+                st.rerun()
 
 # =====================================================
 # ================= FIND DETAILS PAGE =================
@@ -1785,6 +1785,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
