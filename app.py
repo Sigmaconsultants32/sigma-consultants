@@ -619,7 +619,7 @@ Profit : ₹ {row['Profit']:,.2f}
 # =====================================================
 if st.session_state.page == "AddProposal":
 
-    st.header("➕ Add New Proposal")
+    st.header("➕ Create New Proposal")
 
     # ---------- SAFETY CHECK ----------
     if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
@@ -627,42 +627,45 @@ if st.session_state.page == "AddProposal":
         st.stop()
 
     clients_df = st.session_state.clients_df
-    proposals_df = st.session_state.proposals_df
 
-    # ---------- START DATE ----------
+    # ---------- SESSION DRAFT STORAGE ----------
+    if "proposal_clients" not in st.session_state:
+        st.session_state.proposal_clients = []
+
+    # =====================================================
+    # ================= PROPOSAL HEADER ===================
+    # =====================================================
+
+    st.subheader("Proposal Details")
+
     start_date = st.date_input(
         "Start Date",
-        value=datetime.today().date(),
-        key="start_date_new"
+        value=datetime.today().date()
     )
 
-    # ---------- MONTH FILTER ----------
-    month_option = st.selectbox(
-        "Select Duration (Months)",
-        [1, 2, 3],
-        key="month_filter"
+    months = st.selectbox(
+        "Duration (Months)",
+        [1, 2, 3]
     )
 
-    # ---------- AUTO END DATE ----------
-    end_date = (pd.to_datetime(start_date) + pd.DateOffset(months=month_option)).date()
+    end_date = (pd.to_datetime(start_date) + pd.DateOffset(months=months)).date()
 
-    st.write(f"**End Date:** {end_date}")
+    st.info(f"End Date: {end_date}")
 
-    # ---------- RATE ----------
     rate = st.number_input(
-        "Monthly Rate (%)",
+        "Monthly Interest Rate (%)",
         min_value=0.0,
         step=0.10,
-        format="%.2f",
-        key="rate_new"
+        format="%.2f"
     )
 
     st.markdown("---")
-    st.subheader("Add Clients To Proposal")
 
-    # ---------- SESSION STORAGE FOR MULTIPLE CLIENTS ----------
-    if "proposal_clients" not in st.session_state:
-        st.session_state.proposal_clients = []
+    # =====================================================
+    # ================= ADD CLIENT ITEMS ==================
+    # =====================================================
+
+    st.subheader("Add Clients")
 
     active_clients = clients_df[clients_df["Is_Archived"] == False]
 
@@ -679,70 +682,98 @@ if st.session_state.page == "AddProposal":
     with col1:
         selected_client = st.selectbox(
             "Client Name",
-            ["Select Client"] + client_options,
-            key="client_select_multi"
+            ["Select Client"] + client_options
         )
 
     with col2:
-        proposal_price = st.number_input(
-            "Proposal Amount (₹)",
+        principal = st.number_input(
+            "Principal Amount (₹)",
             min_value=0.0,
             step=1000.0,
-            format="%.2f",
-            key="proposal_price_multi"
+            format="%.2f"
         )
 
-    # ---------- ADD CLIENT BUTTON ----------
-    if st.button("➕ Add Client To Proposal"):
+    # ---------- ADD CLIENT ----------
+    if st.button("➕ Add Client"):
 
-        if selected_client != "Select Client" and proposal_price > 0:
+        if selected_client == "Select Client" or principal <= 0:
+            st.warning("Select valid client and enter principal.")
+            st.stop()
 
-            days = month_option * 30
-            final_cost, profit = calc(proposal_price, rate, days)
+        # Prevent duplicate
+        existing = [c["Client_Name"] for c in st.session_state.proposal_clients]
+        if selected_client in existing:
+            st.warning("Client already added.")
+            st.stop()
 
-            st.session_state.proposal_clients.append({
-                "Client_Name": selected_client,
-                "Proposal_Cost": proposal_price,
-                "Profit": profit,
-                "Final_Cost": final_cost
-            })
+        # Finance Calculation (Enterprise Formula)
+        profit = principal * rate * months / 100
+        final_amount = principal + profit
 
-            st.success(f"{selected_client} added successfully")
+        st.session_state.proposal_clients.append({
+            "Client_Name": selected_client,
+            "Principal": principal,
+            "Profit": profit,
+            "Final_Amount": final_amount
+        })
 
-        else:
-            st.warning("Select client and enter valid amount.")
+        st.success(f"{selected_client} added.")
 
-    # ---------- DISPLAY & MANAGE CLIENTS ----------
+    # =====================================================
+    # ================= AUTO RECALCULATION ================
+    # =====================================================
+
+    for item in st.session_state.proposal_clients:
+        p = item["Principal"]
+        item["Profit"] = p * rate * months / 100
+        item["Final_Amount"] = p + item["Profit"]
+
+    # =====================================================
+    # ================= DISPLAY ITEMS =====================
+    # =====================================================
+
     if st.session_state.proposal_clients:
 
-        st.subheader("Added Clients")
+        st.markdown("### Added Clients")
 
         for i, item in enumerate(st.session_state.proposal_clients):
 
             col1, col2, col3, col4, col5 = st.columns([2,2,2,2,1])
 
             col1.write(item["Client_Name"])
-            col2.write(f"₹ {item['Proposal_Cost']:,.2f}")
+            col2.write(f"₹ {item['Principal']:,.2f}")
             col3.write(f"₹ {item['Profit']:,.2f}")
-            col4.write(f"₹ {item['Final_Cost']:,.2f}")
+            col4.write(f"₹ {item['Final_Amount']:,.2f}")
 
-            if col5.button("❌", key=f"delete_{i}"):
+            if col5.button("❌", key=f"del_{i}"):
                 st.session_state.proposal_clients.pop(i)
                 st.rerun()
 
-        # --- TOTAL ---
+        # Totals
         df_preview = pd.DataFrame(st.session_state.proposal_clients)
 
-        total_amount = df_preview["Final_Cost"].sum()
+        total_principal = df_preview["Principal"].sum()
         total_profit = df_preview["Profit"].sum()
+        total_final = df_preview["Final_Amount"].sum()
 
         st.markdown("---")
-        c1, c2 = st.columns(2)
-        c1.metric("Total Profit (₹)", f"{total_profit:,.2f}")
-        c2.metric("Total Final Amount (₹)", f"{total_amount:,.2f}")
-    
-    # ---------- SAVE COMPLETE PROPOSAL ----------
-    if st.button("💾 Save Complete Proposal"):
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total Principal", f"₹ {total_principal:,.2f}")
+        c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
+        c3.metric("Total Final Amount", f"₹ {total_final:,.2f}")
+
+    else:
+        total_principal = 0
+        total_profit = 0
+        total_final = 0
+
+    st.markdown("---")
+
+    # =====================================================
+    # ================= SAVE PROPOSAL =====================
+    # =====================================================
+
+    if st.button("💾 Save Proposal"):
 
         if not st.session_state.proposal_clients:
             st.warning("Add at least one client.")
@@ -750,38 +781,53 @@ if st.session_state.page == "AddProposal":
 
         proposal_id = new_proposal_id()
 
-        rows = []
+        # ---------- SAVE HEADER ----------
+        header_row = {
+            "Proposal_ID": proposal_id,
+            "Start_Date": pd.to_datetime(start_date),
+            "End_Date": pd.to_datetime(end_date),
+            "Months": months,
+            "Rate": rate,
+            "Total_Principal": total_principal,
+            "Total_Profit": total_profit,
+            "Total_Final": total_final,
+            "Status": "Open",
+            "Created_On": pd.Timestamp.now()
+        }
+
+        st.session_state.proposal_header_df = pd.concat(
+            [st.session_state.proposal_header_df, pd.DataFrame([header_row])],
+            ignore_index=True
+        )
+
+        # ---------- SAVE ITEMS ----------
+        item_rows = []
+
         for item in st.session_state.proposal_clients:
 
             client_row = clients_df.loc[
                 clients_df["Client_Name"] == item["Client_Name"]
             ].iloc[0]
 
-            rows.append({
+            item_rows.append({
+                "Item_ID": uuid.uuid4().hex[:8],
                 "Proposal_ID": proposal_id,
                 "Client_ID": client_row["Client_ID"],
                 "Client_Name": item["Client_Name"],
-                "Proposal_Cost": round(item["Proposal_Cost"], 2),
-                "Rate": round(rate, 2),
-                "Profit": round(item["Profit"], 2),
-                "Final_Cost": round(item["Final_Cost"], 2),
-                "Start_Date": pd.to_datetime(start_date),
-                "End_Date": pd.to_datetime(end_date),
-                "Status": "Open",
-                "Closing_Date": pd.NaT
+                "Principal": item["Principal"],
+                "Profit": item["Profit"],
+                "Final_Amount": item["Final_Amount"]
             })
 
-        st.session_state.proposals_df = pd.concat(
-            [proposals_df, pd.DataFrame(rows)],
+        st.session_state.proposal_items_df = pd.concat(
+            [st.session_state.proposal_items_df, pd.DataFrame(item_rows)],
             ignore_index=True
         )
 
-        save_proposals()
-
-        # RESET
+        # ---------- RESET DRAFT ----------
         st.session_state.proposal_clients = []
 
-        st.success("✅ Proposal Saved Successfully")
+        st.success(f"✅ Proposal {proposal_id} created successfully.")
         st.session_state.page = "Summary"
 
 # =====================================================
@@ -1719,6 +1765,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
