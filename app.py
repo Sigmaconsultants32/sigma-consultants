@@ -614,9 +614,6 @@ Profit : ₹ {row['Profit']:,.2f}
 
         st.markdown("---")
 
-# ===================================================== 
-# ================= ADD NEW PROPOSAL ================== 
-# =====================================================
 # =====================================================
 # ================= ADD NEW PROPOSAL ==================
 # =====================================================
@@ -873,6 +870,127 @@ if st.session_state.page == "Edit":
         st.info("Please select a Client")
         st.stop()
 
+        # =================================================
+    # ADD NEW CLIENT TO EXISTING PROPOSAL
+    # =================================================
+    st.markdown("---")
+    add_client_mode = st.checkbox("➕ Add New Client to this Proposal")
+
+    if add_client_mode:
+
+        st.info("New client will be added under selected Proposal ID")
+
+        start_date = proposal_df["Start_Date"].iloc[0]
+        end_date = proposal_df["End_Date"].iloc[0]
+        rate_master = proposal_df["Rate"].iloc[0]
+        status_master = proposal_df["Status"].iloc[0]
+
+        days = (end_date - start_date).days
+
+        if is_mobile:
+
+            new_client_name = st.text_input("Client Name")
+
+            proposal_cost_new = st.number_input(
+                "Proposal Amount (₹)",
+                step=1000.0
+            )
+
+        else:
+
+            c1, c2 = st.columns(2)
+
+            new_client_name = c1.text_input("Client Name")
+
+            proposal_cost_new = c2.number_input(
+                "Proposal Amount (₹)",
+                step=1000.0
+            )
+
+        if proposal_cost_new > 0:
+
+            final_cost_new, profit_new = calc(
+                proposal_cost_new,
+                rate_master,
+                days
+            )
+
+            st.markdown("---")
+            st.subheader("💰 Calculation Preview")
+
+            if is_mobile:
+
+                st.markdown(
+                    f"""
+                    <div style="border:1px solid #ddd;
+                    border-radius:12px;
+                    padding:14px;
+                    background:#fafafa">
+
+                    <b>Duration:</b> {days} days<br>
+                    <b>Rate:</b> {rate_master} %<br>
+                    <b>Profit:</b> ₹ {profit_new:,.2f}<br>
+                    <b>Final Amount:</b> ₹ {final_cost_new:,.2f}
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            else:
+
+                d1, d2, d3 = st.columns(3)
+                d1.metric("Duration (Days)", f"{days}")
+                d2.metric("Profit (₹)", f"{profit_new:,.2f}")
+                d3.metric("Final Amount (₹)", f"{final_cost_new:,.2f}")
+
+        # =============================================
+        # SAVE NEW CLIENT
+        # =============================================
+        if st.button("✅ Add Client", use_container_width=True):
+
+            if new_client_name.strip() == "":
+                st.error("Client Name cannot be empty")
+                st.stop()
+
+            if proposal_cost_new <= 0:
+                st.error("Proposal Amount must be greater than 0")
+                st.stop()
+
+            final_cost_new, profit_new = calc(
+                proposal_cost_new,
+                rate_master,
+                days
+            )
+
+            new_row = {
+                "Client_Name": new_client_name.strip(),
+                "Proposal_ID": proposal_id,
+                "Start_Date": start_date,
+                "End_Date": end_date,
+                "Proposal_Cost": round(proposal_cost_new, 2),
+                "Rate": round(rate_master, 2),
+                "Final_Cost": round(final_cost_new, 2),
+                "Profit": round(profit_new, 2),
+                "Status": status_master,
+                "Closing_Date": pd.NaT
+            }
+
+            st.session_state.proposals_df = pd.concat(
+                [
+                    st.session_state.proposals_df,
+                    pd.DataFrame([new_row])
+                ],
+                ignore_index=True
+            )
+
+            save_proposals()
+
+            st.success(f"✅ Client '{new_client_name}' added to Proposal {proposal_id}")
+
+            st.session_state.page = "Summary"
+            st.rerun()
+    
     row = proposal_df[
         proposal_df["Client_Name"] == client_name
     ].iloc[0]
@@ -1785,6 +1903,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
