@@ -639,14 +639,14 @@ if st.session_state.page == "AddProposal":
         value=datetime.today().date()
     )
 
-    months = st.selectbox(
-        "Duration (Months)",
-        [1, 2, 3]
+    days = st.selectbox(
+    "Duration (Days)",
+    [15, 20, 30, 45, 60, 90]
     )
 
-    end_date = (pd.to_datetime(start_date) + pd.DateOffset(months=months)).date()
-    st.info(f"End Date: {end_date}")
-
+    end_date = (pd.to_datetime(start_date) + pd.Timedelta(days=days)).date()
+    st.info(f"End Date: {end_date}  |  Duration: {days} days")
+    
     rate = st.number_input(
         "Monthly Rate (%)",
         min_value=0.0,
@@ -698,7 +698,7 @@ if st.session_state.page == "AddProposal":
             st.stop()
 
         # Finance Formula (Month Based)
-        profit = principal * rate * months / 100
+        profit = principal * rate * (days / 30) / 100
         final_amount = principal + profit
 
         st.session_state.proposal_clients.append({
@@ -713,7 +713,7 @@ if st.session_state.page == "AddProposal":
     # ---------- AUTO RECALCULATE IF RATE/MONTH CHANGES ----------
     for item in st.session_state.proposal_clients:
         p = item["Principal"]
-        item["Profit"] = p * rate * months / 100
+        item["Profit"] = p * rate * (days / 30) / 100
         item["Final_Amount"] = p + item["Profit"]
 
     # ---------- DISPLAY ADDED CLIENTS ----------
@@ -1903,6 +1903,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
