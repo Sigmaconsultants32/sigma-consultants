@@ -251,6 +251,7 @@ PROPOSAL_FILE = "proposals.xlsx"
 
 @st.cache_data
 def load_clients():
+
     if os.path.exists(CLIENT_FILE):
         df = pd.read_excel(CLIENT_FILE)
     else:
@@ -263,7 +264,7 @@ def load_clients():
         ])
         df.to_excel(CLIENT_FILE, index=False)
 
-    # ---- schema safety for old files ----
+    # schema safety
     if "Is_Archived" not in df.columns:
         df["Is_Archived"] = False
     if "Notes" not in df.columns:
@@ -273,7 +274,50 @@ def load_clients():
 
 
 @st.cache_data
-df = pd.read_excel(
+def load_proposals():
+
+    if os.path.exists(PROPOSAL_FILE):
+        df = pd.read_excel(PROPOSAL_FILE, engine="openpyxl")
+    else:
+        df = pd.DataFrame(columns=[
+            "Proposal_ID",
+            "Client_ID",
+            "Client_Name",
+            "Proposal_Cost",
+            "Rate",
+            "Final_Cost",
+            "Profit",
+            "Start_Date",
+            "End_Date",
+            "Status",
+            "Closing_Date"
+        ])
+        df.to_excel(PROPOSAL_FILE, index=False)
+
+    # Ensure required columns exist
+    required_cols = [
+        "Proposal_ID",
+        "Client_ID",
+        "Client_Name",
+        "Proposal_Cost",
+        "Rate",
+        "Final_Cost",
+        "Profit",
+        "Start_Date",
+        "End_Date",
+        "Status",
+        "Closing_Date"
+    ]
+
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = None
+
+    # Date normalization
+    for c in ["Start_Date", "End_Date", "Closing_Date"]:
+        df[c] = pd.to_datetime(df[c], errors="coerce")
+
+    return df
 
 # ---------------- SESSION STATE ----------------
 
@@ -1908,6 +1952,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
