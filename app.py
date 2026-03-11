@@ -273,50 +273,7 @@ def load_clients():
 
 
 @st.cache_data
-def load_proposals():
-
-    if os.path.exists(PROPOSAL_FILE):
-        df = pd.read_excel(
-            PROPOSAL_FILE,
-            parse_dates=["Start_Date", "End_Date", "Closing_Date"],
-            engine="openpyxl"
-        )
-    else:
-        df = pd.DataFrame(columns=[
-            "Proposal_ID",
-            "Client_ID",
-            "Client_Name",
-            "Proposal_Cost",
-            "Rate",
-            "Final_Cost",
-            "Profit",
-            "Start_Date",
-            "End_Date",
-            "Status",
-            "Closing_Date"
-        ])
-
-        df.to_excel(PROPOSAL_FILE, index=False)
-
-    # ---------- Schema Safety ----------
-    default_cols = {
-        "Proposal_Cost": 0.0,
-        "Rate": 0.0,
-        "Final_Cost": 0.0,
-        "Profit": 0.0,
-        "Status": ""
-    }
-
-    for col, val in default_cols.items():
-        if col not in df.columns:
-            df[col] = val
-
-    # ---------- Date Normalization ----------
-    for c in ["Start_Date", "End_Date", "Closing_Date"]:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce")
-
-    return df
+df = pd.read_excel(
 
 # ---------------- SESSION STATE ----------------
 
@@ -1951,6 +1908,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
