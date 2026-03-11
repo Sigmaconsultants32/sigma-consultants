@@ -592,6 +592,7 @@ if st.session_state.page == "Summary":
     # =====================================================
     # ========= GROUP BY RATE + DATE (SAFE) ================
     # =====================================================
+
     summary_df = (
         df.groupby(["Rate_Int", "DateOnly"], as_index=False)
         .agg({
@@ -601,20 +602,11 @@ if st.session_state.page == "Summary":
         })
         .sort_values(["Rate_Int", "DateOnly"])
     )
-
-    # Save for display section
-    st.session_state.summary_df = summary_df
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-if (
-    st.session_state.page == "Summary"
-    and "summary_df" in st.session_state
-    and not st.session_state.summary_df.empty
-):
+if st.session_state.page == "Summary" and not summary_df.empty:
 
-    summary_df = st.session_state.summary_df
-    
     for _, row in summary_df.iterrows():
 
         profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
@@ -625,12 +617,12 @@ if (
             else "—"
         )
 
-        rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
+        rate = int(row["Rate_Int"])
 
         if is_mobile:
             st.markdown(
                 f"""
-**📅 {date_str} | {rate} %**  
+**📅 {date_str} | {rate}%**  
 💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
 {profit_color} Profit : ₹ {row['Profit']:,.2f}
@@ -639,7 +631,7 @@ if (
         else:
             st.markdown(
                 f"""
-**{date_str} | Rate {rate} %**  
+**{date_str} | Rate {rate}%**  
 Investment : ₹ {row['Proposal_Cost']:,.2f}  
 Final Amount : ₹ {row['Final_Cost']:,.2f}  
 Profit : ₹ {row['Profit']:,.2f}
@@ -1952,6 +1944,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
