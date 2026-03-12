@@ -248,10 +248,7 @@ CLIENT_FILE = "clients.xlsx"
 PROPOSAL_FILE = "proposals.xlsx"
 
 # ---------------- LOADERS ----------------
-
-@st.cache_data
 def load_clients():
-
     if os.path.exists(CLIENT_FILE):
         df = pd.read_excel(CLIENT_FILE)
     else:
@@ -264,7 +261,7 @@ def load_clients():
         ])
         df.to_excel(CLIENT_FILE, index=False)
 
-    # schema safety
+    # ---- schema safety for old files ----
     if "Is_Archived" not in df.columns:
         df["Is_Archived"] = False
     if "Notes" not in df.columns:
@@ -272,12 +269,9 @@ def load_clients():
 
     return df
 
-
-@st.cache_data
 def load_proposals():
-
     if os.path.exists(PROPOSAL_FILE):
-        df = pd.read_excel(PROPOSAL_FILE, engine="openpyxl")
+        df = pd.read_excel(PROPOSAL_FILE)
     else:
         df = pd.DataFrame(columns=[
             "Proposal_ID",
@@ -294,28 +288,23 @@ def load_proposals():
         ])
         df.to_excel(PROPOSAL_FILE, index=False)
 
-    # Ensure required columns exist
-    required_cols = [
-        "Proposal_ID",
-        "Client_ID",
-        "Client_Name",
-        "Proposal_Cost",
-        "Rate",
-        "Final_Cost",
-        "Profit",
-        "Start_Date",
-        "End_Date",
-        "Status",
-        "Closing_Date"
-    ]
+    # ---- schema safety for numeric & status columns ----
+    default_cols = {
+        "Proposal_Cost": 0.0,
+        "Rate": 0.0,
+        "Final_Cost": 0.0,
+        "Profit": 0.0,
+        "Status": ""
+    }
 
-    for col in required_cols:
+    for col, val in default_cols.items():
         if col not in df.columns:
-            df[col] = None
+            df[col] = val
 
-    # Date normalization
+    # ---- date normalization ----
     for c in ["Start_Date", "End_Date", "Closing_Date"]:
-        df[c] = pd.to_datetime(df[c], errors="coerce")
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce")
 
     return df
 
@@ -336,56 +325,35 @@ proposals_df = st.session_state.proposals_df
 # ---- Save helpers (always save from session_state) ----
 def save_clients():
     st.session_state.clients_df.to_excel(CLIENT_FILE, index=False)
-    load_clients.clear()
-
 
 def save_proposals():
     st.session_state.proposals_df.to_excel(PROPOSAL_FILE, index=False)
-    load_proposals.clear()
 
 # ---------------- UTIL ----------------
 
 def new_client_id():
-
     if clients_df.empty or "Client_ID" not in clients_df.columns:
         return "SIG-C-001"
 
-    ids = clients_df["Client_ID"].dropna()
-
-    if ids.empty:
-        return "SIG-C-001"
-
     last_num = (
-        ids.str.replace("SIG-C-", "", regex=False)
+        clients_df["Client_ID"]
+        .str.replace("SIG-C-", "", regex=False)
         .astype(int)
         .max()
     )
-
     return f"SIG-C-{last_num + 1:03d}"
 
 
 def new_proposal_id():
-
-    # Always read latest file to avoid duplicate IDs
-    if os.path.exists(PROPOSAL_FILE):
-        df = pd.read_excel(PROPOSAL_FILE)
-    else:
-        return "SIG-P-001"
-
-    if df.empty or "Proposal_ID" not in df.columns:
-        return "SIG-P-001"
-
-    ids = df["Proposal_ID"].dropna()
-
-    if ids.empty:
+    if proposals_df.empty or "Proposal_ID" not in proposals_df.columns:
         return "SIG-P-001"
 
     last_num = (
-        ids.str.replace("SIG-P-", "", regex=False)
+        proposals_df["Proposal_ID"]
+        .str.replace("SIG-P-", "", regex=False)
         .astype(int)
         .max()
     )
-
     return f"SIG-P-{last_num + 1:03d}"
 
 
@@ -592,7 +560,6 @@ if st.session_state.page == "Summary":
     # =====================================================
     # ========= GROUP BY RATE + DATE (SAFE) ================
     # =====================================================
-
     summary_df = (
         df.groupby(["Rate_Int", "DateOnly"], as_index=False)
         .agg({
@@ -602,11 +569,18 @@ if st.session_state.page == "Summary":
         })
         .sort_values(["Rate_Int", "DateOnly"])
     )
+
 # =====================================================
 # ============ COMPACT SUMMARY DISPLAY ================
 # =====================================================
-if st.session_state.page == "Summary" and not summary_df.empty:
+if (
+    st.session_state.page == "Summary"
+    and "summary_df" in st.session_state
+    and not st.session_state.summary_df.empty
+):
 
+    summary_df = st.session_state.summary_df
+    
     for _, row in summary_df.iterrows():
 
         profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
@@ -617,12 +591,12 @@ if st.session_state.page == "Summary" and not summary_df.empty:
             else "—"
         )
 
-        rate = int(row["Rate_Int"])
+        rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
 
         if is_mobile:
             st.markdown(
                 f"""
-**📅 {date_str} | {rate}%**  
+**📅 {date_str} | {rate} %**  
 💰 Invested : ₹ {row['Proposal_Cost']:,.2f}  
 📈 Final : ₹ {row['Final_Cost']:,.2f}  
 {profit_color} Profit : ₹ {row['Profit']:,.2f}
@@ -631,7 +605,7 @@ if st.session_state.page == "Summary" and not summary_df.empty:
         else:
             st.markdown(
                 f"""
-**{date_str} | Rate {rate}%**  
+**{date_str} | Rate {rate} %**  
 Investment : ₹ {row['Proposal_Cost']:,.2f}  
 Final Amount : ₹ {row['Final_Cost']:,.2f}  
 Profit : ₹ {row['Profit']:,.2f}
@@ -792,37 +766,23 @@ if st.session_state.page == "AddProposal":
 
         for item in st.session_state.proposal_clients:
 
-            # ---------- CLIENT LOOKUP ----------
-            client_row = clients_df[
-                clients_df["Client_Name"] == new_client_name.strip()
-            ]
+            client_row = clients_df.loc[
+                clients_df["Client_Name"] == item["Client_Name"]
+            ].iloc[0]
 
-            if not client_row.empty:
-                client_id = client_row.iloc[0]["Client_ID"]
-            else:
-                client_id = None
-
-            # ---------- DUPLICATE CHECK ----------
-            existing_clients = proposal_df["Client_Name"].tolist()
-
-            if new_client_name.strip() in existing_clients:
-                st.error("Client already exists in this proposal")
-                st.stop()
-
-            # ---------- CREATE ROW ----------
-            new_row = {
+            rows.append({
                 "Proposal_ID": proposal_id,
-                "Client_ID": client_id,
-                "Client_Name": new_client_name.strip(),
-                "Start_Date": start_date,
-                "End_Date": end_date,
-                "Proposal_Cost": round(proposal_cost_new, 2),
-                "Rate": round(rate_master, 2),
-                "Final_Cost": round(final_cost_new, 2),
-                "Profit": round(profit_new, 2),
-                "Status": status_master,
+                "Client_ID": client_row["Client_ID"],
+                "Client_Name": item["Client_Name"],
+                "Proposal_Cost": round(item["Principal"], 2),
+                "Rate": round(rate, 2),
+                "Profit": round(item["Profit"], 2),
+                "Final_Cost": round(item["Final_Amount"], 2),
+                "Start_Date": pd.to_datetime(start_date),
+                "End_Date": pd.to_datetime(end_date),
+                "Status": "Open",
                 "Closing_Date": pd.NaT
-            }
+            })
 
         st.session_state.proposals_df = pd.concat(
             [proposals_df, pd.DataFrame(rows)],
@@ -836,7 +796,6 @@ if st.session_state.page == "AddProposal":
 
         st.success(f"✅ Proposal {proposal_id} created successfully.")
         st.session_state.page = "Summary"
-        st.rerun()
 
 # =====================================================
 # ================= EDIT PROPOSAL =====================
@@ -1944,57 +1903,5 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
