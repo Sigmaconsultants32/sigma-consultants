@@ -247,8 +247,12 @@ section.main > div {
 CLIENT_FILE = "clients.xlsx"
 PROPOSAL_FILE = "proposals.xlsx"
 
-# ---------------- LOADERS ----------------
+# =====================================================
+# -------------------- LOADERS ------------------------
+# =====================================================
+
 def load_clients():
+
     if os.path.exists(CLIENT_FILE):
         df = pd.read_excel(CLIENT_FILE)
     else:
@@ -261,45 +265,95 @@ def load_clients():
         ])
         df.to_excel(CLIENT_FILE, index=False)
 
-    # ---- schema safety for old files ----
+    # -------- SCHEMA SAFETY --------
     if "Is_Archived" not in df.columns:
         df["Is_Archived"] = False
+
     if "Notes" not in df.columns:
         df["Notes"] = ""
 
+    if "Created_Date" in df.columns:
+        df["Created_Date"] = pd.to_datetime(df["Created_Date"], errors="coerce")
+
     return df
 
+
+# =====================================================
+# LOAD PROPOSALS
+# =====================================================
+
 def load_proposals():
+
     if os.path.exists(PROPOSAL_FILE):
+
         df = pd.read_excel(PROPOSAL_FILE)
+
     else:
+
         df = pd.DataFrame(columns=[
             "Proposal_ID",
             "Client_ID",
             "Client_Name",
             "Proposal_Cost",
             "Rate",
-            "Final_Cost",
             "Profit",
+            "Final_Cost",
             "Start_Date",
             "End_Date",
             "Status",
             "Closing_Date"
         ])
+
         df.to_excel(PROPOSAL_FILE, index=False)
 
-    # ---- schema safety for numeric & status columns ----
-    default_cols = {
-        "Proposal_Cost": 0.0,
-        "Rate": 0.0,
-        "Final_Cost": 0.0,
-        "Profit": 0.0,
-        "Status": ""
-    }
+    # -------- SCHEMA SAFETY --------
 
-    for col, val in default_cols.items():
+    required_columns = [
+        "Proposal_ID",
+        "Client_ID",
+        "Client_Name",
+        "Proposal_Cost",
+        "Rate",
+        "Profit",
+        "Final_Cost",
+        "Start_Date",
+        "End_Date",
+        "Status",
+        "Closing_Date"
+    ]
+
+    for col in required_columns:
         if col not in df.columns:
-            df[col] = val
+            df[col] = None
+
+    # -------- NUMERIC SAFETY --------
+
+    numeric_cols = [
+        "Proposal_Cost",
+        "Rate",
+        "Profit",
+        "Final_Cost"
+    ]
+
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    # -------- DATE SAFETY --------
+
+    date_cols = [
+        "Start_Date",
+        "End_Date",
+        "Closing_Date"
+    ]
+
+    for col in date_cols:
+        df[col] = pd.to_datetime(df[col], errors="coerce")
+
+    # -------- STATUS SAFETY --------
+
+    df["Status"] = df["Status"].fillna("Open")
+
+    return df
 
     # ---- date normalization ----
     for c in ["Start_Date", "End_Date", "Closing_Date"]:
@@ -1931,6 +1985,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
