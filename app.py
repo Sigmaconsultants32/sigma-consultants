@@ -622,31 +622,36 @@ if st.session_state.page == "AddProposal":
 
     st.header("➕ Add New Proposal")
 
+    # ---------- SAFETY CHECK ----------
     if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
         st.warning("Please add a client first.")
         st.stop()
 
+    if "proposals_df" not in st.session_state:
+        st.session_state.proposals_df = pd.DataFrame()
+
     clients_df = st.session_state.clients_df
     proposals_df = st.session_state.proposals_df
 
-    # ---------- Draft Storage ----------
+    # ---------- DRAFT STORAGE ----------
     if "proposal_clients" not in st.session_state:
         st.session_state.proposal_clients = []
 
-    # ---------- HEADER FIELDS ----------
+    # ---------- HEADER INPUT ----------
     start_date = st.date_input(
         "Start Date",
         value=datetime.today().date()
     )
 
     days = st.selectbox(
-    "Duration (Days)",
-    [15, 20, 30, 45, 60, 90]
+        "Duration (Days)",
+        [15, 20, 30, 45, 60, 90]
     )
 
     end_date = (pd.to_datetime(start_date) + pd.Timedelta(days=days)).date()
+
     st.info(f"End Date: {end_date}  |  Duration: {days} days")
-    
+
     rate = st.number_input(
         "Monthly Rate (%)",
         min_value=0.0,
@@ -657,7 +662,7 @@ if st.session_state.page == "AddProposal":
     st.markdown("---")
     st.subheader("Add Clients To Proposal")
 
-    # ---------- CLIENT FILTER ----------
+    # ---------- ACTIVE CLIENT FILTER ----------
     active_clients = clients_df[clients_df["Is_Archived"] == False]
 
     client_options = sorted(
@@ -684,20 +689,24 @@ if st.session_state.page == "AddProposal":
             format="%.2f"
         )
 
-    # ---------- ADD CLIENT ----------
+    # =====================================================
+    # ADD CLIENT
+    # =====================================================
+
     if st.button("➕ Add Client"):
 
         if selected_client == "Select Client" or principal <= 0:
             st.warning("Select valid client and enter valid amount.")
             st.stop()
 
-        # Prevent duplicate
-        existing_clients = [c["Client_Name"] for c in st.session_state.proposal_clients]
+        existing_clients = [
+            c["Client_Name"] for c in st.session_state.proposal_clients
+        ]
+
         if selected_client in existing_clients:
             st.warning("Client already added.")
             st.stop()
 
-        # Finance Formula (Month Based)
         profit = principal * rate * (days / 30) / 100
         final_amount = principal + profit
 
@@ -710,13 +719,21 @@ if st.session_state.page == "AddProposal":
 
         st.success(f"{selected_client} added successfully.")
 
-    # ---------- AUTO RECALCULATE IF RATE/MONTH CHANGES ----------
+    # =====================================================
+    # AUTO RECALCULATE IF RATE/DURATION CHANGES
+    # =====================================================
+
     for item in st.session_state.proposal_clients:
+
         p = item["Principal"]
+
         item["Profit"] = p * rate * (days / 30) / 100
         item["Final_Amount"] = p + item["Profit"]
 
-    # ---------- DISPLAY ADDED CLIENTS ----------
+    # =====================================================
+    # SHOW ADDED CLIENTS
+    # =====================================================
+
     if st.session_state.proposal_clients:
 
         st.markdown("### Added Clients")
@@ -741,19 +758,25 @@ if st.session_state.page == "AddProposal":
         total_final = df_preview["Final_Amount"].sum()
 
         st.markdown("---")
+
         c1, c2, c3 = st.columns(3)
+
         c1.metric("Total Principal", f"₹ {total_principal:,.2f}")
         c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
         c3.metric("Total Final Amount", f"₹ {total_final:,.2f}")
 
     else:
+
         total_principal = 0
         total_profit = 0
         total_final = 0
 
     st.markdown("---")
 
-    # ---------- SAVE COMPLETE PROPOSAL ----------
+    # =====================================================
+    # SAVE PROPOSAL
+    # =====================================================
+
     if st.button("💾 Save Proposal"):
 
         if not st.session_state.proposal_clients:
@@ -784,18 +807,23 @@ if st.session_state.page == "AddProposal":
                 "Closing_Date": pd.NaT
             })
 
+        new_df = pd.DataFrame(rows)
+
         st.session_state.proposals_df = pd.concat(
-            [proposals_df, pd.DataFrame(rows)],
+            [proposals_df, new_df],
             ignore_index=True
         )
 
+        # ---------- SAVE TO STORAGE ----------
         save_proposals()
 
-        # Reset Draft
+        # ---------- RESET DRAFT ----------
         st.session_state.proposal_clients = []
 
         st.success(f"✅ Proposal {proposal_id} created successfully.")
+
         st.session_state.page = "Summary"
+        st.rerun()
 
 # =====================================================
 # ================= EDIT PROPOSAL =====================
@@ -1903,5 +1931,6 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
