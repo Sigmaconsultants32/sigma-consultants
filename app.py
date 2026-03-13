@@ -471,73 +471,67 @@ proposals_df = st.session_state.proposals_df
 def save_clients():
 
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM clients")
+    df = st.session_state.clients_df.copy()
 
-    for _, row in st.session_state.clients_df.iterrows():
+    # Ensure required columns exist
+    required_cols = [
+        "Client_ID",
+        "Client_Name",
+        "Created_Date",
+        "Is_Archived",
+        "Notes"
+    ]
 
-        cursor.execute("""
-        INSERT INTO clients (
-            Client_ID,
-            Client_Name,
-            Created_Date,
-            Is_Archived,
-            Notes
-        )
-        VALUES (?, ?, ?, ?, ?)
-        """, (
-            row["Client_ID"],
-            row["Client_Name"],
-            str(row["Created_Date"]),
-            int(row["Is_Archived"]),
-            row["Notes"]
-        ))
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = None
 
-    conn.commit()
+    df = df[required_cols]
+
+    df.to_sql(
+        "clients",
+        conn,
+        if_exists="replace",
+        index=False
+    )
+
     conn.close()
 
 def save_proposals():
 
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM proposals")
+    df = st.session_state.proposals_df.copy()
 
-    for _, row in st.session_state.proposals_df.iterrows():
+    required_cols = [
+        "Proposal_ID",
+        "Client_ID",
+        "Client_Name",
+        "Proposal_Cost",
+        "Rate",
+        "Final_Cost",
+        "Profit",
+        "Start_Date",
+        "End_Date",
+        "Status",
+        "Closing_Date"
+    ]
 
-        cursor.execute("""
-        INSERT INTO proposals (
-            Proposal_ID,
-            Client_ID,
-            Client_Name,
-            Proposal_Cost,
-            Rate,
-            Final_Cost,
-            Profit,
-            Start_Date,
-            End_Date,
-            Status,
-            Closing_Date
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            row["Proposal_ID"],
-            row["Client_ID"],
-            row["Client_Name"],
-            float(row["Proposal_Cost"]),
-            float(row["Rate"]),
-            float(row["Final_Cost"]),
-            float(row["Profit"]),
-            str(row["Start_Date"]),
-            str(row["End_Date"]),
-            row["Status"],
-            str(row["Closing_Date"])
-        ))
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = None
 
-    conn.commit()
+    df = df[required_cols]
+
+    df.to_sql(
+        "proposals",
+        conn,
+        if_exists="replace",
+        index=False
+    )
+
     conn.close()
-
 # ---------------- UTIL ----------------
 
 def new_client_id():
@@ -2140,6 +2134,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
