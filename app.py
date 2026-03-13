@@ -1,62 +1,12 @@
 # =====================================================
-# Sigma Consultants CRM
+# Sigma Consultants – CRM
 # =====================================================
 
 import streamlit as st
 import pandas as pd
-import sqlite3
+from datetime import datetime
 import os
 import io
-from datetime import datetime
-
-# =====================================================
-# DATABASE
-# =====================================================
-
-DB_FILE = "sigma_crm.db"
-
-
-def get_connection():
-    return sqlite3.connect(DB_FILE, check_same_thread=False)
-
-
-def init_db():
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS clients (
-        Client_ID TEXT PRIMARY KEY,
-        Client_Name TEXT,
-        Created_Date TEXT,
-        Is_Archived INTEGER,
-        Notes TEXT
-    )
-    """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS proposals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        Proposal_ID TEXT,
-        Client_ID TEXT,
-        Client_Name TEXT,
-        Proposal_Cost REAL,
-        Rate REAL,
-        Final_Cost REAL,
-        Profit REAL,
-        Start_Date TEXT,
-        End_Date TEXT,
-        Status TEXT,
-        Closing_Date TEXT
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-
-init_db()
 
 
 # ---------------- PAGE CONFIG ----------------
@@ -305,11 +255,12 @@ PROPOSAL_FILE = "proposals.xlsx"
 
 def load_clients():
 
-    conn = get_connection()
+    if os.path.exists(CLIENT_FILE):
 
-    try:
-        df = pd.read_sql_query("SELECT * FROM clients", conn)
-    except:
+        df = pd.read_excel(CLIENT_FILE)
+
+    else:
+
         df = pd.DataFrame(columns=[
             "Client_ID",
             "Client_Name",
@@ -318,21 +269,21 @@ def load_clients():
             "Notes"
         ])
 
-    conn.close()
+        df.to_excel(CLIENT_FILE, index=False)
 
     if "Is_Archived" not in df.columns:
         df["Is_Archived"] = False
 
     return df
 
-
 def load_proposals():
 
-    conn = get_connection()
+    if os.path.exists(PROPOSAL_FILE):
 
-    try:
-        df = pd.read_sql_query("SELECT * FROM proposals", conn)
-    except:
+        df = pd.read_excel(PROPOSAL_FILE)
+
+    else:
+
         df = pd.DataFrame(columns=[
             "Proposal_ID",
             "Client_ID",
@@ -347,13 +298,15 @@ def load_proposals():
             "Closing_Date"
         ])
 
-    conn.close()
+        df.to_excel(PROPOSAL_FILE, index=False)
 
-    for col in ["Start_Date", "End_Date", "Closing_Date"]:
+    for col in ["Start_Date","End_Date","Closing_Date"]:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
+
+    
     # -------- NUMERIC SAFETY --------
 
     numeric_cols = [
@@ -429,91 +382,28 @@ proposals_df = st.session_state.proposals_df
 
 def save_clients():
 
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM clients")
-
-    for _, row in st.session_state.clients_df.iterrows():
-
-        cursor.execute(
-            """
-            INSERT INTO clients
-            (Client_ID, Client_Name, Created_Date, Is_Archived, Notes)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                str(row["Client_ID"]),
-                str(row["Client_Name"]),
-                str(row["Created_Date"]),
-                int(row["Is_Archived"]),
-                str(row["Notes"]),
-            ),
-        )
-
-    conn.commit()
-    conn.close()
+    st.session_state.clients_df.to_excel(
+        CLIENT_FILE,
+        index=False
+    )
 
 
 def save_proposals():
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    st.session_state.proposals_df.to_excel(
+        PROPOSAL_FILE,
+        index=False
+    )
 
-    cursor.execute("DELETE FROM proposals")
-
-    for _, row in st.session_state.proposals_df.iterrows():
-
-        cursor.execute(
-            """
-            INSERT INTO proposals
-            (
-                Proposal_ID,
-                Client_ID,
-                Client_Name,
-                Proposal_Cost,
-                Rate,
-                Final_Cost,
-                Profit,
-                Start_Date,
-                End_Date,
-                Status,
-                Closing_Date
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                str(row["Proposal_ID"]),
-                str(row["Client_ID"]),
-                str(row["Client_Name"]),
-                float(row["Proposal_Cost"]),
-                float(row["Rate"]),
-                float(row["Final_Cost"]),
-                float(row["Profit"]),
-                str(row["Start_Date"]),
-                str(row["End_Date"]),
-                str(row["Status"]),
-                str(row["Closing_Date"]),
-            ),
-        )
-
-    conn.commit()
-    conn.close()
-
-# =====================================================
-# UTILITIES
-# =====================================================
 
 def new_client_id():
 
-    df = st.session_state.clients_df
-
-    if df.empty:
+    if clients_df.empty:
         return "SIG-C-001"
 
     last = (
-        df["Client_ID"]
-        .str.replace("SIG-C-", "", regex=False)
+        clients_df["Client_ID"]
+        .str.replace("SIG-C-","",regex=False)
         .astype(int)
         .max()
     )
@@ -523,28 +413,17 @@ def new_client_id():
 
 def new_proposal_id():
 
-    df = st.session_state.proposals_df
-
-    if df.empty:
+    if proposals_df.empty:
         return "SIG-P-001"
 
     last = (
-        df["Proposal_ID"]
-        .str.replace("SIG-P-", "", regex=False)
+        proposals_df["Proposal_ID"]
+        .str.replace("SIG-P-","",regex=False)
         .astype(int)
         .max()
     )
 
     return f"SIG-P-{last+1:03d}"
-
-
-def calc(cost, rate, days):
-
-    months = days / 30
-    profit = cost * (rate / 100) * months
-    final = cost + profit
-
-    return round(final, 2), round(profit, 2)
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
@@ -2106,6 +1985,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
