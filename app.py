@@ -54,8 +54,11 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # Drop broken table if it exists
+    cursor.execute("DROP TABLE IF EXISTS clients")
+
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS clients (
+    CREATE TABLE clients (
         Client_ID TEXT PRIMARY KEY,
         Client_Name TEXT,
         Created_Date TEXT,
@@ -83,7 +86,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
@@ -471,10 +473,8 @@ def save_clients():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Clear existing rows
     cursor.execute("DELETE FROM clients")
 
-    # Insert rows manually
     for _, row in st.session_state.clients_df.iterrows():
 
         cursor.execute("""
@@ -2140,6 +2140,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
