@@ -1,18 +1,24 @@
 # =====================================================
-# Sigma Consultants – Full CRM Production Build
+# Sigma Consultants CRM
 # =====================================================
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import os, io
 import sqlite3
+import os
+import io
+from datetime import datetime
+
+# =====================================================
+# DATABASE
+# =====================================================
 
 DB_FILE = "sigma_crm.db"
 
+
 def get_connection():
-    conn = sqlite3.connect(DB_FILE, check_same_thread=False)
-    return conn
+    return sqlite3.connect(DB_FILE, check_same_thread=False)
+
 
 def init_db():
 
@@ -49,43 +55,9 @@ def init_db():
     conn.commit()
     conn.close()
 
-def init_db():
 
-    conn = get_connection()
-    cursor = conn.cursor()
+init_db()
 
-    # Drop broken table if it exists
-    cursor.execute("DROP TABLE IF EXISTS clients")
-
-    cursor.execute("""
-    CREATE TABLE clients (
-        Client_ID TEXT PRIMARY KEY,
-        Client_Name TEXT,
-        Created_Date TEXT,
-        Is_Archived INTEGER,
-        Notes TEXT
-    )
-    """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS proposals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        Proposal_ID TEXT,
-        Client_ID TEXT,
-        Client_Name TEXT,
-        Proposal_Cost REAL,
-        Rate REAL,
-        Final_Cost REAL,
-        Profit REAL,
-        Start_Date TEXT,
-        End_Date TEXT,
-        Status TEXT,
-        Closing_Date TEXT
-    )
-    """)
-
-    conn.commit()
-    conn.close()
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
@@ -328,7 +300,7 @@ CLIENT_FILE = "clients.xlsx"
 PROPOSAL_FILE = "proposals.xlsx"
 
 # =====================================================
-# -------------------- LOADERS ------------------------
+# LOAD DATA
 # =====================================================
 
 def load_clients():
@@ -338,40 +310,21 @@ def load_clients():
     try:
         df = pd.read_sql_query("SELECT * FROM clients", conn)
     except:
-        df = pd.DataFrame()
-
-    conn.close()
-
-    # ---------- Ensure Required Columns ----------
-    required_cols = {
-        "Client_ID": "",
-        "Client_Name": "",
-        "Created_Date": None,
-        "Is_Archived": False,
-        "Notes": ""
-    }
-
-    for col, default in required_cols.items():
-        if col not in df.columns:
-            df[col] = default
-
-    # ---------- Correct Order ----------
-    df = df[
-        [
+        df = pd.DataFrame(columns=[
             "Client_ID",
             "Client_Name",
             "Created_Date",
             "Is_Archived",
-            "Notes",
-        ]
-    ]
+            "Notes"
+        ])
+
+    conn.close()
+
+    if "Is_Archived" not in df.columns:
+        df["Is_Archived"] = False
 
     return df
 
-
-# =====================================================
-# LOAD PROPOSALS
-# =====================================================
 
 def load_proposals():
 
@@ -395,6 +348,10 @@ def load_proposals():
         ])
 
     conn.close()
+
+    for col in ["Start_Date", "End_Date", "Closing_Date"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
     # -------- NUMERIC SAFETY --------
@@ -453,7 +410,9 @@ if os.path.exists("proposals.xlsx"):
     conn.close()
 
 
-# ---------------- SESSION STATE ----------------
+# =====================================================
+# SESSION STATE
+# =====================================================
 
 if "clients_df" not in st.session_state:
     st.session_state.clients_df = load_clients()
@@ -461,118 +420,87 @@ if "clients_df" not in st.session_state:
 if "proposals_df" not in st.session_state:
     st.session_state.proposals_df = load_proposals()
 
-
-# ---- Aliases for convenience (read/write safe) ----
 clients_df = st.session_state.clients_df
 proposals_df = st.session_state.proposals_df
 
+# =====================================================
+# SAVE DATA
+# =====================================================
 
-# ---- Save helpers (always save from session_state) ----
 def save_clients():
 
     conn = get_connection()
 
-    df = st.session_state.clients_df.copy()
-
-    # Ensure required columns exist
-    required_cols = [
-        "Client_ID",
-        "Client_Name",
-        "Created_Date",
-        "Is_Archived",
-        "Notes"
-    ]
-
-    for col in required_cols:
-        if col not in df.columns:
-            df[col] = None
-
-    df = df[required_cols]
-
-    df.to_sql(
+    st.session_state.clients_df.to_sql(
         "clients",
         conn,
         if_exists="replace",
         index=False
     )
 
+    conn.commit()
     conn.close()
+
 
 def save_proposals():
 
     conn = get_connection()
 
-    df = st.session_state.proposals_df.copy()
-
-    required_cols = [
-        "Proposal_ID",
-        "Client_ID",
-        "Client_Name",
-        "Proposal_Cost",
-        "Rate",
-        "Final_Cost",
-        "Profit",
-        "Start_Date",
-        "End_Date",
-        "Status",
-        "Closing_Date"
-    ]
-
-    for col in required_cols:
-        if col not in df.columns:
-            df[col] = None
-
-    df = df[required_cols]
-
-    df.to_sql(
+    st.session_state.proposals_df.to_sql(
         "proposals",
         conn,
         if_exists="replace",
         index=False
     )
 
+    conn.commit()
     conn.close()
-# ---------------- UTIL ----------------
+
+# =====================================================
+# UTILITIES
+# =====================================================
 
 def new_client_id():
-    if clients_df.empty or "Client_ID" not in clients_df.columns:
+
+    df = st.session_state.clients_df
+
+    if df.empty:
         return "SIG-C-001"
 
-    last_num = (
-        clients_df["Client_ID"]
+    last = (
+        df["Client_ID"]
         .str.replace("SIG-C-", "", regex=False)
         .astype(int)
         .max()
     )
-    return f"SIG-C-{last_num + 1:03d}"
+
+    return f"SIG-C-{last+1:03d}"
 
 
 def new_proposal_id():
-    if proposals_df.empty or "Proposal_ID" not in proposals_df.columns:
+
+    df = st.session_state.proposals_df
+
+    if df.empty:
         return "SIG-P-001"
 
-    last_num = (
-        proposals_df["Proposal_ID"]
+    last = (
+        df["Proposal_ID"]
         .str.replace("SIG-P-", "", regex=False)
         .astype(int)
         .max()
     )
-    return f"SIG-P-{last_num + 1:03d}"
+
+    return f"SIG-P-{last+1:03d}"
 
 
 def calc(cost, rate, days):
-    try:
-        cost = float(cost)
-        rate = float(rate)
-        days = float(days)
-    except (TypeError, ValueError):
-        return 0.0, 0.0
 
     months = days / 30
     profit = cost * (rate / 100) * months
-    final_amount = cost + profit
+    final = cost + profit
 
-    return round(final_amount, 2), round(profit, 2)
+    return round(final, 2), round(profit, 2)
 
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
@@ -2134,6 +2062,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
