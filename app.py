@@ -333,10 +333,16 @@ def load_clients():
 
     conn = get_connection()
 
-    df = pd.read_sql_query(
-        "SELECT * FROM clients",
-        conn
-    )
+    try:
+        df = pd.read_sql_query("SELECT * FROM clients", conn)
+    except:
+        df = pd.DataFrame(columns=[
+            "Client_ID",
+            "Client_Name",
+            "Created_Date",
+            "Is_Archived",
+            "Notes"
+        ])
 
     conn.close()
 
@@ -351,15 +357,26 @@ def load_proposals():
 
     conn = get_connection()
 
-    df = pd.read_sql_query(
-        "SELECT * FROM proposals",
-        conn
-    )
+    try:
+        df = pd.read_sql_query("SELECT * FROM proposals", conn)
+    except:
+        df = pd.DataFrame(columns=[
+            "Proposal_ID",
+            "Client_ID",
+            "Client_Name",
+            "Proposal_Cost",
+            "Rate",
+            "Final_Cost",
+            "Profit",
+            "Start_Date",
+            "End_Date",
+            "Status",
+            "Closing_Date"
+        ])
 
     conn.close()
 
     return df
-
     # -------- NUMERIC SAFETY --------
 
     numeric_cols = [
@@ -396,14 +413,16 @@ def load_proposals():
 
     return df
 
+init_db()
+
 # ---------------- SESSION STATE ----------------
 
-# ---- Load data once per session ----
 if "clients_df" not in st.session_state:
     st.session_state.clients_df = load_clients()
 
 if "proposals_df" not in st.session_state:
     st.session_state.proposals_df = load_proposals()
+
 
 # ---- Aliases for convenience (read/write safe) ----
 clients_df = st.session_state.clients_df
@@ -2039,6 +2058,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
