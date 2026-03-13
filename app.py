@@ -469,27 +469,73 @@ proposals_df = st.session_state.proposals_df
 def save_clients():
 
     conn = get_connection()
+    cursor = conn.cursor()
 
-    st.session_state.clients_df.to_sql(
-        "clients",
-        conn,
-        if_exists="replace",
-        index=False
-    )
+    # Clear existing rows
+    cursor.execute("DELETE FROM clients")
 
+    # Insert rows manually
+    for _, row in st.session_state.clients_df.iterrows():
+
+        cursor.execute("""
+        INSERT INTO clients (
+            Client_ID,
+            Client_Name,
+            Created_Date,
+            Is_Archived,
+            Notes
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """, (
+            row["Client_ID"],
+            row["Client_Name"],
+            str(row["Created_Date"]),
+            int(row["Is_Archived"]),
+            row["Notes"]
+        ))
+
+    conn.commit()
     conn.close()
 
 def save_proposals():
 
     conn = get_connection()
+    cursor = conn.cursor()
 
-    st.session_state.proposals_df.to_sql(
-        "proposals",
-        conn,
-        if_exists="replace",
-        index=False
-    )
+    cursor.execute("DELETE FROM proposals")
 
+    for _, row in st.session_state.proposals_df.iterrows():
+
+        cursor.execute("""
+        INSERT INTO proposals (
+            Proposal_ID,
+            Client_ID,
+            Client_Name,
+            Proposal_Cost,
+            Rate,
+            Final_Cost,
+            Profit,
+            Start_Date,
+            End_Date,
+            Status,
+            Closing_Date
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            row["Proposal_ID"],
+            row["Client_ID"],
+            row["Client_Name"],
+            float(row["Proposal_Cost"]),
+            float(row["Rate"]),
+            float(row["Final_Cost"]),
+            float(row["Profit"]),
+            str(row["Start_Date"]),
+            str(row["End_Date"]),
+            row["Status"],
+            str(row["Closing_Date"])
+        ))
+
+    conn.commit()
     conn.close()
 
 # ---------------- UTIL ----------------
@@ -2094,6 +2140,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
