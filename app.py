@@ -343,8 +343,6 @@ def load_proposals():
 
     return df
 
-init_db()
-
 # ---------------- MIGRATE EXCEL DATA ----------------
 if os.path.exists("clients.xlsx"):
 
@@ -1985,6 +1983,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
