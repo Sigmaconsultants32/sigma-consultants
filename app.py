@@ -336,15 +336,33 @@ def load_clients():
     try:
         df = pd.read_sql_query("SELECT * FROM clients", conn)
     except:
-        df = pd.DataFrame(columns=[
+        df = pd.DataFrame()
+
+    conn.close()
+
+    # ---------- Ensure Required Columns ----------
+    required_cols = {
+        "Client_ID": "",
+        "Client_Name": "",
+        "Created_Date": None,
+        "Is_Archived": False,
+        "Notes": ""
+    }
+
+    for col, default in required_cols.items():
+        if col not in df.columns:
+            df[col] = default
+
+    # ---------- Correct Order ----------
+    df = df[
+        [
             "Client_ID",
             "Client_Name",
             "Created_Date",
             "Is_Archived",
-            "Notes"
-        ])
-
-    conn.close()
+            "Notes",
+        ]
+    ]
 
     return df
 
@@ -2076,6 +2094,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
