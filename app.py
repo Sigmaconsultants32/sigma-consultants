@@ -415,6 +415,24 @@ def load_proposals():
 
 init_db()
 
+# ---------------- MIGRATE EXCEL DATA ----------------
+if os.path.exists("clients.xlsx"):
+
+    df_clients = pd.read_excel("clients.xlsx")
+
+    conn = get_connection()
+    df_clients.to_sql("clients", conn, if_exists="replace", index=False)
+    conn.close()
+
+if os.path.exists("proposals.xlsx"):
+
+    df_prop = pd.read_excel("proposals.xlsx")
+
+    conn = get_connection()
+    df_prop.to_sql("proposals", conn, if_exists="replace", index=False)
+    conn.close()
+
+
 # ---------------- SESSION STATE ----------------
 
 if "clients_df" not in st.session_state:
@@ -2058,6 +2076,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
