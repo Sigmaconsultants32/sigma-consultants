@@ -6,6 +6,84 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os, io
+import sqlite3
+
+DB_FILE = "sigma_crm.db"
+
+def get_connection():
+    conn = sqlite3.connect(DB_FILE, check_same_thread=False)
+    return conn
+
+def init_db():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS clients (
+        Client_ID TEXT PRIMARY KEY,
+        Client_Name TEXT,
+        Created_Date TEXT,
+        Is_Archived INTEGER,
+        Notes TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS proposals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        Proposal_ID TEXT,
+        Client_ID TEXT,
+        Client_Name TEXT,
+        Proposal_Cost REAL,
+        Rate REAL,
+        Final_Cost REAL,
+        Profit REAL,
+        Start_Date TEXT,
+        End_Date TEXT,
+        Status TEXT,
+        Closing_Date TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+def init_db():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS clients (
+        Client_ID TEXT PRIMARY KEY,
+        Client_Name TEXT,
+        Created_Date TEXT,
+        Is_Archived INTEGER,
+        Notes TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS proposals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        Proposal_ID TEXT,
+        Client_ID TEXT,
+        Client_Name TEXT,
+        Proposal_Cost REAL,
+        Rate REAL,
+        Final_Cost REAL,
+        Profit REAL,
+        Start_Date TEXT,
+        End_Date TEXT,
+        Status TEXT,
+        Closing_Date TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Sigma Consultants", layout="wide")
@@ -253,27 +331,14 @@ PROPOSAL_FILE = "proposals.xlsx"
 
 def load_clients():
 
-    if os.path.exists(CLIENT_FILE):
-        df = pd.read_excel(CLIENT_FILE)
-    else:
-        df = pd.DataFrame(columns=[
-            "Client_ID",
-            "Client_Name",
-            "Created_Date",
-            "Is_Archived",
-            "Notes"
-        ])
-        df.to_excel(CLIENT_FILE, index=False)
+    conn = get_connection()
 
-    # -------- SCHEMA SAFETY --------
-    if "Is_Archived" not in df.columns:
-        df["Is_Archived"] = False
+    df = pd.read_sql_query(
+        "SELECT * FROM clients",
+        conn
+    )
 
-    if "Notes" not in df.columns:
-        df["Notes"] = ""
-
-    if "Created_Date" in df.columns:
-        df["Created_Date"] = pd.to_datetime(df["Created_Date"], errors="coerce")
+    conn.close()
 
     return df
 
@@ -284,47 +349,16 @@ def load_clients():
 
 def load_proposals():
 
-    if os.path.exists(PROPOSAL_FILE):
+    conn = get_connection()
 
-        df = pd.read_excel(PROPOSAL_FILE)
+    df = pd.read_sql_query(
+        "SELECT * FROM proposals",
+        conn
+    )
 
-    else:
+    conn.close()
 
-        df = pd.DataFrame(columns=[
-            "Proposal_ID",
-            "Client_ID",
-            "Client_Name",
-            "Proposal_Cost",
-            "Rate",
-            "Profit",
-            "Final_Cost",
-            "Start_Date",
-            "End_Date",
-            "Status",
-            "Closing_Date"
-        ])
-
-        df.to_excel(PROPOSAL_FILE, index=False)
-
-    # -------- SCHEMA SAFETY --------
-
-    required_columns = [
-        "Proposal_ID",
-        "Client_ID",
-        "Client_Name",
-        "Proposal_Cost",
-        "Rate",
-        "Profit",
-        "Final_Cost",
-        "Start_Date",
-        "End_Date",
-        "Status",
-        "Closing_Date"
-    ]
-
-    for col in required_columns:
-        if col not in df.columns:
-            df[col] = None
+    return df
 
     # -------- NUMERIC SAFETY --------
 
@@ -378,10 +412,30 @@ proposals_df = st.session_state.proposals_df
 
 # ---- Save helpers (always save from session_state) ----
 def save_clients():
-    st.session_state.clients_df.to_excel(CLIENT_FILE, index=False)
+
+    conn = get_connection()
+
+    st.session_state.clients_df.to_sql(
+        "clients",
+        conn,
+        if_exists="replace",
+        index=False
+    )
+
+    conn.close()
 
 def save_proposals():
-    st.session_state.proposals_df.to_excel(PROPOSAL_FILE, index=False)
+
+    conn = get_connection()
+
+    st.session_state.proposals_df.to_sql(
+        "proposals",
+        conn,
+        if_exists="replace",
+        index=False
+    )
+
+    conn.close()
 
 # ---------------- UTIL ----------------
 
@@ -1985,6 +2039,7 @@ if st.session_state.page == "Export":
             file_name="sigma_clients.csv",
             mime="text/csv"
         )
+
 
 
 
