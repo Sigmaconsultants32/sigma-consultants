@@ -110,19 +110,38 @@ section[data-testid="stSidebar"] {
     );
 }
 
-/* SIDEBAR BUTTON STYLE */
+/* SIDEBAR TITLE */
+
+section[data-testid="stSidebar"] h2 {
+    color: #5A2A1F;
+}
+
+/* SIDEBAR BUTTON BASE */
 
 section[data-testid="stSidebar"] button {
-    background: transparent;
-    color: #5A2A1F;
+
+    background: rgba(0,0,0,0.05);
+    color: #4A1F14;
     border-radius: 10px;
-    font-weight: 500;
+    font-weight: 600;
+    border: 1px solid rgba(0,0,0,0.08);
 }
 
 /* SIDEBAR BUTTON HOVER */
 
 section[data-testid="stSidebar"] button:hover {
-    background: rgba(255,255,255,0.6);
+
+    background: rgba(0,0,0,0.12);
+    transform: translateX(3px);
+}
+
+/* ACTIVE BUTTON EFFECT */
+
+section[data-testid="stSidebar"] button:focus {
+
+    background: white;
+    color: #FF6800;
+    font-weight: 700;
 }
 
 </style>
@@ -430,15 +449,23 @@ if st.session_state.page == "Welcome":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1,2,1])
+    center_col = st.columns([1,2,1])[1]
 
-    with col2:
+    with center_col:
 
         logo_path = "sigma_logo.png"
 
         if os.path.exists(logo_path):
 
-            st.image(logo_path, width=180)
+            st.markdown(
+                f"""
+                <div style="text-align:center;">
+                    <img src="data:image/png;base64,{base64.b64encode(open(logo_path, "rb").read()).decode()}"
+                    width="140">
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         else:
 
@@ -452,10 +479,13 @@ if st.session_state.page == "Welcome":
 <div style="
 border-radius:14px;
 padding:18px;
-margin-top:10px;
+margin-top:12px;
 background:#ffffff;
 box-shadow:0 6px 18px rgba(0,0,0,0.08);
 text-align:center;
+max-width:520px;
+margin-left:auto;
+margin-right:auto;
 ">
 
 <h4>Welcome to Sigma Consultants CRM</h4>
