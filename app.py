@@ -465,7 +465,7 @@ if st.session_state.page == "Welcome":
                 f"""
                 <div style="text-align:center;">
                     <img src="data:image/png;base64,{base64.b64encode(open(logo_path, "rb").read()).decode()}"
-                    width="140">
+                    width="200">
                 </div>
                 """,
                 unsafe_allow_html=True
