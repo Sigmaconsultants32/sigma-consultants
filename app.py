@@ -132,7 +132,10 @@ section[data-testid="stSidebar"] button {
 
 section[data-testid="stSidebar"] button:hover {
 
-    background: rgb(50, 211, 117);
+    background: linear-gradient(
+        180deg,
+        #32D375 20%,
+        #A5EFDD 80%
     transform: translateX(3px);
 }
 
