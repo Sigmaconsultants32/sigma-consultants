@@ -454,6 +454,7 @@ if st.session_state.page == "Welcome":
 # ================= Summary ==============================
 # =====================================================
 if st.session_state.page == "Summary":
+
     st.header("📊 Summary")
 
     # ---------- SAFETY CHECK ----------
@@ -461,7 +462,7 @@ if st.session_state.page == "Summary":
         st.info("No proposals available")
         st.stop()
 
-    # ---------- WORKING COPY (DO NOT MUTATE SESSION DATA) ----------
+    # ---------- WORKING COPY ----------
     df = proposals_df.copy()
 
     # ---------- BASIC SUMMARY ----------
@@ -480,7 +481,7 @@ if st.session_state.page == "Summary":
         c3.metric("Open Proposals", open_cnt)
 
     # =====================================================
-    # ============ DATE BASED SUMMARY =====================
+    # DATE BASED SUMMARY
     # =====================================================
     st.markdown("---")
     st.subheader("📅 Date Based Summary")
@@ -492,20 +493,26 @@ if st.session_state.page == "Summary":
             df[c] = pd.to_datetime(df[c], errors="coerce")
 
     # =====================================================
-    # ================= STATUS FILTER =====================
+    # STATUS FILTER
     # =====================================================
-    status_options = ["All"] + sorted(df["Status"].dropna().unique().tolist())
-    selected_status = st.selectbox("Select Proposal Status", status_options)
+    status_options = ["All"] + sorted(
+        df["Status"].dropna().unique().tolist()
+    )
+
+    selected_status = st.selectbox(
+        "Select Proposal Status",
+        status_options
+    )
 
     if selected_status != "All":
-        df = df[df["Status"] == selected_status].copy()
+        df = df[df["Status"] == selected_status]
 
     if df.empty:
         st.warning("No data for selected status")
         st.stop()
 
     # =====================================================
-    # ============ START / END DATE SELECTOR ===============
+    # DATE FILTER
     # =====================================================
     date_type = st.radio(
         "Select Date Type",
@@ -513,7 +520,11 @@ if st.session_state.page == "Summary":
         horizontal=True
     )
 
-    date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+    date_col = (
+        "Start_Date"
+        if date_type == "Start Date"
+        else "End_Date"
+    )
 
     df = df.dropna(subset=[date_col])
 
@@ -524,13 +535,14 @@ if st.session_state.page == "Summary":
     df["DateOnly"] = df[date_col].dt.date
 
     available_dates = sorted(df["DateOnly"].unique())
-    date_options = ["All"] + available_dates
 
     selected_dates = st.multiselect(
         f"Select {date_type}(s)",
-        date_options,
-        default="All",
-        format_func=lambda x: x if x == "All" else x.strftime("%d-%m-%Y")
+        ["All"] + available_dates,
+        default=["All"],
+        format_func=lambda x:
+            x if x == "All"
+            else x.strftime("%d-%m-%Y")
     )
 
     if "All" not in selected_dates:
@@ -541,7 +553,7 @@ if st.session_state.page == "Summary":
         st.stop()
 
     # =====================================================
-    # ================ SAFE RATE NORMALIZATION =============
+    # RATE NORMALIZATION
     # =====================================================
     df["Rate_Int"] = (
         pd.to_numeric(df["Rate"], errors="coerce")
@@ -551,7 +563,7 @@ if st.session_state.page == "Summary":
     )
 
     # =====================================================
-    # ================= PROPOSAL STATS ====================
+    # PROPOSAL STATS
     # =====================================================
     total_inv = df["Proposal_Cost"].sum()
     total_final = df["Final_Cost"].sum()
@@ -572,10 +584,13 @@ if st.session_state.page == "Summary":
     st.markdown("---")
 
     # =====================================================
-    # ========= GROUP BY RATE + DATE (SAFE) ================
+    # GROUP BY RATE + DATE
     # =====================================================
     st.session_state.summary_df = (
-        df.groupby(["Rate_Int", "DateOnly"], as_index=False)
+        df.groupby(
+            ["Rate_Int", "DateOnly"],
+            as_index=False
+        )
         .agg({
             "Proposal_Cost": "sum",
             "Final_Cost": "sum",
@@ -584,20 +599,22 @@ if st.session_state.page == "Summary":
         .sort_values(["Rate_Int", "DateOnly"])
     )
 
-# =====================================================
-# ============ COMPACT SUMMARY DISPLAY ================
-# =====================================================
-if (
-    st.session_state.page == "Summary"
-    and "summary_df" in st.session_state
-    and not st.session_state.summary_df.empty
-):
+    summary_df = st.session_state.summary_df
 
-    st.session_state.summary_df = summary_df
-    
+    # =====================================================
+    # COMPACT SUMMARY DISPLAY
+    # =====================================================
+    if summary_df.empty:
+        st.info("No grouped summary available")
+        st.stop()
+
     for _, row in summary_df.iterrows():
 
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+        profit_color = (
+            "🟢"
+            if row["Profit"] >= 0
+            else "🔴"
+        )
 
         date_str = (
             row["DateOnly"].strftime("%d-%m-%Y")
@@ -605,9 +622,10 @@ if (
             else "—"
         )
 
-        rate = int(row["Rate_Int"]) if "Rate_Int" in row else int(round(row["Rate"], 0))
+        rate = int(row["Rate_Int"])
 
         if is_mobile:
+
             st.markdown(
                 f"""
 **📅 {date_str} | {rate} %**  
@@ -616,7 +634,9 @@ if (
 {profit_color} Profit : ₹ {row['Profit']:,.2f}
 """
             )
+
         else:
+
             st.markdown(
                 f"""
 **{date_str} | Rate {rate} %**  
