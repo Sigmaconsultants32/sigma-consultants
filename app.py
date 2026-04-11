@@ -101,7 +101,9 @@ st.markdown(
     """
 <style>
 
-/* SIDEBAR BACKGROUND */
+/* =====================================================
+   SIDEBAR BACKGROUND
+===================================================== */
 
 section[data-testid="stSidebar"] {
     background: linear-gradient(
@@ -109,43 +111,103 @@ section[data-testid="stSidebar"] {
         #FFACA8 20%,
         #FFD2C4 80%
     );
+    padding-top: 20px;
 }
 
-/* SIDEBAR TITLE */
+
+/* =====================================================
+   SIDEBAR TITLE
+===================================================== */
 
 section[data-testid="stSidebar"] h2 {
     color: #5A2A1F;
+    font-weight: 700;
 }
 
-/* SIDEBAR BUTTON BASE */
 
-section[data-testid="stSidebar"] button {
+/* =====================================================
+   NORMAL SIDEBAR BUTTON
+===================================================== */
+
+.sidebar-btn button {
 
     background: linear-gradient(
         180deg,
         #B1F2AE 20%,
         #3291EF 80%
-    border: 1px solid rgba(0,0,0,0.09);
+    );
+
+    color: #0B2A4A;
+    border-radius: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(0,0,0,0.08);
+
+    padding: 10px 14px;
+    margin-bottom: 6px;
+
+    transition: all 0.18s ease-in-out;
 }
 
-/* SIDEBAR BUTTON HOVER */
 
-section[data-testid="stSidebar"] button:hover {
+/* =====================================================
+   HOVER EFFECT
+===================================================== */
+
+.sidebar-btn button:hover {
 
     background: linear-gradient(
         180deg,
         #32D375 20%,
         #A5EFDD 80%
-    transform: translateX(3px);
+    );
+
+    transform: translateX(4px);
 }
 
-/* ACTIVE BUTTON EFFECT */
 
-section[data-testid="stSidebar"] button:focus {
+/* =====================================================
+   ACTIVE PAGE BUTTON
+===================================================== */
 
-    background: white;
-    color: #FF6800;
+.sidebar-active button {
+
+    background: white !important;
+
+    color: #FF6800 !important;
+
     font-weight: 700;
+
+    border-radius: 12px;
+
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+
+/* =====================================================
+   LOGOUT BUTTON SPECIAL STYLE
+===================================================== */
+
+section[data-testid="stSidebar"] button[kind="secondary"] {
+
+    background: rgba(255,255,255,0.7);
+
+    font-weight: 600;
+
+    border-radius: 10px;
+}
+
+
+/* =====================================================
+   SIDEBAR DIVIDER SPACING
+===================================================== */
+
+section[data-testid="stSidebar"] hr {
+
+    margin-top: 12px;
+    margin-bottom: 12px;
+    border-color: rgba(0,0,0,0.08);
 }
 
 </style>
@@ -419,12 +481,23 @@ with st.sidebar:
 
     st.markdown("## 📂 Sigma Consultants")
 
-    def nav(label, page):
+    current_page = st.session_state.page
+
+
+    def nav(label, page_key):
+
+        is_active = current_page == page_key
+
+        btn_class = "sidebar-active" if is_active else "sidebar-btn"
+
+        st.markdown(f'<div class="{btn_class}">', unsafe_allow_html=True)
 
         if st.button(label, use_container_width=True):
-
-            st.session_state.page = page
+            st.session_state.page = page_key
             st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
     nav("🏠 Summary", "Summary")
     nav("➕ Add Proposal", "AddProposal")
@@ -440,11 +513,10 @@ with st.sidebar:
     st.markdown("---")
 
     if st.button("🚪 Logout", use_container_width=True):
-
         st.session_state.auth = False
         st.session_state.page = "Welcome"
         st.rerun()
-
+        
 # =====================================================
 # WELCOME SCREEN
 # =====================================================
