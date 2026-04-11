@@ -451,7 +451,7 @@ if st.session_state.page == "Welcome":
             st.session_state.page = "Find"
 
 # =====================================================
-# ================= Summary ==============================
+# ================= Summary ===========================
 # =====================================================
 if st.session_state.page == "Summary":
 
@@ -667,7 +667,7 @@ if st.session_state.page == "AddProposal":
     clients_df = st.session_state.clients_df
     proposals_df = st.session_state.proposals_df
 
-    # ---------- DRAFT STORAGE ----------
+    # ---------- INIT DRAFT STORAGE ----------
     if "proposal_clients" not in st.session_state:
         st.session_state.proposal_clients = []
 
@@ -682,7 +682,10 @@ if st.session_state.page == "AddProposal":
         [15, 20, 30, 45, 60, 90]
     )
 
-    end_date = (pd.to_datetime(start_date) + pd.Timedelta(days=days)).date()
+    end_date = (
+        pd.to_datetime(start_date)
+        + pd.Timedelta(days=days)
+    ).date()
 
     st.info(f"End Date: {end_date}  |  Duration: {days} days")
 
@@ -697,7 +700,9 @@ if st.session_state.page == "AddProposal":
     st.subheader("Add Clients To Proposal")
 
     # ---------- ACTIVE CLIENT FILTER ----------
-    active_clients = clients_df[clients_df["Is_Archived"] == False]
+    active_clients = clients_df[
+        clients_df["Is_Archived"] == False
+    ]
 
     client_options = sorted(
         active_clients["Client_Name"]
@@ -724,25 +729,33 @@ if st.session_state.page == "AddProposal":
         )
 
     # =====================================================
-    # ADD CLIENT
+    # ADD CLIENT TO DRAFT
     # =====================================================
 
     if st.button("➕ Add Client"):
 
-        if selected_client == "Select Client" or principal <= 0:
-            st.warning("Select valid client and enter valid amount.")
+        if selected_client == "Select Client":
+            st.warning("Please select a client.")
+            st.stop()
+
+        if principal <= 0:
+            st.warning("Enter valid proposal amount.")
             st.stop()
 
         existing_clients = [
-            c["Client_Name"] for c in st.session_state.proposal_clients
+            c["Client_Name"]
+            for c in st.session_state.proposal_clients
         ]
 
         if selected_client in existing_clients:
             st.warning("Client already added.")
             st.stop()
 
-        profit = principal * rate * (days / 30) / 100
-        final_amount = principal + profit
+        final_amount, profit = calc(
+            principal,
+            rate,
+            days
+        )
 
         st.session_state.proposal_clients.append({
             "Client_Name": selected_client,
@@ -754,15 +767,19 @@ if st.session_state.page == "AddProposal":
         st.success(f"{selected_client} added successfully.")
 
     # =====================================================
-    # AUTO RECALCULATE IF RATE/DURATION CHANGES
+    # AUTO RECALCULATE IF RATE OR DAYS CHANGE
     # =====================================================
 
     for item in st.session_state.proposal_clients:
 
-        p = item["Principal"]
+        final_amount, profit = calc(
+            item["Principal"],
+            rate,
+            days
+        )
 
-        item["Profit"] = p * rate * (days / 30) / 100
-        item["Final_Amount"] = p + item["Profit"]
+        item["Profit"] = profit
+        item["Final_Amount"] = final_amount
 
     # =====================================================
     # SHOW ADDED CLIENTS
@@ -772,9 +789,15 @@ if st.session_state.page == "AddProposal":
 
         st.markdown("### Added Clients")
 
-        for i, item in enumerate(st.session_state.proposal_clients):
+        remove_index = None
 
-            col1, col2, col3, col4, col5 = st.columns([2,2,2,2,1])
+        for i, item in enumerate(
+            st.session_state.proposal_clients
+        ):
+
+            col1, col2, col3, col4, col5 = st.columns(
+                [2, 2, 2, 2, 1]
+            )
 
             col1.write(item["Client_Name"])
             col2.write(f"₹ {item['Principal']:,.2f}")
@@ -782,10 +805,15 @@ if st.session_state.page == "AddProposal":
             col4.write(f"₹ {item['Final_Amount']:,.2f}")
 
             if col5.button("❌", key=f"delete_{i}"):
-                st.session_state.proposal_clients.pop(i)
-                st.rerun()
+                remove_index = i
 
-        df_preview = pd.DataFrame(st.session_state.proposal_clients)
+        if remove_index is not None:
+            st.session_state.proposal_clients.pop(remove_index)
+            st.rerun()
+
+        df_preview = pd.DataFrame(
+            st.session_state.proposal_clients
+        )
 
         total_principal = df_preview["Principal"].sum()
         total_profit = df_preview["Profit"].sum()
@@ -795,15 +823,20 @@ if st.session_state.page == "AddProposal":
 
         c1, c2, c3 = st.columns(3)
 
-        c1.metric("Total Principal", f"₹ {total_principal:,.2f}")
-        c2.metric("Total Profit", f"₹ {total_profit:,.2f}")
-        c3.metric("Total Final Amount", f"₹ {total_final:,.2f}")
+        c1.metric(
+            "Total Principal",
+            f"₹ {total_principal:,.2f}"
+        )
 
-    else:
+        c2.metric(
+            "Total Profit",
+            f"₹ {total_profit:,.2f}"
+        )
 
-        total_principal = 0
-        total_profit = 0
-        total_final = 0
+        c3.metric(
+            "Total Final Amount",
+            f"₹ {total_final:,.2f}"
+        )
 
     st.markdown("---")
 
@@ -823,9 +856,18 @@ if st.session_state.page == "AddProposal":
 
         for item in st.session_state.proposal_clients:
 
-            client_row = clients_df.loc[
-                clients_df["Client_Name"] == item["Client_Name"]
-            ].iloc[0]
+            client_match = clients_df[
+                clients_df["Client_Name"]
+                == item["Client_Name"]
+            ]
+
+            if client_match.empty:
+                st.error(
+                    f"Client not found: {item['Client_Name']}"
+                )
+                st.stop()
+
+            client_row = client_match.iloc[0]
 
             rows.append({
                 "Proposal_ID": proposal_id,
@@ -844,21 +886,23 @@ if st.session_state.page == "AddProposal":
         new_df = pd.DataFrame(rows)
 
         st.session_state.proposals_df = pd.concat(
-            [proposals_df, new_df],
+            [
+                st.session_state.proposals_df,
+                new_df
+            ],
             ignore_index=True
         )
 
-        # ---------- SAVE TO STORAGE ----------
         save_proposals()
 
-        # ---------- RESET DRAFT ----------
         st.session_state.proposal_clients = []
 
-        st.success(f"✅ Proposal {proposal_id} created successfully.")
+        st.success(
+            f"✅ Proposal {proposal_id} created successfully."
+        )
 
         st.session_state.page = "Summary"
         st.rerun()
-
 # =====================================================
 # ================= EDIT PROPOSAL =====================
 # =====================================================
