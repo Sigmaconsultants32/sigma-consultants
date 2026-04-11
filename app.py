@@ -906,6 +906,7 @@ if st.session_state.page == "AddProposal":
 # =====================================================
 # ================= EDIT PROPOSAL =====================
 # =====================================================
+
 if st.session_state.page == "Edit":
 
     st.header("✏️ Edit Proposal")
@@ -917,7 +918,7 @@ if st.session_state.page == "Edit":
     df = proposals_df.copy()
 
     # =================================================
-    # STEP 1: STATUS FILTER (WITH SELECT)
+    # STEP 1: STATUS FILTER
     # =================================================
     status_filter = st.selectbox(
         "Select Proposal Status",
@@ -935,13 +936,11 @@ if st.session_state.page == "Edit":
         st.stop()
 
     # =================================================
-    # STEP 2: PROPOSAL ID FILTER (WITH SELECT)
+    # STEP 2: PROPOSAL ID SELECT
     # =================================================
-    proposal_id_list = ["Select Proposal ID"] + sorted(df["Proposal_ID"].unique())
-
     proposal_id = st.selectbox(
         "Select Proposal ID",
-        proposal_id_list
+        ["Select Proposal ID"] + sorted(df["Proposal_ID"].unique())
     )
 
     if proposal_id == "Select Proposal ID":
@@ -950,360 +949,152 @@ if st.session_state.page == "Edit":
 
     proposal_df = df[df["Proposal_ID"] == proposal_id]
 
+    if proposal_df.empty:
+        st.error("Proposal not found")
+        st.stop()
+
     # =================================================
-    # STEP 3: READ-ONLY MASTER DATA
+    # STEP 3: MASTER DETAILS
     # =================================================
-    start_date = proposal_df["Start_Date"].iloc[0]
-    end_date = proposal_df["End_Date"].iloc[0]
-    rate_master = proposal_df["Rate"].iloc[0]
+    master_start = proposal_df["Start_Date"].iloc[0]
+    master_end = proposal_df["End_Date"].iloc[0]
+    master_rate = proposal_df["Rate"].iloc[0]
 
     c1, c2, c3 = st.columns(3)
-    c1.text_input("Start Date", start_date.strftime("%d-%m-%Y"), disabled=True)
-    c2.text_input("End Date", end_date.strftime("%d-%m-%Y"), disabled=True)
-    c3.text_input("Rate (%)", int(round(rate_master, 0)), disabled=True)
+
+    c1.text_input(
+        "Start Date",
+        master_start.strftime("%d-%m-%Y"),
+        disabled=True
+    )
+
+    c2.text_input(
+        "End Date",
+        master_end.strftime("%d-%m-%Y"),
+        disabled=True
+    )
+
+    c3.text_input(
+        "Rate (%)",
+        int(round(master_rate, 0)),
+        disabled=True
+    )
 
     # =================================================
-    # STEP 4: CLIENT SELECTION (WITH SELECT)
+    # STEP 4: CLIENT SELECT
     # =================================================
-
-    client_list = ["Select"] + sorted(proposal_df["Client_Name"].unique())
-
     client_name = st.selectbox(
         "Select Client Included in Proposal",
-        client_list
+        ["Select"] + sorted(proposal_df["Client_Name"].unique())
     )
 
     if client_name == "Select":
         st.info("Please select a Client")
         st.stop()
 
-
-    # =================================================
-    # ADD NEW CLIENT TO EXISTING PROPOSAL
-    # =================================================
-
-    st.markdown("---")
-
-    add_client_mode = st.checkbox("➕ Add New Client to this Proposal")
-
-    if add_client_mode:
-
-        st.info("New client will be added under selected Proposal ID")
-
-        start_date = proposal_df["Start_Date"].iloc[0]
-        end_date = proposal_df["End_Date"].iloc[0]
-        rate_master = proposal_df["Rate"].iloc[0]
-        status_master = proposal_df["Status"].iloc[0]
-
-        days = (end_date - start_date).days
-
-        if days <= 0:
-            st.error("Invalid proposal duration")
-            st.stop()
-
-        # ================= INPUT FIELDS =================
-
-        if is_mobile:
-
-            new_client_name = st.text_input("Client Name")
-
-            proposal_cost_new = st.number_input(
-                "Proposal Amount (₹)",
-                min_value=0.0,
-                step=1000.0
-            )
-
-        else:
-
-            c1, c2 = st.columns(2)
-
-            new_client_name = c1.text_input("Client Name")
-
-            proposal_cost_new = c2.number_input(
-                "Proposal Amount (₹)",
-                min_value=0.0,
-                step=1000.0
-            )
-
-        # ================= PREVIEW CALCULATION =================
-
-        if proposal_cost_new > 0:
-
-            final_cost_new, profit_new = calc(
-                proposal_cost_new,
-                rate_master,
-                days
-            )
-
-            st.markdown("---")
-            st.subheader("💰 Calculation Preview")
-
-            if is_mobile:
-
-                st.markdown(
-                    f"""
-                    <div style="border:1px solid #ddd;
-                    border-radius:12px;
-                    padding:14px;
-                    background:#fafafa">
-
-                    <b>Duration:</b> {days} days<br>
-                    <b>Rate:</b> {rate_master} %<br>
-                    <b>Profit:</b> ₹ {profit_new:,.2f}<br>
-                    <b>Final Amount:</b> ₹ {final_cost_new:,.2f}
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            else:
-
-                d1, d2, d3 = st.columns(3)
-    
-                d1.metric("Duration (Days)", f"{days}")
-                d2.metric("Profit (₹)", f"{profit_new:,.2f}")
-                d3.metric("Final Amount (₹)", f"{final_cost_new:,.2f}")
-
-
-        # ================= SAVE NEW CLIENT =================
-
-        if st.button("✅ Add Client", use_container_width=True):
-
-            if not new_client_name.strip():
-                st.error("Client Name cannot be empty")
-                st.stop()
-
-            if proposal_cost_new <= 0:
-                st.error("Proposal Amount must be greater than 0")
-                st.stop()
-
-            # ---------- GET CLIENT_ID SAFELY ----------
-
-            client_match = st.session_state.clients_df[
-                st.session_state.clients_df["Client_Name"].str.lower()
-                == new_client_name.strip().lower()
-            ]
-
-            if client_match.empty:
-                st.error("Client not found in Clients list. Please create client first.")
-                st.stop()
-
-            client_id_val = client_match.iloc[0]["Client_ID"]
-
-            # ---------- CALCULATE AGAIN (SAFE) ----------
-
-            final_cost_new, profit_new = calc(
-                proposal_cost_new,
-                rate_master,
-                days
-            )
-
-            # ---------- CREATE ROW ----------
-
-            new_row = {
-                "Proposal_ID": proposal_id,
-                "Client_ID": client_id_val,
-                "Client_Name": new_client_name.strip(),
-                "Proposal_Cost": round(proposal_cost_new, 2),
-                "Rate": round(rate_master, 2),
-                "Final_Cost": round(final_cost_new, 2),
-                "Profit": round(profit_new, 2),
-                "Start_Date": pd.to_datetime(start_date),
-                "End_Date": pd.to_datetime(end_date),
-                "Status": status_master,
-                "Closing_Date": pd.NaT
-            }
-
-            # ---------- SAVE TO SESSION ----------
-
-            st.session_state.proposals_df = pd.concat(
-                [
-                    st.session_state.proposals_df,
-                    pd.DataFrame([new_row])
-                ],
-                ignore_index=True
-            )
-
-            save_proposals()
-
-            st.success(
-                f"✅ Client '{new_client_name}' added to Proposal {proposal_id}"
-            )    
-
-            st.session_state.page = "Summary"
-            st.rerun()
-
-
-    # =================================================
-    # LOAD SELECTED CLIENT ROW
-    # =================================================
-
-    row = proposal_df[
+    selected_rows = proposal_df[
         proposal_df["Client_Name"] == client_name
-    ].iloc[0]
+    ]
+
+    if selected_rows.empty:
+        st.error("Client not found inside proposal")
+        st.stop()
+
+    row = selected_rows.iloc[0]
 
     st.markdown("---")
 
     # =================================================
-    # STEP 5: CURRENT DETAILS
+    # STEP 5: SHOW CURRENT DETAILS
     # =================================================
-    if is_mobile:
-        st.markdown(
-            f"""
-            <div style="border:1px solid #ddd;
-            border-radius:12px;
-            padding:14px;
-            background:#fafafa">
-
-            <b>Client:</b> {row['Client_Name']}<br>
-            <b>Status:</b> {row['Status']}<br>
-            <b>Start Date:</b> {row['Start_Date'].date()}<br>
-            <b>End Date:</b> {row['End_Date'].date()}<br>
-            <b>Proposal Amount:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-            <b>Rate:</b> {int(round(row['Rate'],0))} %<br>
-            <b>Final Amount:</b> ₹ {row['Final_Cost']:,.2f}<br>
-            <b>Profit:</b> ₹ {row['Profit']:,.2f}
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.dataframe(
-            pd.DataFrame([row])[[ 
-                "Client_Name",
-                "Proposal_ID",
-                "Start_Date",
-                "End_Date",
-                "Proposal_Cost",
-                "Rate",
-                "Final_Cost",
-                "Profit",
-                "Status"
-            ]],
-            use_container_width=True
-        )
+    st.dataframe(
+        pd.DataFrame([row])[[
+            "Client_Name",
+            "Proposal_ID",
+            "Start_Date",
+            "End_Date",
+            "Proposal_Cost",
+            "Rate",
+            "Final_Cost",
+            "Profit",
+            "Status"
+        ]],
+        use_container_width=True
+    )
 
     # =================================================
     # STEP 6: EDIT MODE
     # =================================================
     st.markdown("---")
+
     edit_mode = st.checkbox("✏️ Edit Proposal")
 
     if edit_mode:
 
-        st.warning("Editing will recalculate Final Amount & Profit")
+        proposal_cost = st.number_input(
+            "Proposal Amount (₹)",
+            value=float(row["Proposal_Cost"]),
+            step=1000.0
+        )
 
-        if is_mobile:
-            proposal_cost = st.number_input(
-                "Proposal Amount (₹)",
-                value=float(row["Proposal_Cost"]),
-                step=1000.0
-            )
-            rate = st.number_input(
-                "Rate (%)",
-                value=float(row["Rate"]),
-                step=0.5
-            )
-            new_start = st.date_input(
-                "Start Date",
-                value=row["Start_Date"].date()
-            )
-            new_end = st.date_input(
-                "End Date",
-                value=row["End_Date"].date()
-            )
-            new_status = st.selectbox(
-                "Status",
-                ["Open", "Closed"],
-                index=0 if row["Status"] == "Open" else 1
-            )
-        else:
-            c1, c2, c3, c4, c5 = st.columns(5)
-            proposal_cost = c1.number_input(
-                "Proposal Amount (₹)",
-                value=float(row["Proposal_Cost"]),
-                step=1000.0
-            )
-            rate = c2.number_input(
-                "Rate (%)",
-                value=float(row["Rate"]),
-                step=0.5
-            )
-            new_start = c3.date_input(
-                "Start Date",
-                value=row["Start_Date"].date()
-            )
-            new_end = c4.date_input(
-                "End Date",
-                value=row["End_Date"].date()
-            )
-            new_status = c5.selectbox(
-                "Status",
-                ["Open", "Closed"],
-                index=0 if row["Status"] == "Open" else 1
-            )
+        rate = st.number_input(
+            "Rate (%)",
+            value=float(row["Rate"]),
+            step=0.5
+        )
 
-        # =================================================
-        # APPLY TO ALL CLIENTS OPTION
-        # =================================================
-        apply_all = False
-        if len(client_list) > 2:
-            apply_all = st.checkbox(
-                "Apply changes to all clients in this proposal",
-                help="Applies Start Date, End Date, Rate and Status to all clients"
-            )
+        new_start = st.date_input(
+            "Start Date",
+            value=row["Start_Date"].date()
+        )
 
-        # =================================================
-        # STEP 7: SAFE AUTO CALCULATION
-        # =================================================
+        new_end = st.date_input(
+            "End Date",
+            value=row["End_Date"].date()
+        )
+
+        new_status = st.selectbox(
+            "Status",
+            ["Open", "Closed"],
+            index=0 if row["Status"] == "Open" else 1
+        )
+
+        apply_all = st.checkbox(
+            "Apply changes to all clients in this proposal"
+        )
+
         days = (pd.to_datetime(new_end) - pd.to_datetime(new_start)).days
 
-        if days < 0:
+        if days <= 0:
             st.error("End Date must be after Start Date")
             st.stop()
 
-        final_cost, profit = calc(proposal_cost, rate, days)
-        months = days / 30
+        final_cost, profit = calc(
+            proposal_cost,
+            rate,
+            days
+        )
 
-        st.markdown("---")
-        st.subheader("💰 Proposal Details")
-
-        if is_mobile:
-            st.markdown(
-                f"""
-                <div style="border:1px solid #ddd;
-                border-radius:12px;
-                padding:14px;
-                background:#fafafa">
-
-                <b>Duration:</b> {days} days ({months:.2f} months)<br>
-                <b>Profit:</b> ₹ {profit:,.2f}<br>
-                <b>Final Amount:</b> ₹ {final_cost:,.2f}
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            d1, d2, d3 = st.columns(3)
-            d1.metric("Duration (Months)", f"{months:.2f}")
-            d2.metric("Profit (₹)", f"{profit:,.2f}")
-            d3.metric("Final Amount (₹)", f"{final_cost:,.2f}")
+        st.metric("Final Amount", f"₹ {final_cost:,.2f}")
+        st.metric("Profit", f"₹ {profit:,.2f}")
 
         # =================================================
-        # STEP 8: SAVE
+        # SAVE CHANGES
         # =================================================
         if st.button("💾 Save Changes", use_container_width=True):
 
             if apply_all:
+
                 mask = (
-                    st.session_state.proposals_df["Proposal_ID"] == proposal_id
+                    st.session_state.proposals_df["Proposal_ID"]
+                    == proposal_id
                 )
+
             else:
+
                 mask = (
-                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id)
+                    &
                     (st.session_state.proposals_df["Client_Name"] == client_name)
                 )
 
@@ -1322,8 +1113,11 @@ if st.session_state.page == "Edit":
             ]
 
             st.session_state.proposals_df.loc[
-                (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
-                (st.session_state.proposals_df["Client_Name"] == client_name),
+                mask if apply_all else (
+                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id)
+                    &
+                    (st.session_state.proposals_df["Client_Name"] == client_name)
+                ),
                 ["Proposal_Cost", "Final_Cost", "Profit"]
             ] = [
                 round(proposal_cost, 2),
@@ -1334,7 +1128,9 @@ if st.session_state.page == "Edit":
             save_proposals()
 
             st.success("✅ Proposal updated successfully")
+
             st.session_state.page = "Summary"
+            st.rerun()
 
         # =================================================
         # DELETE OPTIONS
@@ -1344,14 +1140,13 @@ if st.session_state.page == "Edit":
 
         col_del1, col_del2 = st.columns(2)
 
-        # -----------------------------
-        # DELETE SELECTED CLIENT
-        # -----------------------------
         with col_del1:
+
             if st.button("🗑 Delete This Client", use_container_width=True):
 
                 mask = (
-                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id) &
+                    (st.session_state.proposals_df["Proposal_ID"] == proposal_id)
+                    &
                     (st.session_state.proposals_df["Client_Name"] == client_name)
                 )
 
@@ -1362,18 +1157,17 @@ if st.session_state.page == "Edit":
                 save_proposals()
 
                 st.success(f"Client '{client_name}' deleted from proposal.")
+
                 st.session_state.page = "Summary"
                 st.rerun()
 
-
-        # -----------------------------
-        # DELETE ENTIRE PROPOSAL
-        # -----------------------------
         with col_del2:
+
             if st.button("❌ Delete Entire Proposal", use_container_width=True):
 
                 mask = (
-                    st.session_state.proposals_df["Proposal_ID"] == proposal_id
+                    st.session_state.proposals_df["Proposal_ID"]
+                    == proposal_id
                 )
 
                 st.session_state.proposals_df = (
@@ -1383,9 +1177,9 @@ if st.session_state.page == "Edit":
                 save_proposals()
 
                 st.success(f"Proposal '{proposal_id}' deleted completely.")
+
                 st.session_state.page = "Summary"
                 st.rerun()
-
 # =====================================================
 # ================= FIND DETAILS PAGE =================
 # =====================================================
