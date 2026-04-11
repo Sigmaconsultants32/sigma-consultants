@@ -106,8 +106,8 @@ st.markdown(
 section[data-testid="stSidebar"] {
     background: linear-gradient(
         180deg,
-        #FFACA8 10%,
-        #FFD2C4 90%
+        #FFACA8 20%,
+        #FFD2C4 80%
     );
 }
 
@@ -121,18 +121,18 @@ section[data-testid="stSidebar"] h2 {
 
 section[data-testid="stSidebar"] button {
 
-    background: rgba(0,0,0,0.05);
-    color: #4A1F14;
-    border-radius: 10px;
-    font-weight: 600;
-    border: 1px solid rgba(0,0,0,0.08);
+    background: linear-gradient(
+        180deg,
+        #B1F2AE 20%,
+        #3291EF 80%
+    border: 1px solid rgba(0,0,0,0.09);
 }
 
 /* SIDEBAR BUTTON HOVER */
 
 section[data-testid="stSidebar"] button:hover {
 
-    background: rgba(0,0,0,0.12);
+    background: rgba(0,0,0,0.14);
     transform: translateX(3px);
 }
 
