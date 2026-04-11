@@ -278,12 +278,6 @@ def load_clients():
 
 def load_proposals():
 
-    if os.path.exists(PROPOSAL_FILE):
-        df = pd.read_excel(PROPOSAL_FILE)
-    else:
-        df = pd.DataFrame(...)
-        def load_proposals():
-
     required_cols = [
         "Proposal_ID",
         "Client_ID",
@@ -298,7 +292,7 @@ def load_proposals():
         "Closing_Date"
     ]
 
-    # ---------- LOAD OR CREATE ----------
+    # ---------- LOAD OR CREATE FILE ----------
     if os.path.exists(PROPOSAL_FILE):
         df = pd.read_excel(PROPOSAL_FILE)
     else:
@@ -324,36 +318,7 @@ def load_proposals():
     df["Status"] = df["Status"].fillna("Open")
 
     return df
-
-    # -------- NUMERIC SAFETY --------
-
-    numeric_cols = [
-        "Proposal_Cost",
-        "Rate",
-        "Profit",
-        "Final_Cost"
-    ]
-
-    for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
-    # -------- DATE SAFETY --------
-
-    date_cols = [
-        "Start_Date",
-        "End_Date",
-        "Closing_Date"
-    ]
-
-    for col in date_cols:
-        df[col] = pd.to_datetime(df[col], errors="coerce")
-
-    # -------- STATUS SAFETY --------
-
-    df["Status"] = df["Status"].fillna("Open")
-
-    return df
-
+    
     # ---- date normalization ----
     for c in ["Start_Date", "End_Date", "Closing_Date"]:
         if c in df.columns:
