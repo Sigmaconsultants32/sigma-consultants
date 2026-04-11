@@ -132,7 +132,7 @@ section[data-testid="stSidebar"] button {
 
 section[data-testid="stSidebar"] button:hover {
 
-    background: rgba(0,0,0,0.14);
+    background: rgb(50, 211, 117);
     transform: translateX(3px);
 }
 
