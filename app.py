@@ -279,34 +279,24 @@ def load_clients():
 def load_proposals():
 
     if os.path.exists(PROPOSAL_FILE):
-
         df = pd.read_excel(PROPOSAL_FILE)
-
     else:
-
-        df = pd.DataFrame(columns=[
-            "Proposal_ID",
-            "Client_ID",
-            "Client_Name",
-            "Proposal_Cost",
-            "Rate",
-            "Final_Cost",
-            "Profit",
-            "Start_Date",
-            "End_Date",
-            "Status",
-            "Closing_Date"
-        ])
-
+        df = pd.DataFrame(...)
         df.to_excel(PROPOSAL_FILE, index=False)
 
-    for col in ["Start_Date","End_Date","Closing_Date"]:
-        if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
+    # FIX: move ALL logic above return
+    numeric_cols = ["Proposal_Cost", "Rate", "Profit", "Final_Cost"]
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    date_cols = ["Start_Date", "End_Date", "Closing_Date"]
+    for col in date_cols:
+        df[col] = pd.to_datetime(df[col], errors="coerce")
+
+    df["Status"] = df["Status"].fillna("Open")
 
     return df
 
-    
     # -------- NUMERIC SAFETY --------
 
     numeric_cols = [
@@ -613,7 +603,7 @@ if (
     and not st.session_state.summary_df.empty
 ):
 
-    summary_df = st.session_state.summary_df
+    st.session_state.summary_df = summary_df
     
     for _, row in summary_df.iterrows():
 
