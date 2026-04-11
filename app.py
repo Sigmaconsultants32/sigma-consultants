@@ -26,14 +26,14 @@ SECONDARY_COLOR = "#FF6800"
 ACCENT_COLOR = "#EE2929"
 
 # =====================================================
-# GLOBAL STYLES
+# GLOBAL STYLE
 # =====================================================
 
 st.markdown(
     f"""
 <style>
 
-/* APP BACKGROUND */
+/* ---------- APP BACKGROUND ---------- */
 
 .stApp {{
     background: linear-gradient(
@@ -43,10 +43,10 @@ st.markdown(
     );
 }}
 
-/* CARD CONTAINERS */
+/* ---------- CARD CONTAINERS ---------- */
 
 section[data-testid="stVerticalBlock"] > div {{
-    background: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.96);
     border-radius: 18px;
     padding: 18px;
     margin-bottom: 18px;
@@ -54,14 +54,14 @@ section[data-testid="stVerticalBlock"] > div {{
     border-left: 6px solid {SECONDARY_COLOR};
 }}
 
-/* HEADERS */
+/* ---------- HEADERS ---------- */
 
 h1, h2, h3 {{
     color: #1f2937;
     font-weight: 700;
 }}
 
-/* PRIMARY BUTTONS */
+/* ---------- PRIMARY BUTTONS ---------- */
 
 button[kind="primary"] {{
     background: {SECONDARY_COLOR};
@@ -74,7 +74,7 @@ button[kind="primary"]:hover {{
     background: {ACCENT_COLOR};
 }}
 
-/* METRICS */
+/* ---------- METRICS ---------- */
 
 div[data-testid="metric-container"] {{
     border-radius: 14px;
@@ -87,15 +87,43 @@ div[data-testid="metric-container"] {{
     border: 1px solid #e5e7eb;
 }}
 
-/* SIDEBAR */
+</style>
+""",
+    unsafe_allow_html=True
+)
 
-section[data-testid="stSidebar"] {{
+# =====================================================
+# SIDEBAR STYLE (SOFTER VERSION)
+# =====================================================
+
+st.markdown(
+    """
+<style>
+
+/* SIDEBAR BACKGROUND */
+
+section[data-testid="stSidebar"] {
     background: linear-gradient(
         180deg,
-        {SECONDARY_COLOR},
-        {ACCENT_COLOR}
+        #FFE5DB 0%,
+        #FFD2C4 100%
     );
-}}
+}
+
+/* SIDEBAR BUTTON STYLE */
+
+section[data-testid="stSidebar"] button {
+    background: transparent;
+    color: #5A2A1F;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* SIDEBAR BUTTON HOVER */
+
+section[data-testid="stSidebar"] button:hover {
+    background: rgba(255,255,255,0.6);
+}
 
 </style>
 """,
@@ -151,7 +179,7 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1,2,1])
 
     with col2:
 
@@ -172,6 +200,7 @@ if not st.session_state.auth:
                 st.rerun()
 
             else:
+
                 st.error("Incorrect password")
 
     st.stop()
@@ -263,13 +292,7 @@ def load_proposals():
             errors="coerce"
         ).fillna(0)
 
-    date_cols = [
-        "Start_Date",
-        "End_Date",
-        "Closing_Date"
-    ]
-
-    for col in date_cols:
+    for col in ["Start_Date", "End_Date", "Closing_Date"]:
 
         df[col] = pd.to_datetime(
             df[col],
@@ -281,7 +304,7 @@ def load_proposals():
     return df
 
 # =====================================================
-# SESSION STATE INIT
+# SESSION INIT
 # =====================================================
 
 if "clients_df" not in st.session_state:
@@ -298,7 +321,6 @@ proposals_df = st.session_state.proposals_df
 # =====================================================
 
 def save_clients():
-
     st.session_state.clients_df.to_excel(
         CLIENT_FILE,
         index=False
@@ -306,7 +328,6 @@ def save_clients():
 
 
 def save_proposals():
-
     st.session_state.proposals_df.to_excel(
         PROPOSAL_FILE,
         index=False
@@ -350,7 +371,7 @@ def new_proposal_id():
     return f"SIG-P-{last+1:03d}"
 
 # =====================================================
-# INTEREST CALCULATION ENGINE
+# INTEREST CALC ENGINE
 # =====================================================
 
 def calc(principal, rate, days):
@@ -400,6 +421,72 @@ with st.sidebar:
         st.session_state.auth = False
         st.session_state.page = "Welcome"
         st.rerun()
+
+# =====================================================
+# WELCOME SCREEN
+# =====================================================
+
+if st.session_state.page == "Welcome":
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1,2,1])
+
+    with col2:
+
+        logo_path = "sigma_logo.png"
+
+        if os.path.exists(logo_path):
+
+            st.image(logo_path, width=180)
+
+        else:
+
+            st.markdown(
+                "<h2 style='text-align:center;'>Sigma Consultants</h2>",
+                unsafe_allow_html=True
+            )
+
+        st.markdown(
+            """
+<div style="
+border-radius:14px;
+padding:18px;
+margin-top:10px;
+background:#ffffff;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
+text-align:center;
+">
+
+<h4>Welcome to Sigma Consultants CRM</h4>
+
+<p style="color:#555;font-size:14px;">
+Manage clients, proposals, investments, profits,
+and maturity tracking from one dashboard.
+</p>
+
+</div>
+""",
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("➕ Add Client", use_container_width=True, type="primary"):
+            st.session_state.page = "Clients"
+            st.rerun()
+
+        if st.button("📄 Add Proposal", use_container_width=True):
+            st.session_state.page = "AddProposal"
+            st.rerun()
+
+        if st.button("🔍 Find Details", use_container_width=True):
+            st.session_state.page = "Find"
+            st.rerun()
+
+        if st.button("📊 View Summary", use_container_width=True):
+            st.session_state.page = "Summary"
+            st.rerun()
 
 # =====================================================
 # ================= SUMMARY ===========================
