@@ -106,8 +106,8 @@ st.markdown(
 section[data-testid="stSidebar"] {
     background: linear-gradient(
         180deg,
-        #FFE5DB 0%,
-        #FFD2C4 100%
+        #FFACA8 10%,
+        #FFD2C4 90%
     );
 }
 
