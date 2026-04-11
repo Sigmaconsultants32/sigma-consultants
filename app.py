@@ -304,11 +304,6 @@ def load_proposals():
         if col not in df.columns:
             df[col] = None
 
-    # ---------- NUMERIC SAFETY ----------
-    numeric_cols = ["Proposal_Cost", "Rate", "Profit", "Final_Cost"]
-    for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
     # ---------- DATE SAFETY ----------
     date_cols = ["Start_Date", "End_Date", "Closing_Date"]
     for col in date_cols:
@@ -319,13 +314,6 @@ def load_proposals():
 
     return df
     
-    # ---- date normalization ----
-    for c in ["Start_Date", "End_Date", "Closing_Date"]:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce")
-
-    return df
-
 # =====================================================
 # SESSION STATE
 # =====================================================
@@ -586,7 +574,7 @@ if st.session_state.page == "Summary":
     # =====================================================
     # ========= GROUP BY RATE + DATE (SAFE) ================
     # =====================================================
-    summary_df = (
+    st.session_state.summary_df = (
         df.groupby(["Rate_Int", "DateOnly"], as_index=False)
         .agg({
             "Proposal_Cost": "sum",
@@ -913,6 +901,7 @@ if st.session_state.page == "Edit":
     # =================================================
     # STEP 4: CLIENT SELECTION (WITH SELECT)
     # =================================================
+
     client_list = ["Select"] + sorted(proposal_df["Client_Name"].unique())
 
     client_name = st.selectbox(
@@ -924,10 +913,13 @@ if st.session_state.page == "Edit":
         st.info("Please select a Client")
         st.stop()
 
-        # =================================================
+
+    # =================================================
     # ADD NEW CLIENT TO EXISTING PROPOSAL
     # =================================================
+
     st.markdown("---")
+
     add_client_mode = st.checkbox("➕ Add New Client to this Proposal")
 
     if add_client_mode:
@@ -941,12 +933,19 @@ if st.session_state.page == "Edit":
 
         days = (end_date - start_date).days
 
+        if days <= 0:
+            st.error("Invalid proposal duration")
+            st.stop()
+
+        # ================= INPUT FIELDS =================
+
         if is_mobile:
 
             new_client_name = st.text_input("Client Name")
 
             proposal_cost_new = st.number_input(
                 "Proposal Amount (₹)",
+                min_value=0.0,
                 step=1000.0
             )
 
@@ -958,8 +957,11 @@ if st.session_state.page == "Edit":
 
             proposal_cost_new = c2.number_input(
                 "Proposal Amount (₹)",
+                min_value=0.0,
                 step=1000.0
             )
+
+        # ================= PREVIEW CALCULATION =================
 
         if proposal_cost_new > 0:
 
@@ -994,16 +996,17 @@ if st.session_state.page == "Edit":
             else:
 
                 d1, d2, d3 = st.columns(3)
+    
                 d1.metric("Duration (Days)", f"{days}")
                 d2.metric("Profit (₹)", f"{profit_new:,.2f}")
                 d3.metric("Final Amount (₹)", f"{final_cost_new:,.2f}")
 
-        # =============================================
-        # SAVE NEW CLIENT
-        # =============================================
+
+        # ================= SAVE NEW CLIENT =================
+
         if st.button("✅ Add Client", use_container_width=True):
 
-            if new_client_name.strip() == "":
+            if not new_client_name.strip():
                 st.error("Client Name cannot be empty")
                 st.stop()
 
@@ -1011,24 +1014,44 @@ if st.session_state.page == "Edit":
                 st.error("Proposal Amount must be greater than 0")
                 st.stop()
 
+            # ---------- GET CLIENT_ID SAFELY ----------
+
+            client_match = st.session_state.clients_df[
+                st.session_state.clients_df["Client_Name"].str.lower()
+                == new_client_name.strip().lower()
+            ]
+
+            if client_match.empty:
+                st.error("Client not found in Clients list. Please create client first.")
+                st.stop()
+
+            client_id_val = client_match.iloc[0]["Client_ID"]
+
+            # ---------- CALCULATE AGAIN (SAFE) ----------
+
             final_cost_new, profit_new = calc(
                 proposal_cost_new,
                 rate_master,
                 days
             )
 
+            # ---------- CREATE ROW ----------
+
             new_row = {
-                "Client_Name": new_client_name.strip(),
                 "Proposal_ID": proposal_id,
-                "Start_Date": start_date,
-                "End_Date": end_date,
+                "Client_ID": client_id_val,
+                "Client_Name": new_client_name.strip(),
                 "Proposal_Cost": round(proposal_cost_new, 2),
                 "Rate": round(rate_master, 2),
                 "Final_Cost": round(final_cost_new, 2),
                 "Profit": round(profit_new, 2),
+                "Start_Date": pd.to_datetime(start_date),
+                "End_Date": pd.to_datetime(end_date),
                 "Status": status_master,
                 "Closing_Date": pd.NaT
             }
+
+            # ---------- SAVE TO SESSION ----------
 
             st.session_state.proposals_df = pd.concat(
                 [
@@ -1040,11 +1063,18 @@ if st.session_state.page == "Edit":
 
             save_proposals()
 
-            st.success(f"✅ Client '{new_client_name}' added to Proposal {proposal_id}")
+            st.success(
+                f"✅ Client '{new_client_name}' added to Proposal {proposal_id}"
+            )    
 
             st.session_state.page = "Summary"
             st.rerun()
-    
+
+
+    # =================================================
+    # LOAD SELECTED CLIENT ROW
+    # =================================================
+
     row = proposal_df[
         proposal_df["Client_Name"] == client_name
     ].iloc[0]
@@ -1295,10 +1325,6 @@ if st.session_state.page == "Edit":
 # =====================================================
 # ================= FIND DETAILS PAGE =================
 # =====================================================
-
-# ================= IMPORTS =================
-import pandas as pd
-import streamlit as st
 
 # ================= SAFETY INITIALIZATION =================
 if "page" not in st.session_state:
