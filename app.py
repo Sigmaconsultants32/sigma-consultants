@@ -1,5 +1,5 @@
 # =====================================================
-# Sigma Consultants – CRM
+# Sigma Consultants – CRM (Modern UI Base)
 # =====================================================
 
 import streamlit as st
@@ -8,146 +8,104 @@ from datetime import datetime
 import os
 import io
 
+# =====================================================
+# PAGE CONFIG
+# =====================================================
 
-# ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Sigma Consultants", layout="wide")
+st.set_page_config(
+    page_title="Sigma Consultants",
+    layout="wide"
+)
 
-# ================= BRAND THEME =================
-PRIMARY_COLOR = "#9DD3DB"     # Soft teal (main brand)
-SECONDARY_COLOR = "#FF6800"   # Orange (energy)
-ACCENT_COLOR = "#EE2929"      # Red (attention)
+# =====================================================
+# BRAND COLORS
+# =====================================================
+
+PRIMARY_COLOR = "#9DD3DB"
+SECONDARY_COLOR = "#FF6800"
+ACCENT_COLOR = "#EE2929"
+
+# =====================================================
+# GLOBAL STYLES
+# =====================================================
 
 st.markdown(
     f"""
-    <style>
+<style>
 
-    /* ---------- APP BACKGROUND ---------- */
-    .stApp {{
-        background: linear-gradient(
-            135deg,
-            {PRIMARY_COLOR} 0%,
-            #ffffff 65%
-        );
-    }}
+/* APP BACKGROUND */
 
-    /* ---------- PAGE CONTAINERS (CARDS) ---------- */
-    section[data-testid="stVerticalBlock"] > div {{
-        background: rgba(255,255,255,0.95);
-        border-radius: 18px;
-        padding: 18px;
-        margin-bottom: 18px;
-        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
-        border-left: 6px solid {SECONDARY_COLOR};
-    }}
+.stApp {{
+    background: linear-gradient(
+        135deg,
+        {PRIMARY_COLOR} 0%,
+        #ffffff 65%
+    );
+}}
 
-    /* ---------- HEADERS ---------- */
-    h1, h2, h3 {{
-        color: #1f2937; /* dark text for readability */
-        font-weight: 700;
-    }}
+/* CARD CONTAINERS */
 
-    /* ---------- PRIMARY BUTTONS ---------- */
-    button[kind="primary"] {{
-        background: {SECONDARY_COLOR};
-        border-radius: 12px;
-        font-weight: 600;
-        border: none;
-        color: white;
-    }}
+section[data-testid="stVerticalBlock"] > div {{
+    background: rgba(255,255,255,0.95);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    border-left: 6px solid {SECONDARY_COLOR};
+}}
 
-    button[kind="primary"]:hover {{
-        background: {ACCENT_COLOR};
-        color: white;
-    }}
+/* HEADERS */
 
-    /* ---------- SECONDARY BUTTONS ---------- */
-    button {{
-        border-radius: 10px;
-    }}
+h1, h2, h3 {{
+    color: #1f2937;
+    font-weight: 700;
+}}
 
-    /* ---------- METRICS ---------- */
-    div[data-testid="metric-container"] {{
-        border-radius: 14px;
-        padding: 14px;
-        background: linear-gradient(
-            145deg,
-            #ffffff,
-            {PRIMARY_COLOR}
-        );
-        border: 1px solid #e5e7eb;
-    }}
+/* PRIMARY BUTTONS */
 
-    /* ---------- SIDEBAR (MATCHING BRAND) ---------- */
-    section[data-testid="stSidebar"] {{
-        background: linear-gradient(
-            180deg,
-            {SECONDARY_COLOR} 0%,
-            {ACCENT_COLOR} 100%
-        );
-    }}
+button[kind="primary"] {{
+    background: {SECONDARY_COLOR};
+    border-radius: 12px;
+    border: none;
+    color: white;
+}}
 
-    </style>
-    """,
+button[kind="primary"]:hover {{
+    background: {ACCENT_COLOR};
+}}
+
+/* METRICS */
+
+div[data-testid="metric-container"] {{
+    border-radius: 14px;
+    padding: 14px;
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        {PRIMARY_COLOR}
+    );
+    border: 1px solid #e5e7eb;
+}}
+
+/* SIDEBAR */
+
+section[data-testid="stSidebar"] {{
+    background: linear-gradient(
+        180deg,
+        {SECONDARY_COLOR},
+        {ACCENT_COLOR}
+    );
+}}
+
+</style>
+""",
     unsafe_allow_html=True
 )
 
-# ================= SIDEBAR STYLING =================
-st.markdown(
-    """
-    <style>
-    /* ---------- SIDEBAR BACKGROUND ---------- */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #FFBFAD 0%,
-            #FFA08A 100%
-        );
-        padding-top: 20px;
-    }
+# =====================================================
+# MOBILE MODE
+# =====================================================
 
-    /* ---------- SIDEBAR TITLE ---------- */
-    .sidebar-title {
-        color: #4A1F14;
-        font-size: 22px;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    /* ---------- MENU BUTTON BASE ---------- */
-    .sidebar-btn button {
-        width: 100%;
-        background: transparent;
-        color: #4A1F14;
-        border: none;
-        text-align: left;
-        padding: 12px 16px;
-        font-size: 15px;
-        border-radius: 12px;
-        margin-bottom: 8px;
-        transition: all 0.2s ease-in-out;
-        font-weight: 500;
-    }
-
-    /* ---------- HOVER EFFECT ---------- */
-    .sidebar-btn button:hover {
-        background: rgba(255,255,255,0.45);
-        transform: translateX(4px);
-    }
-
-    /* ---------- ACTIVE PAGE ---------- */
-    .sidebar-active button {
-        background: white;
-        color: #FF6800;
-        font-weight: 700;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# ---------------- MOBILE TOGGLE ----------------
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = False
 
@@ -158,21 +116,34 @@ st.session_state.is_mobile = st.toggle(
 
 is_mobile = st.session_state.is_mobile
 
+# =====================================================
+# CARD COMPONENT
+# =====================================================
 
 def card(title, value):
+
     st.markdown(
         f"""
-        <div style="padding:14px;border-radius:12px;
-        background:#ffffff;margin-bottom:10px;
-        box-shadow:0 3px 8px rgba(0,0,0,0.08)">
-        <div style="font-size:13px;color:#555">{title}</div>
-        <div style="font-size:22px;font-weight:600">{value}</div>
-        </div>
-        """,
+<div style="
+padding:14px;
+border-radius:12px;
+background:#ffffff;
+margin-bottom:10px;
+box-shadow:0 3px 8px rgba(0,0,0,0.08)
+">
+
+<div style="font-size:13px;color:#555">{title}</div>
+<div style="font-size:22px;font-weight:600">{value}</div>
+
+</div>
+""",
         unsafe_allow_html=True
     )
 
-# ---------------- LOGIN ----------------
+# =====================================================
+# LOGIN SYSTEM
+# =====================================================
+
 PASSWORD = os.getenv("SIGMA_PASSWORD", "sigma123")
 
 if "auth" not in st.session_state:
@@ -180,80 +151,51 @@ if "auth" not in st.session_state:
 
 if not st.session_state.auth:
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        st.markdown("""
-        <div class="login-box ui-card">
-            <h3 style="text-align:center;margin-bottom:10px;">🔐 Sigma Consultants</h3>
-        """, unsafe_allow_html=True)
+
+        st.markdown("### 🔐 Sigma Consultants Login")
 
         pwd = st.text_input("Password", type="password")
 
-        if st.button("Login", use_container_width=True, type="primary"):
+        if st.button(
+            "Login",
+            use_container_width=True,
+            type="primary"
+        ):
+
             if pwd == PASSWORD:
+
                 st.session_state.auth = True
                 st.session_state.page = "Welcome"
                 st.rerun()
+
             else:
                 st.error("Incorrect password")
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
     st.stop()
 
-# ---------------- STYLES ----------------
-st.markdown("""
-<style>
+# =====================================================
+# FILE PATHS
+# =====================================================
 
-/* Header underline */
-.header {
-    border-bottom: 3px solid #1f77ff;
-    margin-bottom: 20px;
-    padding-bottom: 6px;
-}
-
-/* Primary buttons */
-button[kind="primary"] {
-    background-color: #1f77ff !important;
-    border-radius: 8px !important;
-}
-
-/* Card style */
-.ui-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 12px;
-    background: #fafafa;
-}
-
-/* SAFE content padding (does not affect layout engine) */
-section.main > div {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
-}
-
-/* Login box width */
-.login-box {
-    max-width: 420px;
-    margin: auto;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- FILES ----------------
 CLIENT_FILE = "clients.xlsx"
 PROPOSAL_FILE = "proposals.xlsx"
 
 # =====================================================
-# LOAD DATA
+# LOAD CLIENTS
 # =====================================================
 
 def load_clients():
+
+    required_cols = [
+        "Client_ID",
+        "Client_Name",
+        "Created_Date",
+        "Is_Archived",
+        "Notes"
+    ]
 
     if os.path.exists(CLIENT_FILE):
 
@@ -261,20 +203,21 @@ def load_clients():
 
     else:
 
-        df = pd.DataFrame(columns=[
-            "Client_ID",
-            "Client_Name",
-            "Created_Date",
-            "Is_Archived",
-            "Notes"
-        ])
-
+        df = pd.DataFrame(columns=required_cols)
         df.to_excel(CLIENT_FILE, index=False)
 
-    if "Is_Archived" not in df.columns:
-        df["Is_Archived"] = False
+    for col in required_cols:
+
+        if col not in df.columns:
+            df[col] = None
+
+    df["Is_Archived"] = df["Is_Archived"].fillna(False)
 
     return df
+
+# =====================================================
+# LOAD PROPOSALS
+# =====================================================
 
 def load_proposals():
 
@@ -292,30 +235,53 @@ def load_proposals():
         "Closing_Date"
     ]
 
-    # ---------- LOAD OR CREATE FILE ----------
     if os.path.exists(PROPOSAL_FILE):
+
         df = pd.read_excel(PROPOSAL_FILE)
+
     else:
+
         df = pd.DataFrame(columns=required_cols)
         df.to_excel(PROPOSAL_FILE, index=False)
 
-    # ---------- ADD MISSING COLUMNS ----------
     for col in required_cols:
+
         if col not in df.columns:
             df[col] = None
 
-    # ---------- DATE SAFETY ----------
-    date_cols = ["Start_Date", "End_Date", "Closing_Date"]
-    for col in date_cols:
-        df[col] = pd.to_datetime(df[col], errors="coerce")
+    numeric_cols = [
+        "Proposal_Cost",
+        "Rate",
+        "Final_Cost",
+        "Profit"
+    ]
 
-    # ---------- STATUS SAFETY ----------
+    for col in numeric_cols:
+
+        df[col] = pd.to_numeric(
+            df[col],
+            errors="coerce"
+        ).fillna(0)
+
+    date_cols = [
+        "Start_Date",
+        "End_Date",
+        "Closing_Date"
+    ]
+
+    for col in date_cols:
+
+        df[col] = pd.to_datetime(
+            df[col],
+            errors="coerce"
+        )
+
     df["Status"] = df["Status"].fillna("Open")
 
     return df
-    
+
 # =====================================================
-# SESSION STATE
+# SESSION STATE INIT
 # =====================================================
 
 if "clients_df" not in st.session_state:
@@ -328,7 +294,7 @@ clients_df = st.session_state.clients_df
 proposals_df = st.session_state.proposals_df
 
 # =====================================================
-# SAVE DATA
+# SAVE FUNCTIONS
 # =====================================================
 
 def save_clients():
@@ -346,6 +312,9 @@ def save_proposals():
         index=False
     )
 
+# =====================================================
+# SAFE ID GENERATORS
+# =====================================================
 
 def new_client_id():
 
@@ -354,7 +323,9 @@ def new_client_id():
 
     last = (
         clients_df["Client_ID"]
-        .str.replace("SIG-C-","",regex=False)
+        .astype(str)
+        .str.replace("SIG-C-", "", regex=False)
+        .fillna("0")
         .astype(int)
         .max()
     )
@@ -369,7 +340,9 @@ def new_proposal_id():
 
     last = (
         proposals_df["Proposal_ID"]
-        .str.replace("SIG-P-","",regex=False)
+        .astype(str)
+        .str.replace("SIG-P-", "", regex=False)
+        .fillna("0")
         .astype(int)
         .max()
     )
@@ -377,25 +350,37 @@ def new_proposal_id():
     return f"SIG-P-{last+1:03d}"
 
 # =====================================================
-# CALCULATION FUNCTION (ADD HERE)
+# INTEREST CALCULATION ENGINE
 # =====================================================
 
 def calc(principal, rate, days):
+
     profit = principal * rate * (days / 30) / 100
     final = principal + profit
+
     return final, profit
 
-# ---------------- PAGE STATE ----------------
+# =====================================================
+# PAGE STATE
+# =====================================================
+
 if "page" not in st.session_state:
     st.session_state.page = "Welcome"
 
-# ---------------- SIDEBAR ----------------
+# =====================================================
+# SIDEBAR NAVIGATION
+# =====================================================
+
 with st.sidebar:
+
     st.markdown("## 📂 Sigma Consultants")
 
-    def nav(label, page_key):
+    def nav(label, page):
+
         if st.button(label, use_container_width=True):
-            st.session_state.page = page_key
+
+            st.session_state.page = page
+            st.rerun()
 
     nav("🏠 Summary", "Summary")
     nav("➕ Add Proposal", "AddProposal")
@@ -409,46 +394,12 @@ with st.sidebar:
     nav("📥 Export Data", "Export")
 
     st.markdown("---")
+
     if st.button("🚪 Logout", use_container_width=True):
+
         st.session_state.auth = False
-        st.session_state.page = "Summary"
-    
-# =====================================================
-# ================= WELCOME SCREEN ====================
-# =====================================================
-if st.session_state.page == "Welcome":
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col2:
-
-        logo_path = "sigma_logo.png"
-
-        if os.path.exists(logo_path):
-            st.image(logo_path, width=180)
-        else:
-            st.markdown("<h3 style='text-align:center;'>Sigma Consultants</h3>", unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="ui-card" style="text-align:center;">
-            <p style="color:#555;">
-                Manage clients, proposals, profits & follow-ups
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        if st.button("➕ Add Client", use_container_width=True, type="primary"):
-            st.session_state.page = "Clients"
-
-        if st.button("📄 Add Proposal", use_container_width=True):
-            st.session_state.page = "AddProposal"
-
-        if st.button("🔍 Find Details", use_container_width=True):
-            st.session_state.page = "Find"
+        st.session_state.page = "Welcome"
+        st.rerun()
 
 # =====================================================
 # ================= SUMMARY ===========================
