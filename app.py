@@ -1157,13 +1157,26 @@ if st.session_state.page == "Clients":
 # =====================================================
 # ================= CLIENT DASHBOARD ==================
 # =====================================================
+
 if st.session_state.page == "ClientDashboard":
 
     st.header("📊 Client Summary Dashboard")
 
+    # ---------- SAFETY CHECK ----------
+    if "clients_df" not in st.session_state or st.session_state.clients_df.empty:
+        st.info("No clients available")
+        st.stop()
+
+    if "proposals_df" not in st.session_state:
+        st.info("No proposal data available")
+        st.stop()
+
+    clients_df = st.session_state.clients_df.copy()
+    proposals_df = st.session_state.proposals_df.copy()
+
     # ---------- ACTIVE CLIENTS ONLY ----------
-    active_clients = st.session_state.clients_df[
-        st.session_state.clients_df["Is_Archived"] == False
+    active_clients = clients_df[
+        clients_df["Is_Archived"] == False
     ].copy()
 
     if active_clients.empty:
@@ -1171,9 +1184,15 @@ if st.session_state.page == "ClientDashboard":
         st.stop()
 
     # =================================================
-    # ============== CLIENT FILTER ====================
+    # CLIENT FILTER
     # =================================================
-    client_options = ["Select"] + sorted(active_clients["Client_Name"].unique())
+    client_options = ["Select"] + sorted(
+        active_clients["Client_Name"]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
 
     client = st.selectbox("Select Client", client_options)
 
@@ -1181,15 +1200,19 @@ if st.session_state.page == "ClientDashboard":
         st.info("Please select a client to continue")
         st.stop()
 
-    client_row = active_clients[
+    client_match = active_clients[
         active_clients["Client_Name"] == client
-    ].iloc[0]
+    ]
 
-    client_id = client_row["Client_ID"]
+    if client_match.empty:
+        st.error("Client not found")
+        st.stop()
 
-    # ---------- WORKING COPY ----------
-    client_df = st.session_state.proposals_df[
-        st.session_state.proposals_df["Client_ID"] == client_id
+    client_id = client_match.iloc[0]["Client_ID"]
+
+    # ---------- FILTER CLIENT PROPOSALS ----------
+    client_df = proposals_df[
+        proposals_df["Client_ID"] == client_id
     ].copy()
 
     if client_df.empty:
@@ -1197,11 +1220,15 @@ if st.session_state.page == "ClientDashboard":
         st.stop()
 
     # ---------- DATE NORMALIZATION ----------
-    for c in ["Start_Date", "End_Date"]:
-        client_df[c] = pd.to_datetime(client_df[c], errors="coerce")
+    for col in ["Start_Date", "End_Date", "Closing_Date"]:
+        if col in client_df.columns:
+            client_df[col] = pd.to_datetime(
+                client_df[col],
+                errors="coerce"
+            )
 
     # =================================================
-    # ============== STATUS FILTER ====================
+    # STATUS FILTER
     # =================================================
     status = st.selectbox(
         "Select Status",
@@ -1213,29 +1240,36 @@ if st.session_state.page == "ClientDashboard":
         st.stop()
 
     if status != "All":
-        client_df = client_df[client_df["Status"] == status]
+        client_df = client_df[
+            client_df["Status"] == status
+        ]
 
     if client_df.empty:
         st.info("No records found for selected filters")
         st.stop()
 
     # =================================================
-    # ============== GRAND TOTALS =====================
+    # GRAND TOTALS
     # =================================================
     total_invest = client_df["Proposal_Cost"].sum()
     total_final = client_df["Final_Cost"].sum()
     total_profit = client_df["Profit"].sum()
+
     open_props = (client_df["Status"] == "Open").sum()
     closed_props = (client_df["Status"] == "Closed").sum()
 
     if is_mobile:
+
         card("Investment", f"₹ {total_invest:,.2f}")
         card("Final Amount", f"₹ {total_final:,.2f}")
         card("Profit", f"₹ {total_profit:,.2f}")
         card("Open", open_props)
         card("Closed", closed_props)
+
     else:
+
         c1, c2, c3, c4, c5 = st.columns(5)
+
         c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
         c2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
         c3.metric("Total Profit", f"₹ {total_profit:,.2f}")
@@ -1245,12 +1279,18 @@ if st.session_state.page == "ClientDashboard":
     st.markdown("---")
 
     # =================================================
-    # ============== DISPLAY DATA =====================
+    # DISPLAY DATA TABLE
     # =================================================
-    display_df = client_df.sort_values("Start_Date").copy()
+    display_df = client_df.sort_values(
+        by="Start_Date",
+        ascending=True
+    ).copy()
 
-    display_df["Start_Date"] = display_df["Start_Date"].dt.strftime("%d/%m/%Y")
-    display_df["End_Date"] = display_df["End_Date"].dt.strftime("%d/%m/%Y")
+    # SAFE DATE FORMAT
+    for col in ["Start_Date", "End_Date"]:
+        display_df[col] = display_df[col].dt.strftime("%d/%m/%Y")
+
+    # SAFE RATE FORMAT
     display_df["Rate"] = (
         pd.to_numeric(display_df["Rate"], errors="coerce")
         .fillna(0)
@@ -1260,71 +1300,89 @@ if st.session_state.page == "ClientDashboard":
 
     # ---------------- MOBILE VIEW -------------------
     if is_mobile:
-        for _, r in display_df.iterrows():
+
+        for _, row in display_df.iterrows():
+
             st.markdown(
                 f"""
-                <div style="border:1px solid #ddd;
-                border-radius:12px;
-                padding:14px;
-                margin-bottom:12px;
-                background:#fafafa">
+<div style="border:1px solid #ddd;
+border-radius:12px;
+padding:14px;
+margin-bottom:12px;
+background:#fafafa">
 
-                <b>Start Date:</b> {r['Start_Date']}<br>
-                <b>End Date:</b> {r['End_Date']}<br>
-                <b>Proposal Cost:</b> ₹ {r['Proposal_Cost']:,.2f}<br>
-                <b>Final Cost:</b> ₹ {r['Final_Cost']:,.2f}<br>
-                <b>Profit:</b> ₹ {r['Profit']:,.2f}<br>
-                <b>Status:</b> {r['Status']}
+<b>Start Date:</b> {row['Start_Date']}<br>
+<b>End Date:</b> {row['End_Date']}<br>
+<b>Proposal Cost:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
+<b>Final Cost:</b> ₹ {row['Final_Cost']:,.2f}<br>
+<b>Profit:</b> ₹ {row['Profit']:,.2f}<br>
+<b>Status:</b> {row['Status']}
 
-                </div>
-                """,
+</div>
+""",
                 unsafe_allow_html=True
             )
 
     # ---------------- DESKTOP VIEW ------------------
     else:
+
         st.dataframe(
-            display_df[[
-                "Proposal_ID",
-                "Start_Date",
-                "End_Date",
-                "Proposal_Cost",
-                "Final_Cost",
-                "Profit",
-                "Status"
-            ]],
+            display_df[
+                [
+                    "Proposal_ID",
+                    "Start_Date",
+                    "End_Date",
+                    "Proposal_Cost",
+                    "Final_Cost",
+                    "Profit",
+                    "Status"
+                ]
+            ],
             use_container_width=True
         )
 
 # =====================================================
 # ================= EXPORT DATA =======================
 # =====================================================
+
 if st.session_state.page == "Export":
 
     st.header("📤 Export Data")
 
-    proposals_df = st.session_state.proposals_df
-    clients_df = st.session_state.clients_df
-
     # ---------- SAFETY CHECK ----------
+    if "proposals_df" not in st.session_state:
+        st.session_state.proposals_df = pd.DataFrame()
+
+    if "clients_df" not in st.session_state:
+        st.session_state.clients_df = pd.DataFrame()
+
+    proposals_df = st.session_state.proposals_df.copy()
+    clients_df = st.session_state.clients_df.copy()
+
     if proposals_df.empty and clients_df.empty:
         st.warning("No data available to export.")
         st.stop()
 
     # ---------- EXPORT FUNCTION ----------
-    def export_excel():
+    @st.cache_data(show_spinner=False)
+    def export_excel(clients, proposals):
+
         output = io.BytesIO()
 
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            if not clients_df.empty:
-                clients_df.to_excel(
+        with pd.ExcelWriter(
+            output,
+            engine="openpyxl"
+        ) as writer:
+
+            if not clients.empty:
+                clients.to_excel(
                     writer,
                     index=False,
                     sheet_name="Clients"
                 )
 
-            if not proposals_df.empty:
-                proposals_df.to_excel(
+            if not proposals.empty:
+                proposals.to_excel(
                     writer,
                     index=False,
                     sheet_name="Proposals"
@@ -1333,14 +1391,21 @@ if st.session_state.page == "Export":
         output.seek(0)
         return output
 
-    # ---------- GENERATE FILE ----------
-    excel_file = export_excel()
+    excel_file = export_excel(
+        clients_df,
+        proposals_df
+    )
+
+    # ---------- TIMESTAMPED FILE NAME ----------
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+
+    file_name = f"sigma_consultants_data_{timestamp}.xlsx"
 
     # ---------- DOWNLOAD BUTTON ----------
     st.download_button(
         label="⬇️ Download Excel (Clients + Proposals)",
         data=excel_file,
-        file_name="sigma_consultants_data.xlsx",
+        file_name=file_name,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
@@ -1348,18 +1413,26 @@ if st.session_state.page == "Export":
     st.markdown("### 🔁 Alternative Format")
 
     if not proposals_df.empty:
+
         st.download_button(
             label="⬇️ Download Proposals CSV",
-            data=proposals_df.to_csv(index=False),
-            file_name="sigma_proposals.csv",
+            data=proposals_df.to_csv(
+                index=False,
+                encoding="utf-8-sig"
+            ),
+            file_name=f"sigma_proposals_{timestamp}.csv",
             mime="text/csv"
         )
 
     if not clients_df.empty:
+
         st.download_button(
             label="⬇️ Download Clients CSV",
-            data=clients_df.to_csv(index=False),
-            file_name="sigma_clients.csv",
+            data=clients_df.to_csv(
+                index=False,
+                encoding="utf-8-sig"
+            ),
+            file_name=f"sigma_clients_{timestamp}.csv",
             mime="text/csv"
         )
 
