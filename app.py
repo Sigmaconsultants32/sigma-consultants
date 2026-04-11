@@ -282,17 +282,45 @@ def load_proposals():
         df = pd.read_excel(PROPOSAL_FILE)
     else:
         df = pd.DataFrame(...)
+        def load_proposals():
+
+    required_cols = [
+        "Proposal_ID",
+        "Client_ID",
+        "Client_Name",
+        "Proposal_Cost",
+        "Rate",
+        "Final_Cost",
+        "Profit",
+        "Start_Date",
+        "End_Date",
+        "Status",
+        "Closing_Date"
+    ]
+
+    # ---------- LOAD OR CREATE ----------
+    if os.path.exists(PROPOSAL_FILE):
+        df = pd.read_excel(PROPOSAL_FILE)
+    else:
+        df = pd.DataFrame(columns=required_cols)
         df.to_excel(PROPOSAL_FILE, index=False)
 
-    # FIX: move ALL logic above return
+    # ---------- ADD MISSING COLUMNS ----------
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = None
+
+    # ---------- NUMERIC SAFETY ----------
     numeric_cols = ["Proposal_Cost", "Rate", "Profit", "Final_Cost"]
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
+    # ---------- DATE SAFETY ----------
     date_cols = ["Start_Date", "End_Date", "Closing_Date"]
     for col in date_cols:
         df[col] = pd.to_datetime(df[col], errors="coerce")
 
+    # ---------- STATUS SAFETY ----------
     df["Status"] = df["Status"].fillna("Open")
 
     return df
