@@ -395,6 +395,15 @@ def new_proposal_id():
 
     return f"SIG-P-{last+1:03d}"
 
+# =====================================================
+# CALCULATION FUNCTION (ADD HERE)
+# =====================================================
+
+def calc(principal, rate, days):
+    profit = principal * rate * (days / 30) / 100
+    final = principal + profit
+    return final, profit
+
 # ---------------- PAGE STATE ----------------
 if "page" not in st.session_state:
     st.session_state.page = "Welcome"
