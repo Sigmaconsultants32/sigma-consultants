@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import io
+import base64
 
 # =====================================================
 # PAGE CONFIG
