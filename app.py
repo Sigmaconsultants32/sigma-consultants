@@ -808,46 +808,57 @@ if "page" not in st.session_state:
 
 is_mobile = st.session_state.get("is_mobile", False)
 
+
 # ================= UTILITIES =================
 def get_master_df(proposals_df):
+
     df = proposals_df.copy()
+
     for c in ["Start_Date", "End_Date", "Closing_Date"]:
         if c in df.columns:
             df[c] = pd.to_datetime(df[c], errors="coerce")
+
     return df
+
 
 # ================= COMPONENT : GRAND TOTAL =================
 def render_grand_total(total_invest, total_final, total_profit, is_mobile):
+
     if is_mobile:
+
         st.markdown(
             f"""
-            <div style="
-                background:#e3f2fd;
-                border-radius:14px;
-                padding:14px;
-                margin:15px 0;
-                border:1px solid #90caf9">
-                <b>💠 Grand Total</b><br><br>
-                <b>Investment:</b> ₹ {total_invest:,.2f}<br>
-                <b>Final Amount:</b> ₹ {total_final:,.2f}<br>
-                <b>Profit:</b> ₹ {total_profit:,.2f}
-            </div>
-            """,
+<div style="background:#e3f2fd;border-radius:14px;
+padding:14px;margin:15px 0;border:1px solid #90caf9">
+
+<b>💠 Grand Total</b><br><br>
+<b>Investment:</b> ₹ {total_invest:,.2f}<br>
+<b>Final Amount:</b> ₹ {total_final:,.2f}<br>
+<b>Profit:</b> ₹ {total_profit:,.2f}
+
+</div>
+""",
             unsafe_allow_html=True
         )
+
     else:
+
         c1, c2, c3 = st.columns(3)
+
         c1.metric("Investment", f"₹ {total_invest:,.2f}")
         c2.metric("Final Amount", f"₹ {total_final:,.2f}")
         c3.metric("Profit", f"₹ {total_profit:,.2f}")
 
+
 # ================= MODE SELECTOR =================
 def render_find_mode_selector():
+
     return st.radio(
         "Find Details Mode",
         ["By Proposal", "By Client Name", "By Start / End Date"],
         horizontal=True
     )
+
 
 # ================= BY PROPOSAL =================
 def render_by_proposal(df_master, is_mobile):
@@ -855,32 +866,71 @@ def render_by_proposal(df_master, is_mobile):
     st.subheader("📄 Find Details By Proposal")
 
     status = st.selectbox("Status", ["All", "Open", "Closed"])
-    df = df_master if status == "All" else df_master[df_master["Status"] == status]
+
+    df = df_master if status == "All" else df_master[
+        df_master["Status"] == status
+    ]
 
     if df.empty:
         st.info("No proposals found")
         return
 
-    proposal_options = ["-- Select Proposal --"] + sorted(df["Proposal_ID"].unique())
-    proposal_id = st.selectbox("Select Proposal ID", proposal_options)
+    proposal_options = ["Select Proposal"] + sorted(
+        df["Proposal_ID"].dropna().unique().tolist()
+    )
 
-    if proposal_id == "-- Select Proposal --":
-        st.info("Please select a Proposal ID")
+    proposal_id = st.selectbox(
+        "Select Proposal ID",
+        proposal_options
+    )
+
+    if proposal_id == "Select Proposal":
         return
 
     proposal_df = df[df["Proposal_ID"] == proposal_id]
 
+    if proposal_df.empty:
+        st.warning("Proposal not found")
+        return
+
+    start_date = proposal_df["Start_Date"].iloc[0]
+    end_date = proposal_df["End_Date"].iloc[0]
+    rate_val = proposal_df["Rate"].iloc[0]
+
     c1, c2, c3 = st.columns(3)
-    c1.text_input("Start Date", proposal_df["Start_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
-    c2.text_input("End Date", proposal_df["End_Date"].iloc[0].strftime("%d-%m-%Y"), disabled=True)
-    c3.text_input("Rate (%)", int(round(proposal_df["Rate"].iloc[0])), disabled=True)
+
+    c1.text_input(
+        "Start Date",
+        start_date.strftime("%d-%m-%Y") if pd.notna(start_date) else "—",
+        disabled=True
+    )
+
+    c2.text_input(
+        "End Date",
+        end_date.strftime("%d-%m-%Y") if pd.notna(end_date) else "—",
+        disabled=True
+    )
+
+    c3.text_input(
+        "Rate (%)",
+        int(round(rate_val)) if pd.notna(rate_val) else 0,
+        disabled=True
+    )
 
     client = st.selectbox(
         "Select Client",
-        ["All"] + sorted(proposal_df["Client_Name"].unique())
+        ["All"] + sorted(
+            proposal_df["Client_Name"].dropna().unique().tolist()
+        )
     )
 
-    result = proposal_df if client == "All" else proposal_df[proposal_df["Client_Name"] == client]
+    result = (
+        proposal_df
+        if client == "All"
+        else proposal_df[
+            proposal_df["Client_Name"] == client
+        ]
+    )
 
     if result.empty:
         st.info("No data found")
@@ -894,64 +944,75 @@ def render_by_proposal(df_master, is_mobile):
     )
 
     st.dataframe(
-        result[["Client_Name", "Proposal_Cost", "Final_Cost", "Profit"]].round(2),
+        result[
+            ["Client_Name", "Proposal_Cost", "Final_Cost", "Profit"]
+        ].round(2),
         use_container_width=True,
         hide_index=True
     )
+
 
 # ================= BY CLIENT NAME =================
 def render_by_client(df_master, is_mobile):
 
     st.subheader("🔎 Find Details Using Client Name")
 
-    # ---------- Status Filter ----------
     status = st.selectbox("Status", ["All", "Open", "Closed"])
-    df = df_master if status == "All" else df_master[df_master["Status"] == status]
+
+    df = df_master if status == "All" else df_master[
+        df_master["Status"] == status
+    ]
 
     if df.empty:
-        st.info("No records found")
         return
 
-    # ---------- Client Name Selector ----------
-    client_list = sorted(df["Client_Name"].dropna().unique().tolist())
-    client_list.insert(0, "Select Client Name")
+    client_list = ["Select Client Name"] + sorted(
+        df["Client_Name"].dropna().unique().tolist()
+    )
 
     client = st.selectbox("Client Name", client_list)
 
     if client == "Select Client Name":
-        st.info("Please select a client name")
         return
 
     df = df[df["Client_Name"] == client]
 
-    # ---------- Date Type ----------
-    date_type = st.radio("Date Type", ["Start Date", "End Date"], horizontal=True)
-    date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+    date_type = st.radio(
+        "Date Type",
+        ["Start Date", "End Date"],
+        horizontal=True
+    )
 
-    df = df.dropna(subset=[date_col])
-    df["DateOnly"] = df[date_col].dt.date
+    date_col = (
+        "Start_Date"
+        if date_type == "Start Date"
+        else "End_Date"
+    )
+
+    df = df.dropna(subset=[date_col]).copy()
 
     if df.empty:
-        st.info("No dates available")
         return
 
-    # ---------- Date Selector ----------
-    date_list = sorted(df["DateOnly"].unique().tolist())
-    date_list.insert(0, "Select Date")
+    df["DateOnly"] = df[date_col].dt.date
+
+    date_list = ["Select Date"] + sorted(
+        df["DateOnly"].unique().tolist()
+    )
 
     selected_date = st.selectbox(
         "Select Date",
         date_list,
-        format_func=lambda x: x if isinstance(x, str) else x.strftime("%d-%m-%Y")
+        format_func=lambda x:
+            x if isinstance(x, str)
+            else x.strftime("%d-%m-%Y")
     )
 
     if selected_date == "Select Date":
-        st.info("Please select a date")
         return
 
     result = df[df["DateOnly"] == selected_date]
 
-    # ---------- Grand Total ----------
     render_grand_total(
         result["Proposal_Cost"].sum(),
         result["Final_Cost"].sum(),
@@ -959,45 +1020,39 @@ def render_by_client(df_master, is_mobile):
         is_mobile
     )
 
-    # ---------- Table ----------
     st.dataframe(
-        result[["Proposal_Cost", "Rate", "Final_Cost", "Profit"]].round(2),
+        result[
+            ["Proposal_Cost", "Rate", "Final_Cost", "Profit"]
+        ].round(2),
         use_container_width=True,
         hide_index=True
     )
-    
+
+
 # ================= BY DATE =================
 def render_by_date(df_master, is_mobile):
 
     st.subheader("📅 Find Details Using Start / End Date")
 
-    # -----------------------------
-    # STATUS
-    # -----------------------------
     status = st.selectbox(
         "Status",
         ["All", "Open", "Closed"],
         key="date_status"
     )
 
-    df = df_master if status == "All" else df_master[df_master["Status"] == status]
+    df = df_master if status == "All" else df_master[
+        df_master["Status"] == status
+    ]
 
     if df.empty:
-        st.info("No records found")
         return
 
-    # -----------------------------
-    # INIT BLOCKS (ONCE)
-    # -----------------------------
     if "date_blocks" not in st.session_state:
         st.session_state.date_blocks = [1]
 
     if "remove_block" not in st.session_state:
         st.session_state.remove_block = None
 
-    # -----------------------------
-    # ADD BLOCK
-    # -----------------------------
     if st.button("➕ Check Another Date"):
         st.session_state.date_blocks.append(
             max(st.session_state.date_blocks) + 1
@@ -1005,10 +1060,9 @@ def render_by_date(df_master, is_mobile):
 
     st.divider()
 
-    # -----------------------------
-    # RENDER BLOCKS
-    # -----------------------------
-    for i, block_id in enumerate(list(st.session_state.date_blocks)):
+    for i, block_id in enumerate(
+        list(st.session_state.date_blocks)
+    ):
 
         col1, col2 = st.columns([6, 1])
 
@@ -1020,9 +1074,6 @@ def render_by_date(df_master, is_mobile):
                 if st.button("❌", key=f"remove_{block_id}"):
                     st.session_state.remove_block = block_id
 
-        # -------------------------
-        # DATE TYPE (NO "Select")
-        # -------------------------
         date_type = st.radio(
             "Date Type",
             ["Start Date", "End Date"],
@@ -1030,45 +1081,36 @@ def render_by_date(df_master, is_mobile):
             key=f"date_type_{block_id}"
         )
 
-        date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
+        date_col = (
+            "Start_Date"
+            if date_type == "Start Date"
+            else "End_Date"
+        )
 
         df_local = df.dropna(subset=[date_col]).copy()
-        df_local["DateOnly"] = df_local[date_col].dt.date
 
         if df_local.empty:
-            st.info("No dates available")
-            st.divider()
             continue
 
-        # -------------------------
-        # DATE SELECT (SAFE)
-        # -------------------------
-        date_options = [None] + sorted(df_local["DateOnly"].unique())
+        df_local["DateOnly"] = df_local[date_col].dt.date
 
         selected_date = st.selectbox(
             f"Select {date_type}",
-            date_options,
+            [None] + sorted(df_local["DateOnly"].unique()),
             key=f"date_select_{block_id}",
-            format_func=lambda x: "Select" if x is None else x.strftime("%d-%m-%Y")
+            format_func=lambda x:
+                "Select"
+                if x is None
+                else x.strftime("%d-%m-%Y")
         )
 
         if selected_date is None:
-            st.divider()
             continue
 
-        # -------------------------
-        # RESULT
-        # -------------------------
-        result = df_local[df_local["DateOnly"] == selected_date]
+        result = df_local[
+            df_local["DateOnly"] == selected_date
+        ]
 
-        if result.empty:
-            st.info("No records found")
-            st.divider()
-            continue
-
-        # -------------------------
-        # GRAND TOTAL
-        # -------------------------
         render_grand_total(
             result["Proposal_Cost"].sum(),
             result["Final_Cost"].sum(),
@@ -1078,7 +1120,13 @@ def render_by_date(df_master, is_mobile):
 
         st.dataframe(
             result[
-                ["Client_Name", "Proposal_Cost", "Rate", "Final_Cost", "Profit"]
+                [
+                    "Client_Name",
+                    "Proposal_Cost",
+                    "Rate",
+                    "Final_Cost",
+                    "Profit"
+                ]
             ].round(2),
             use_container_width=True,
             hide_index=True
@@ -1086,36 +1134,46 @@ def render_by_date(df_master, is_mobile):
 
         st.divider()
 
-    # -----------------------------
-    # REMOVE BLOCK (AFTER RENDER)
-    # -----------------------------
     if st.session_state.remove_block:
-        if st.session_state.remove_block in st.session_state.date_blocks:
+
+        if (
+            st.session_state.remove_block
+            in st.session_state.date_blocks
+        ):
             st.session_state.date_blocks.remove(
                 st.session_state.remove_block
             )
+
         st.session_state.remove_block = None
+
 
 # ================= PAGE CONTROLLER =================
 if st.session_state.page == "Find":
 
     st.header("🔍 Find Proposal Details")
 
-    if "proposals_df" not in globals() or proposals_df.empty:
+    if "proposals_df" not in st.session_state:
         st.warning("No proposal data available")
         st.stop()
 
-    df_master = get_master_df(proposals_df)
+    if st.session_state.proposals_df.empty:
+        st.warning("No proposal data available")
+        st.stop()
+
+    df_master = get_master_df(
+        st.session_state.proposals_df
+    )
 
     find_mode = render_find_mode_selector()
 
     if find_mode == "By Proposal":
         render_by_proposal(df_master, is_mobile)
+
     elif find_mode == "By Client Name":
         render_by_client(df_master, is_mobile)
+
     elif find_mode == "By Start / End Date":
         render_by_date(df_master, is_mobile)
-
 
 # =====================================================
 # ================= CLIENTS ===========================
