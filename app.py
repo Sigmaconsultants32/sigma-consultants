@@ -384,7 +384,7 @@ def load_proposals():
             errors="coerce"
         )
 
-    df["Status"] = df["Status"].fillna("Open")
+    df["Status"] = df["Status"].apply(normalize_status)
 
     return df
 
@@ -465,6 +465,25 @@ def calc(principal, rate, days):
     final = principal + profit
 
     return final, profit
+
+# =====================================================
+# STATUS NORMALIZATION
+# =====================================================
+
+def normalize_status(value):
+
+    if pd.isna(value):
+        return "Open"
+
+    status = str(value).strip().lower()
+
+    if status in {"close", "closed", "done", "complete", "completed"}:
+        return "Close"
+
+    if status == "open":
+        return "Open"
+
+    return str(value).strip().title()
 
 # =====================================================
 # PAGE STATE
@@ -855,7 +874,7 @@ if st.session_state.page == "Edit":
 
     status_filter = st.selectbox(
         "Select Proposal Status",
-        ["Select", "Open", "Closed"]
+        ["Select", "Open", "Close"]
     )
 
     if status_filter == "Select":
@@ -1009,7 +1028,7 @@ def render_by_proposal(df_master, is_mobile):
 
     st.subheader("📄 Find Details By Proposal")
 
-    status = st.selectbox("Status", ["All", "Open", "Closed"])
+    status = st.selectbox("Status", ["All", "Open", "Close"])
 
     df = df_master if status == "All" else df_master[
         df_master["Status"] == status
@@ -1101,7 +1120,7 @@ def render_by_client(df_master, is_mobile):
 
     st.subheader("🔎 Find Details Using Client Name")
 
-    status = st.selectbox("Status", ["All", "Open", "Closed"])
+    status = st.selectbox("Status", ["All", "Open", "Close"])
 
     df = df_master if status == "All" else df_master[
         df_master["Status"] == status
@@ -1180,7 +1199,7 @@ def render_by_date(df_master, is_mobile):
 
     status = st.selectbox(
         "Status",
-        ["All", "Open", "Closed"],
+        ["All", "Open", "Close"],
         key="date_status"
     )
 
@@ -1385,153 +1404,118 @@ if st.session_state.page == "ClientDashboard":
         st.info("No active clients")
         st.stop()
 
-    # =================================================
-    # CLIENT FILTER
-    # =================================================
-    client_options = ["Select"] + sorted(
-        active_clients["Client_Name"]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    client = st.selectbox("Select Client", client_options)
-
-    if client == "Select":
-        st.info("Please select a client to continue")
-        st.stop()
-
-    client_match = active_clients[
-        active_clients["Client_Name"] == client
-    ]
-
-    if client_match.empty:
-        st.error("Client not found")
-        st.stop()
-
-    client_id = client_match.iloc[0]["Client_ID"]
-
-    # ---------- FILTER CLIENT PROPOSALS ----------
-    client_df = proposals_df[
-        proposals_df["Client_ID"] == client_id
-    ].copy()
-
-    if client_df.empty:
-        st.info("No proposals available for this client")
-        st.stop()
-
-    # ---------- DATE NORMALIZATION ----------
+    # ---------- DATE / STATUS NORMALIZATION ----------
     for col in ["Start_Date", "End_Date", "Closing_Date"]:
-        if col in client_df.columns:
-            client_df[col] = pd.to_datetime(
-                client_df[col],
-                errors="coerce"
-            )
+        if col in proposals_df.columns:
+            proposals_df[col] = pd.to_datetime(proposals_df[col], errors="coerce")
+
+    if "Status" in proposals_df.columns:
+        proposals_df["Status"] = proposals_df["Status"].apply(normalize_status)
+    else:
+        proposals_df["Status"] = "Open"
 
     # =================================================
-    # STATUS FILTER
+    # VIEW MODE
     # =================================================
-    status = st.selectbox(
-        "Select Status",
-        ["Select", "All", "Open", "Closed"]
+    view_mode = st.radio(
+        "Select View",
+        ["Single Client", "All Clients"],
+        horizontal=True
     )
 
-    if status == "Select":
-        st.info("Please select status to view data")
-        st.stop()
+    # =================================================
+    # SINGLE CLIENT VIEW
+    # =================================================
+    if view_mode == "Single Client":
 
-    if status != "All":
-        client_df = client_df[
-            client_df["Status"] == status
+        client_options = ["Select"] + sorted(
+            active_clients["Client_Name"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        client = st.selectbox("Select Client", client_options)
+
+        if client == "Select":
+            st.info("Please select a client to continue")
+            st.stop()
+
+        client_match = active_clients[
+            active_clients["Client_Name"] == client
         ]
 
-    if client_df.empty:
-        st.info("No records found for selected filters")
-        st.stop()
+        if client_match.empty:
+            st.error("Client not found")
+            st.stop()
 
-    # =================================================
-    # GRAND TOTALS
-    # =================================================
-    total_invest = client_df["Proposal_Cost"].sum()
-    total_final = client_df["Final_Cost"].sum()
-    total_profit = client_df["Profit"].sum()
+        client_id = client_match.iloc[0]["Client_ID"]
 
-    open_props = (client_df["Status"] == "Open").sum()
-    closed_props = (client_df["Status"] == "Closed").sum()
+        client_df = proposals_df[
+            proposals_df["Client_ID"] == client_id
+        ].copy()
 
-    if is_mobile:
+        if client_df.empty:
+            st.info("No proposals available for this client")
+            st.stop()
 
-        card("Investment", f"₹ {total_invest:,.2f}")
-        card("Final Amount", f"₹ {total_final:,.2f}")
-        card("Profit", f"₹ {total_profit:,.2f}")
-        card("Open", open_props)
-        card("Closed", closed_props)
+        status = st.selectbox(
+            "Select Proposal Status",
+            ["All", "Open", "Close"]
+        )
 
-    else:
+        if status != "All":
+            client_df = client_df[client_df["Status"] == status]
 
-        c1, c2, c3, c4, c5 = st.columns(5)
+        if client_df.empty:
+            st.info("No records found for selected filters")
+            st.stop()
 
-        c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
-        c2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
-        c3.metric("Total Profit", f"₹ {total_profit:,.2f}")
-        c4.metric("Open Proposals", open_props)
-        c5.metric("Closed Proposals", closed_props)
+        total_invest = client_df["Proposal_Cost"].sum()
+        total_final = client_df["Final_Cost"].sum()
+        total_profit = client_df["Profit"].sum()
 
-    st.markdown("---")
+        open_props = (client_df["Status"] == "Open").sum()
+        closed_props = (client_df["Status"] == "Close").sum()
 
-    # =================================================
-    # DISPLAY DATA TABLE
-    # =================================================
-    display_df = client_df.sort_values(
-        by="Start_Date",
-        ascending=True
-    ).copy()
+        if is_mobile:
+            card("Investment", f"₹ {total_invest:,.2f}")
+            card("Final Amount", f"₹ {total_final:,.2f}")
+            card("Profit", f"₹ {total_profit:,.2f}")
+            card("Open", open_props)
+            card("Closed", closed_props)
+        else:
+            c1, c2, c3, c4, c5 = st.columns(5)
+            c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
+            c2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
+            c3.metric("Total Profit", f"₹ {total_profit:,.2f}")
+            c4.metric("Open Proposals", open_props)
+            c5.metric("Closed Proposals", closed_props)
 
-    # SAFE DATE FORMAT
-    for col in ["Start_Date", "End_Date"]:
-        display_df[col] = display_df[col].dt.strftime("%d/%m/%Y")
+        st.markdown("---")
+        st.subheader("📄 Proposal Details")
 
-    # SAFE RATE FORMAT
-    display_df["Rate"] = (
-        pd.to_numeric(display_df["Rate"], errors="coerce")
-        .fillna(0)
-        .round(0)
-        .astype(int)
-    )
+        display_df = client_df.sort_values(
+            by=["Start_Date", "Proposal_ID"],
+            ascending=True
+        ).copy()
 
-    # ---------------- MOBILE VIEW -------------------
-    if is_mobile:
+        display_df.insert(0, "Sr. No.", range(1, len(display_df) + 1))
 
-        for _, row in display_df.iterrows():
+        for col in ["Start_Date", "End_Date"]:
+            if col in display_df.columns:
+                display_df[col] = pd.to_datetime(display_df[col], errors="coerce").dt.strftime("%d/%m/%Y")
 
-            st.markdown(
-                f"""
-<div style="border:1px solid #ddd;
-border-radius:12px;
-padding:14px;
-margin-bottom:12px;
-background:#fafafa">
-
-<b>Start Date:</b> {row['Start_Date']}<br>
-<b>End Date:</b> {row['End_Date']}<br>
-<b>Proposal Cost:</b> ₹ {row['Proposal_Cost']:,.2f}<br>
-<b>Final Cost:</b> ₹ {row['Final_Cost']:,.2f}<br>
-<b>Profit:</b> ₹ {row['Profit']:,.2f}<br>
-<b>Status:</b> {row['Status']}
-
-</div>
-""",
-                unsafe_allow_html=True
-            )
-
-    # ---------------- DESKTOP VIEW ------------------
-    else:
+        for col in ["Proposal_Cost", "Final_Cost", "Profit"]:
+            display_df[col] = pd.to_numeric(display_df[col], errors="coerce").fillna(0).round(2)
 
         st.dataframe(
             display_df[
                 [
+                    "Sr. No.",
                     "Proposal_ID",
+                    "Client_Name",
                     "Start_Date",
                     "End_Date",
                     "Proposal_Cost",
@@ -1540,11 +1524,82 @@ background:#fafafa">
                     "Status"
                 ]
             ],
-            use_container_width=True
+            use_container_width=True,
+            hide_index=True
         )
+
+    # =================================================
+    # ALL CLIENTS VIEW
+    # =================================================
+    else:
+
+        status = st.selectbox(
+            "Select Proposal Status",
+            ["All", "Open", "Close"]
+        )
+
+        all_df = proposals_df.copy()
+
+        if all_df.empty:
+            st.info("No proposal data available")
+            st.stop()
+
+        if status != "All":
+            all_df = all_df[all_df["Status"] == status]
+
+        if all_df.empty:
+            st.info("No records found for selected filters")
+            st.stop()
+
+        summary_df = (
+            all_df.groupby(["Client_Name"], as_index=False)
+            .agg(
+                **{
+                    "Total of Proposal price": ("Proposal_Cost", "sum"),
+                    "Total of Profit amount": ("Profit", "sum")
+                }
+            )
+        )
+
+        summary_df["Proposal Status"] = status
+        summary_df["Total of Proposal Price and Profit amount"] = (
+            summary_df["Total of Proposal price"] + summary_df["Total of Profit amount"]
+        )
+
+        summary_df = summary_df[
+            [
+                "Client_Name",
+                "Proposal Status",
+                "Total of Proposal price",
+                "Total of Profit amount",
+                "Total of Proposal Price and Profit amount"
+            ]
+        ].sort_values("Client_Name").reset_index(drop=True)
+
+        summary_df.insert(0, "Sr. No.", range(1, len(summary_df) + 1))
+
+        summary_df = summary_df.rename(
+            columns={
+                "Client_Name": "Client Name"
+            }
+        )
+
+        for col in [
+            "Total of Proposal price",
+            "Total of Profit amount",
+            "Total of Proposal Price and Profit amount"
+        ]:
+            summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0).round(2)
+
+        if is_mobile:
+            table_df = summary_df
+            st.dataframe(table_df, use_container_width=True, hide_index=True)
+        else:
+            st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # =====================================================
 # ================= EXPORT DATA =======================
+
 # =====================================================
 
 if st.session_state.page == "Export":
@@ -1637,7 +1692,6 @@ if st.session_state.page == "Export":
             file_name=f"sigma_clients_{timestamp}.csv",
             mime="text/csv"
         )
-
 
 
 
