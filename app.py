@@ -329,6 +329,19 @@ def load_clients():
 
     return df
 
+def normalize_status(value):
+    if pd.isna(value):
+        return "Open"
+
+    text = str(value).strip().lower()
+
+    if text in ["open", "o"]:
+        return "Open"
+    if text in ["close", "closed", "c"]:
+        return "Close"
+
+    return "Open"
+
 # =====================================================
 # LOAD PROPOSALS
 # =====================================================
@@ -350,41 +363,23 @@ def load_proposals():
     ]
 
     if os.path.exists(PROPOSAL_FILE):
-
         df = pd.read_excel(PROPOSAL_FILE)
-
     else:
-
         df = pd.DataFrame(columns=required_cols)
         df.to_excel(PROPOSAL_FILE, index=False)
 
     for col in required_cols:
-
         if col not in df.columns:
             df[col] = None
 
-    numeric_cols = [
-        "Proposal_Cost",
-        "Rate",
-        "Final_Cost",
-        "Profit"
-    ]
-
+    numeric_cols = ["Proposal_Cost", "Rate", "Final_Cost", "Profit"]
     for col in numeric_cols:
-
-        df[col] = pd.to_numeric(
-            df[col],
-            errors="coerce"
-        ).fillna(0)
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
     for col in ["Start_Date", "End_Date", "Closing_Date"]:
+        df[col] = pd.to_datetime(df[col], errors="coerce")
 
-        df[col] = pd.to_datetime(
-            df[col],
-            errors="coerce"
-        )
-
-    df["Status"] = df["Status"].apply(normalize_status)
+    df["Status"] = df["Status"].fillna("Open").apply(normalize_status)
 
     return df
 
