@@ -406,7 +406,7 @@ def load_proposals():
             errors="coerce"
         )
 
-    df["Status"] = df["Status"].apply(normalize_status)
+    df["Status"] = df["Status"].fillna("Open").apply(normalize_status)
 
     return df
 
