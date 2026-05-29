@@ -4,7 +4,7 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetimex
 import os
 import io
 import base64
@@ -1506,14 +1506,14 @@ if st.session_state.page == "ClientDashboard":
             card("Final Amount", f"₹ {total_final:,.2f}")
             card("Profit", f"₹ {total_profit:,.2f}")
             card("Open", open_props)
-            card("Closed", closed_props)
+            card("Close", closed_props)
         else:
             c1, c2, c3, c4, c5 = st.columns(5)
             c1.metric("Total Investment", f"₹ {total_invest:,.2f}")
             c2.metric("Total Final Amount", f"₹ {total_final:,.2f}")
             c3.metric("Total Profit", f"₹ {total_profit:,.2f}")
             c4.metric("Open Proposals", open_props)
-            c5.metric("Closed Proposals", closed_props)
+            c5.metric("Close Proposals", closed_props)
 
         st.markdown("---")
         st.subheader("📄 Proposal Details")
