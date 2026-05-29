@@ -14,17 +14,24 @@ import base64
 # =====================================================
 
 st.set_page_config(
-    page_title="Sigma Consultants",
-    layout="wide"
+    page_title="Sigma Consultants CRM",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # =====================================================
 # BRAND COLORS
 # =====================================================
 
-PRIMARY_COLOR = "#9DD3DB"
-SECONDARY_COLOR = "#FF6800"
-ACCENT_COLOR = "#EE2929"
+PRIMARY_COLOR = "#0F172A"
+SECONDARY_COLOR = "#2563EB"
+ACCENT_COLOR = "#14B8A6"
+BG_COLOR = "#F5F7FB"
+CARD_BG = "#FFFFFF"
+TEXT_COLOR = "#0F172A"
+MUTED_COLOR = "#64748B"
+BORDER_COLOR = "#E2E8F0"
 
 # =====================================================
 # GLOBAL STYLE
@@ -33,59 +40,169 @@ ACCENT_COLOR = "#EE2929"
 st.markdown(
     f"""
 <style>
-
-/* ---------- APP BACKGROUND ---------- */
+:root {{
+    --sigma-primary: {PRIMARY_COLOR};
+    --sigma-secondary: {SECONDARY_COLOR};
+    --sigma-accent: {ACCENT_COLOR};
+    --sigma-bg: {BG_COLOR};
+    --sigma-card: {CARD_BG};
+    --sigma-text: {TEXT_COLOR};
+    --sigma-muted: {MUTED_COLOR};
+    --sigma-border: {BORDER_COLOR};
+}}
 
 .stApp {{
-    background: linear-gradient(
-        135deg,
-        {PRIMARY_COLOR} 0%,
-        #ffffff 65%
-    );
+    background: linear-gradient(180deg, #F8FAFC 0%, #EEF4FB 100%);
+    color: var(--sigma-text);
 }}
 
-/* ---------- CARD CONTAINERS ---------- */
+html, body, [class*="css"] {{
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}}
+
+div.block-container {{
+    padding-top: 1.1rem;
+    padding-bottom: 1.4rem;
+    max-width: 1320px;
+}}
+
+section[data-testid="stVerticalBlock"] {{
+    gap: 0.6rem;
+}}
 
 section[data-testid="stVerticalBlock"] > div {{
-    background: rgba(255,255,255,0.96);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 18px;
-    padding: 18px;
-    margin-bottom: 18px;
-    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
-    border-left: 6px solid {SECONDARY_COLOR};
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    backdrop-filter: blur(6px);
 }}
 
-/* ---------- HEADERS ---------- */
-
-h1, h2, h3 {{
-    color: #1f2937;
+h1, h2, h3, h4, h5 {{
+    color: var(--sigma-text);
     font-weight: 700;
+    letter-spacing: -0.02em;
 }}
 
-/* ---------- PRIMARY BUTTONS ---------- */
+p, span, label, div {{
+    color: var(--sigma-text);
+}}
+
+[data-testid="stMetric"] {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}}
+
+[data-testid="stMetricLabel"] p {{
+    color: var(--sigma-muted);
+    font-size: 0.9rem;
+}}
+
+[data-testid="stMetricValue"] {{
+    color: var(--sigma-text);
+    font-weight: 800;
+}}
 
 button[kind="primary"] {{
-    background: {SECONDARY_COLOR};
-    border-radius: 12px;
+    background: linear-gradient(135deg, var(--sigma-secondary) 0%, var(--sigma-accent) 100%);
     border: none;
+    border-radius: 12px;
     color: white;
+    font-weight: 700;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
 }}
 
 button[kind="primary"]:hover {{
-    background: {ACCENT_COLOR};
+    filter: brightness(0.97);
+    transform: translateY(-1px);
 }}
 
-/* ---------- METRICS ---------- */
+button {{
+    border-radius: 12px;
+}}
 
-div[data-testid="metric-container"] {{
+[data-testid="stDataFrame"], .stDataFrame {{
+    border: 1px solid var(--sigma-border);
     border-radius: 14px;
-    padding: 14px;
-    background: linear-gradient(
-        145deg,
-        #ffffff,
-        {PRIMARY_COLOR}
-    );
-    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    background: #fff;
+}}
+
+[data-baseweb="select"], [data-baseweb="input"] {{
+    border-radius: 12px !important;
+}}
+
+[data-baseweb="select"] > div, [data-baseweb="input"] > div {{
+    min-height: 42px;
+}}
+
+section[data-testid="stSidebar"] {{
+    background: linear-gradient(180deg, #0B1120 0%, #111827 100%);
+    padding-top: 18px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+}}
+
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] p {{
+    color: #F8FAFC;
+}}
+
+.sidebar-btn button {{
+    background: rgba(255,255,255,0.04);
+    color: #E5E7EB;
+    border-radius: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 0.6rem 0.85rem;
+    margin-bottom: 6px;
+    transition: all 0.18s ease-in-out;
+    box-shadow: none;
+}}
+
+.sidebar-btn button:hover {{
+    background: rgba(255,255,255,0.09);
+    transform: translateX(2px);
+}}
+
+.sidebar-active button {{
+    background: linear-gradient(135deg, var(--sigma-secondary), var(--sigma-accent)) !important;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(37,99,235,0.2);
+    border: 1px solid rgba(255,255,255,0.08);
+}}
+
+section[data-testid="stSidebar"] hr {{
+    margin-top: 12px;
+    margin-bottom: 12px;
+    border-color: rgba(255,255,255,0.08);
+}}
+
+.stToggle label {{
+    font-weight: 600;
+}}
+
+/* Compact mobile-friendly spacing */
+@media (max-width: 768px) {{
+    div.block-container {{
+        padding-left: 0.7rem;
+        padding-right: 0.7rem;
+        padding-top: 0.8rem;
+    }}
+
+    section[data-testid="stVerticalBlock"] > div {{
+        padding: 12px 12px;
+        border-radius: 16px;
+    }}
 }}
 
 </style>
@@ -94,122 +211,24 @@ div[data-testid="metric-container"] {{
 )
 
 # =====================================================
-# SIDEBAR STYLE (SOFTER VERSION)
+# SIDEBAR STYLE
 # =====================================================
 
 st.markdown(
     """
 <style>
-
-/* =====================================================
-   SIDEBAR BACKGROUND
-===================================================== */
-
 section[data-testid="stSidebar"] {
-    background: linear-gradient(
-        180deg,
-        #FFACA8 20%,
-        #FFD2C4 80%
-    );
-    padding-top: 20px;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
 }
-
-
-/* =====================================================
-   SIDEBAR TITLE
-===================================================== */
-
-section[data-testid="stSidebar"] h2 {
-    color: #5A2A1F;
-    font-weight: 700;
-}
-
-
-/* =====================================================
-   NORMAL SIDEBAR BUTTON
-===================================================== */
-
-.sidebar-btn button {
-
-    background: linear-gradient(
-        180deg,
-        #B1F2AE 20%,
-        #3291EF 80%
-    );
-
-    color: #0B2A4A;
-    border-radius: 12px;
-    font-weight: 600;
-    border: 1px solid rgba(0,0,0,0.08);
-
-    padding: 10px 14px;
-    margin-bottom: 6px;
-
-    transition: all 0.18s ease-in-out;
-}
-
-
-/* =====================================================
-   HOVER EFFECT
-===================================================== */
-
-.sidebar-btn button:hover {
-
-    background: linear-gradient(
-        180deg,
-        #32D375 20%,
-        #A5EFDD 80%
-    );
-
-    transform: translateX(4px);
-}
-
-
-/* =====================================================
-   ACTIVE PAGE BUTTON
-===================================================== */
-
-.sidebar-active button {
-
-    background: white !important;
-
-    color: #FF6800 !important;
-
-    font-weight: 700;
-
-    border-radius: 12px;
-
-    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-
-    border: 1px solid rgba(0,0,0,0.06);
-}
-
-
-/* =====================================================
-   LOGOUT BUTTON SPECIAL STYLE
-===================================================== */
 
 section[data-testid="stSidebar"] button[kind="secondary"] {
-
-    background: rgba(255,255,255,0.7);
-
+    background: rgba(255,255,255,0.08);
+    color: #F8FAFC;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
     font-weight: 600;
-
-    border-radius: 10px;
 }
-
-
-/* =====================================================
-   SIDEBAR DIVIDER SPACING
-===================================================== */
-
-section[data-testid="stSidebar"] hr {
-
-    margin-top: 12px;
-    margin-bottom: 12px;
-    border-color: rgba(0,0,0,0.08);
-}
-
 </style>
 """,
     unsafe_allow_html=True
@@ -224,7 +243,8 @@ if "is_mobile" not in st.session_state:
 
 st.session_state.is_mobile = st.toggle(
     "📱 Mobile View",
-    value=st.session_state.is_mobile
+    value=st.session_state.is_mobile,
+    help="Switch between compact mobile-style cards and desktop table view."
 )
 
 is_mobile = st.session_state.is_mobile
@@ -238,15 +258,17 @@ def card(title, value):
     st.markdown(
         f"""
 <div style="
-padding:14px;
-border-radius:12px;
-background:#ffffff;
+padding:12px 14px;
+border-radius:14px;
+background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%);
 margin-bottom:10px;
-box-shadow:0 3px 8px rgba(0,0,0,0.08)
+box-shadow:0 8px 20px rgba(15,23,42,0.05);
+border:1px solid rgba(226,232,240,0.95);
+border-left:5px solid {SECONDARY_COLOR};
 ">
 
-<div style="font-size:13px;color:#555">{title}</div>
-<div style="font-size:22px;font-weight:600">{value}</div>
+<div style="font-size:12px;color:{MUTED_COLOR};text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">{title}</div>
+<div style="font-size:20px;font-weight:800;color:{TEXT_COLOR};margin-top:4px;">{value}</div>
 
 </div>
 """,
@@ -329,19 +351,6 @@ def load_clients():
 
     return df
 
-def normalize_status(value):
-    if pd.isna(value):
-        return "Open"
-
-    text = str(value).strip().lower()
-
-    if text in ["open", "o"]:
-        return "Open"
-    if text in ["close", "closed", "c"]:
-        return "Close"
-
-    return "Open"
-
 # =====================================================
 # LOAD PROPOSALS
 # =====================================================
@@ -363,23 +372,41 @@ def load_proposals():
     ]
 
     if os.path.exists(PROPOSAL_FILE):
+
         df = pd.read_excel(PROPOSAL_FILE)
+
     else:
+
         df = pd.DataFrame(columns=required_cols)
         df.to_excel(PROPOSAL_FILE, index=False)
 
     for col in required_cols:
+
         if col not in df.columns:
             df[col] = None
 
-    numeric_cols = ["Proposal_Cost", "Rate", "Final_Cost", "Profit"]
+    numeric_cols = [
+        "Proposal_Cost",
+        "Rate",
+        "Final_Cost",
+        "Profit"
+    ]
+
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+        df[col] = pd.to_numeric(
+            df[col],
+            errors="coerce"
+        ).fillna(0)
 
     for col in ["Start_Date", "End_Date", "Closing_Date"]:
-        df[col] = pd.to_datetime(df[col], errors="coerce")
 
-    df["Status"] = df["Status"].fillna("Open").apply(normalize_status)
+        df[col] = pd.to_datetime(
+            df[col],
+            errors="coerce"
+        )
+
+    df["Status"] = df["Status"].apply(normalize_status)
 
     return df
 
