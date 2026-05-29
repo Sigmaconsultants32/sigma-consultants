@@ -9,6 +9,26 @@ import os
 import io
 import base64
 
+
+# =====================================================
+# STATUS NORMALIZATION
+# =====================================================
+
+def normalize_status(value):
+    """Normalize legacy and mixed proposal status labels."""
+    if pd.isna(value):
+        return "Open"
+
+    status = str(value).strip().lower()
+
+    if status in {"close", "closed", "done", "complete", "completed"}:
+        return "Close"
+
+    if status == "open":
+        return "Open"
+
+    return str(value).strip().title()
+
 # =====================================================
 # PAGE CONFIG
 # =====================================================
@@ -988,8 +1008,9 @@ if st.session_state.page == "Edit":
 # =====================================================
 
 # ================= SAFETY INITIALIZATION =================
+# Keep the current page if already set; otherwise default to Welcome.
 if "page" not in st.session_state:
-    st.session_state.page = "Find"
+    st.session_state.page = "Welcome"
 
 is_mobile = st.session_state.get("is_mobile", False)
 
@@ -1578,46 +1599,48 @@ if st.session_state.page == "ClientDashboard":
             .agg(
                 **{
                     "Total of Proposal price": ("Proposal_Cost", "sum"),
-                    "Total of Profit amount": ("Profit", "sum")
+                    "Total of Profit amount": ("Profit", "sum"),
                 }
             )
+            .sort_values("Client_Name")
+            .reset_index(drop=True)
         )
 
         summary_df["Proposal Status"] = status
         summary_df["Total of Proposal Price and Profit amount"] = (
-            summary_df["Total of Proposal price"] + summary_df["Total of Profit amount"]
+            summary_df["Total of Proposal price"]
+            + summary_df["Total of Profit amount"]
         )
+
+        summary_df.insert(0, "Sr. No.", range(1, len(summary_df) + 1))
 
         summary_df = summary_df[
             [
+                "Sr. No.",
                 "Client_Name",
                 "Proposal Status",
                 "Total of Proposal price",
                 "Total of Profit amount",
-                "Total of Proposal Price and Profit amount"
+                "Total of Proposal Price and Profit amount",
             ]
-        ].sort_values("Client_Name").reset_index(drop=True)
-
-        summary_df.insert(0, "Sr. No.", range(1, len(summary_df) + 1))
-
-        summary_df = summary_df.rename(
-            columns={
-                "Client_Name": "Client Name"
-            }
-        )
+        ].rename(columns={"Client_Name": "Client Name"})
 
         for col in [
             "Total of Proposal price",
             "Total of Profit amount",
-            "Total of Proposal Price and Profit amount"
+            "Total of Proposal Price and Profit amount",
         ]:
-            summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0).round(2)
+            summary_df[col] = (
+                pd.to_numeric(summary_df[col], errors="coerce")
+                .fillna(0)
+                .round(2)
+            )
 
-        if is_mobile:
-            table_df = summary_df
-            st.dataframe(table_df, use_container_width=True, hide_index=True)
-        else:
-            st.dataframe(summary_df, use_container_width=True, hide_index=True)
+        st.dataframe(
+            summary_df,
+            use_container_width=True,
+            hide_index=True
+        )
 
 # =====================================================
 # ================= EXPORT DATA =======================
