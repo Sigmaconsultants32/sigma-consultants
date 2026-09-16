@@ -551,79 +551,150 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 .profit-pos {{ color: {ACCENT_COLOR}; font-weight: 700; font-size: 1rem; }}
 .profit-neg {{ color: #DC2626; font-weight: 700; font-size: 1rem; }}
 
+/* ── Sidebar ── */
 section[data-testid="stSidebar"] {{
-    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
-    padding: 1.25rem 0.9rem 1.5rem;
-    border-right: 1px solid #334155;
+    background: #1A2234;
+    border-right: 1px solid #2A3548;
 }}
 
 section[data-testid="stSidebar"] > div {{
-    padding-top: 0.35rem;
+    padding: 1.5rem 1.1rem 1.75rem;
+    background: #1A2234;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand {{
-    padding: 0.5rem 0.65rem 1.1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    margin-bottom: 1rem;
+    padding: 0.25rem 0.5rem 1.25rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid #2E3A50;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand h2 {{
     margin: 0;
-    color: #F8FAFC !important;
-    font-size: 1.125rem;
+    color: #FFFFFF !important;
+    font-size: 1.25rem;
     font-weight: 800;
     letter-spacing: -0.02em;
+    line-height: 1.3;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand p {{
-    margin: 0.35rem 0 0;
-    color: #94A3B8 !important;
-    font-size: 0.875rem;
+    margin: 0.4rem 0 0;
+    color: #8B9BB4 !important;
+    font-size: 0.9375rem;
     line-height: 1.45;
+    font-weight: 500;
 }}
 
-section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
-    color: #CBD5E1 !important;
-    font-size: var(--sigma-fs-caption) !important;
+section[data-testid="stSidebar"] .sidebar-section {{
+    margin: 1.1rem 0 0.5rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6B7A94;
+}}
+
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {{
+    color: #C5D0E0 !important;
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+}}
+
+section[data-testid="stSidebar"] [data-testid="stToggle"] label span {{
+    color: #E2E8F0 !important;
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+}}
+
+section[data-testid="stSidebar"] .sidebar-btn,
+section[data-testid="stSidebar"] .sidebar-active {{
+    margin-bottom: 0.3rem;
 }}
 
 section[data-testid="stSidebar"] .stButton {{
-    margin-bottom: 0.2rem;
+    margin-bottom: 0;
 }}
 
 section[data-testid="stSidebar"] .stButton > button {{
-    background: transparent;
-    color: #CBD5E1 !important;
-    border: 1px solid transparent;
+    background: transparent !important;
+    color: #DDE4EE !important;
+    border: none !important;
     justify-content: flex-start;
     text-align: left;
     font-weight: 600 !important;
-    font-size: var(--sigma-fs-caption) !important;
-    min-height: 44px;
-    padding: 0.5rem 0.9rem !important;
+    font-size: 1rem !important;
+    min-height: 48px;
+    padding: 0.65rem 1rem !important;
     width: 100%;
     border-radius: 10px !important;
     box-shadow: none !important;
+    letter-spacing: 0.01em;
+}}
+
+section[data-testid="stSidebar"] .stButton > button p,
+section[data-testid="stSidebar"] .stButton > button div {{
+    font-size: 1rem !important;
+    font-weight: 600 !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-btn .stButton > button:hover {{
-    background: rgba(255,255,255,0.08) !important;
-    border-color: rgba(255,255,255,0.08) !important;
-    color: #F8FAFC !important;
+    background: #243044 !important;
+    color: #FFFFFF !important;
     transform: none;
+    border: none !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-active .stButton > button {{
-    background: linear-gradient(135deg, rgba(37,99,235,0.35) 0%, rgba(59,130,246,0.25) 100%) !important;
+    background: {SECONDARY_COLOR} !important;
     color: #FFFFFF !important;
-    border: 1px solid rgba(147, 197, 253, 0.4) !important;
+    border: none !important;
     font-weight: 700 !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}}
+
+section[data-testid="stSidebar"] .sidebar-active .stButton > button:hover {{
+    background: {SECONDARY_DARK} !important;
+    color: #FFFFFF !important;
+}}
+
+section[data-testid="stSidebar"] .sidebar-util .stButton > button {{
+    background: #243044 !important;
+    color: #B8C5D6 !important;
+    border: 1px solid #2E3A50 !important;
+    font-size: 0.9375rem !important;
+    min-height: 44px;
+}}
+
+section[data-testid="stSidebar"] .sidebar-util .stButton > button:hover {{
+    background: #2C3A52 !important;
+    color: #FFFFFF !important;
+    border-color: #3D4F6A !important;
+}}
+
+section[data-testid="stSidebar"] .sidebar-logout .stButton > button {{
+    background: transparent !important;
+    color: #F87171 !important;
+    border: 1px solid #4A3040 !important;
+    font-size: 0.9375rem !important;
+    min-height: 44px;
+}}
+
+section[data-testid="stSidebar"] .sidebar-logout .stButton > button:hover {{
+    background: rgba(248, 113, 113, 0.12) !important;
+    color: #FCA5A5 !important;
+    border-color: #F87171 !important;
 }}
 
 section[data-testid="stSidebar"] hr {{
-    margin: 0.85rem 0;
-    border-color: rgba(255,255,255,0.1);
+    margin: 1rem 0;
+    border: none;
+    border-top: 1px solid #2E3A50 !important;
+}}
+
+section[data-testid="stSidebar"] [data-testid="stAlert"] {{
+    font-size: 0.875rem;
 }}
 
 div[data-testid="stImage"] {{
@@ -799,18 +870,18 @@ def sidebar_nav() -> None:
         st.markdown(
             """
 <div class="sidebar-brand">
-  <h2>📊 Sigma Consultants</h2>
+  <h2>Sigma Consultants</h2>
   <p>Client &amp; proposal management</p>
 </div>
 """,
             unsafe_allow_html=True,
         )
         st.session_state.is_mobile = st.toggle(
-            "📱 Compact view",
+            "Compact card view",
             value=st.session_state.is_mobile,
             help="Stack metric cards for smaller screens.",
         )
-        st.markdown("---")
+
         current = st.session_state.page
 
         def nav(label: str, page_key: str) -> None:
@@ -820,25 +891,33 @@ def sidebar_nav() -> None:
                 go(page_key)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        nav("🏠  Welcome", "Welcome")
-        nav("📈  Summary", "Summary")
-        nav("➕  Add proposal", "AddProposal")
-        nav("🔍  Find details", "Find")
-        nav("✏️  Edit proposal", "Edit")
-        nav("👤  Clients", "Clients")
-        nav("📋  Client dashboard", "ClientDashboard")
-        st.markdown("---")
-        nav("📥  Export data", "Export")
-        st.markdown("---")
-        if st.button("🔄  Reload Excel files", use_container_width=True):
+        st.markdown('<p class="sidebar-section">Main menu</p>', unsafe_allow_html=True)
+        nav("Welcome", "Welcome")
+        nav("Summary", "Summary")
+        nav("Add proposal", "AddProposal")
+        nav("Find details", "Find")
+        nav("Edit proposal", "Edit")
+        nav("Clients", "Clients")
+        nav("Client dashboard", "ClientDashboard")
+
+        st.markdown('<p class="sidebar-section">Data</p>', unsafe_allow_html=True)
+        nav("Export data", "Export")
+
+        st.markdown('<p class="sidebar-section">System</p>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-util">', unsafe_allow_html=True)
+        if st.button("Reload Excel files", use_container_width=True, key="nav_reload"):
             st.session_state.clients_df = load_clients()
             st.session_state.proposals_df = load_proposals()
             st.success("Reloaded from disk")
             st.rerun()
-        if st.button("🚪  Log out", use_container_width=True):
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown('<div class="sidebar-logout">', unsafe_allow_html=True)
+        if st.button("Log out", use_container_width=True, key="nav_logout"):
             st.session_state.auth = False
             st.session_state.page = "Welcome"
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # =====================================================
@@ -1600,3 +1679,4 @@ elif page == "Export":
 else:
     st.session_state.page = "Welcome"
     st.rerun()
+
