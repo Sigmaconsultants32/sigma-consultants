@@ -44,12 +44,13 @@ DURATION_DAYS = [15, 20, 30, 45, 60, 90]
 
 PRIMARY_COLOR = "#0F172A"
 SECONDARY_COLOR = "#2563EB"
-ACCENT_COLOR = "#14B8A6"
-BG_COLOR = "#F5F7FB"
+ACCENT_COLOR = "#059669"
+BG_COLOR = "#F8FAFC"
 CARD_BG = "#FFFFFF"
 TEXT_COLOR = "#0F172A"
 MUTED_COLOR = "#64748B"
 BORDER_COLOR = "#E2E8F0"
+SURFACE_ALT = "#F1F5F9"
 
 
 # =====================================================
@@ -208,6 +209,8 @@ def inject_css() -> None:
     st.markdown(
         f"""
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 :root {{
     --sigma-primary: {PRIMARY_COLOR};
     --sigma-secondary: {SECONDARY_COLOR};
@@ -217,100 +220,417 @@ def inject_css() -> None:
     --sigma-text: {TEXT_COLOR};
     --sigma-muted: {MUTED_COLOR};
     --sigma-border: {BORDER_COLOR};
+    --sigma-surface-alt: {SURFACE_ALT};
+    --sigma-radius: 12px;
+    --sigma-radius-lg: 16px;
+    --sigma-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --sigma-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
+}}
+
+html, body, [class*="css"], .stApp, button, input, textarea, select {{
+    font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif !important;
+    font-size: 14px;
 }}
 
 .stApp {{
-    background: linear-gradient(180deg, #F8FAFC 0%, #EEF4FB 100%);
+    background: var(--sigma-bg);
     color: var(--sigma-text);
 }}
 
-html, body, [class*="css"] {{
-    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+[data-testid="stHeader"] {{
+    background: transparent;
 }}
 
 div.block-container {{
-    padding-top: 1.1rem;
-    padding-bottom: 1.4rem;
-    max-width: 1320px;
+    padding: 1.25rem 1.75rem 2rem;
+    max-width: 1120px;
 }}
 
-h1, h2, h3, h4, h5 {{
-    color: var(--sigma-text);
+.page-header {{
+    margin: 0 0 1.25rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sigma-border);
+}}
+
+.page-header h1 {{
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
     font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--sigma-text);
+}}
+
+.page-subtitle {{
+    margin: 0.4rem 0 0 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--sigma-muted);
+    font-weight: 400;
+    max-width: 52ch;
+}}
+
+.section-title {{
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--sigma-text);
+    letter-spacing: -0.01em;
+}}
+
+h1, h2, h3, h4 {{
+    color: var(--sigma-text);
+    font-weight: 600;
     letter-spacing: -0.02em;
 }}
 
-[data-testid="stMetric"] {{
-    background: #ffffff;
-    border: 1px solid var(--sigma-border);
-    border-radius: 16px;
-    padding: 12px 14px;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+h1 {{ font-size: 1.5rem; }}
+h2 {{ font-size: 0.9375rem; }}
+h3 {{ font-size: 0.875rem; }}
+
+[data-testid="stWidgetLabel"] p,
+label {{
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    color: #475569 !important;
+    margin-bottom: 0.25rem !important;
 }}
 
-[data-testid="stMetricLabel"] p {{ color: var(--sigma-muted); font-size: 0.9rem; }}
-[data-testid="stMetricValue"] {{ color: var(--sigma-text); font-weight: 800; }}
+.stCaption, [data-testid="stCaptionContainer"] {{
+    font-size: 0.8125rem !important;
+    color: var(--sigma-muted) !important;
+    line-height: 1.45 !important;
+}}
 
-button[kind="primary"] {{
-    background: linear-gradient(135deg, var(--sigma-secondary) 0%, var(--sigma-accent) 100%);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+[data-testid="stVerticalBlock"] > div {{
+    gap: 0.35rem;
+}}
+
+.stButton > button {{
+    min-height: 40px;
+    border-radius: 10px !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    border: 1px solid var(--sigma-border);
+    color: var(--sigma-text);
+    background: #ffffff;
+    padding: 0.45rem 1rem !important;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}}
+
+.stButton > button:hover {{
+    background: var(--sigma-surface-alt);
+    border-color: #CBD5E1;
+    color: var(--sigma-text);
+}}
+
+.stButton > button[kind="primary"],
+button[kind="primary"],
+[data-testid="stBaseButton-primary"],
+[data-testid="stFormSubmitButton"] button {{
+    background: {SECONDARY_COLOR} !important;
+    color: #ffffff !important;
+    border: 1px solid {SECONDARY_COLOR} !important;
+    box-shadow: none !important;
+}}
+
+.stButton > button[kind="primary"]:hover,
+button[kind="primary"]:hover,
+[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stFormSubmitButton"] button:hover {{
+    background: #1D4ED8 !important;
+    border-color: #1D4ED8 !important;
+    color: #ffffff !important;
+}}
+
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+.stDeployButton,
+#MainMenu {{
+    visibility: hidden;
+    height: 0;
 }}
 
 [data-testid="stDataFrame"], .stDataFrame {{
     border: 1px solid var(--sigma-border);
-    border-radius: 14px;
+    border-radius: var(--sigma-radius);
     overflow: hidden;
     background: #fff;
+    font-size: 0.8125rem;
 }}
+
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div,
+.stNumberInput input,
+.stTextInput input,
+.stDateInput input {{
+    min-height: 40px;
+    font-size: 0.875rem !important;
+    border-radius: 10px !important;
+    color: var(--sigma-text) !important;
+}}
+
+[data-testid="stForm"] {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: var(--sigma-radius-lg);
+    padding: 1.25rem 1.35rem 1rem;
+    box-shadow: var(--sigma-shadow);
+}}
+
+[data-testid="stRadio"] [role="radiogroup"] {{
+    gap: 0.5rem;
+}}
+
+[data-testid="stRadio"] label {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+}}
+
+[data-testid="stRadio"] label[data-checked="true"] {{
+    background: #EFF6FF !important;
+    border-color: #BFDBFE !important;
+    color: {SECONDARY_COLOR} !important;
+}}
+
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: var(--sigma-radius-lg);
+    padding: 1rem 1.15rem 0.85rem;
+    box-shadow: var(--sigma-shadow);
+    margin-bottom: 0.75rem;
+}}
+
+.hero-card, .login-heading {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: var(--sigma-radius-lg);
+    padding: 1.75rem 1.5rem 1.5rem;
+    text-align: center;
+    box-shadow: var(--sigma-shadow-md);
+}}
+
+.hero-kicker, .login-heading .hero-kicker {{
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: {SECONDARY_COLOR};
+    margin-bottom: 0.5rem;
+}}
+
+.hero-card h1, .login-heading h1 {{
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--sigma-text);
+}}
+
+.hero-card p, .login-heading p {{
+    margin: 0.55rem auto 0;
+    max-width: 400px;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--sigma-muted);
+}}
+
+.welcome-actions [data-testid="stVerticalBlock"] {{
+    gap: 0.45rem;
+}}
+
+.kpi-grid [data-testid="column"] {{
+    display: flex;
+}}
+
+.kpi-grid [data-testid="column"] > div {{
+    width: 100%;
+}}
+
+.kpi-card {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: var(--sigma-radius);
+    padding: 0.9rem 1rem;
+    margin: 0;
+    height: 100%;
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: var(--sigma-shadow);
+}}
+
+.kpi-card .kpi-label {{
+    font-size: 0.6875rem;
+    color: var(--sigma-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    line-height: 1.3;
+}}
+
+.kpi-card .kpi-value {{
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sigma-text);
+    margin-top: 0.35rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}}
+
+.summary-item {{
+    background: #ffffff;
+    border: 1px solid var(--sigma-border);
+    border-radius: var(--sigma-radius);
+    padding: 0.85rem 1rem;
+    margin: 0 0 0.5rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--sigma-shadow);
+}}
+
+.summary-item .left {{
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sigma-text);
+}}
+
+.summary-item .meta {{
+    font-size: 0.8125rem;
+    color: var(--sigma-muted);
+    margin-top: 0.15rem;
+    font-weight: 400;
+}}
+
+.summary-item .right {{
+    text-align: right;
+    font-size: 0.8125rem;
+    color: #475569;
+    line-height: 1.5;
+    white-space: nowrap;
+}}
+
+.profit-pos {{ color: {ACCENT_COLOR}; font-weight: 600; }}
+.profit-neg {{ color: #DC2626; font-weight: 600; }}
 
 section[data-testid="stSidebar"] {{
-    background: linear-gradient(180deg, #0B1120 0%, #111827 100%);
-    padding: 18px 0.6rem 1rem;
-    border-right: 1px solid rgba(255,255,255,0.06);
+    background: #0F172A;
+    padding: 1rem 0.75rem 1.25rem;
+    border-right: 1px solid #1E293B;
 }}
 
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3,
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] span,
-section[data-testid="stSidebar"] p {{
-    color: #F8FAFC;
+section[data-testid="stSidebar"] > div {{
+    padding-top: 0.25rem;
 }}
 
-.sidebar-btn button {{
-    background: rgba(255,255,255,0.04);
-    color: #E5E7EB;
-    border-radius: 12px;
-    font-weight: 600;
-    border: 1px solid rgba(255,255,255,0.08);
-    margin-bottom: 6px;
+section[data-testid="stSidebar"] .sidebar-brand {{
+    padding: 0.25rem 0.5rem 0.9rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 0.75rem;
 }}
 
-.sidebar-btn button:hover {{
-    background: rgba(255,255,255,0.09);
-}}
-
-.sidebar-active button {{
-    background: linear-gradient(135deg, var(--sigma-secondary), var(--sigma-accent)) !important;
-    color: white !important;
+section[data-testid="stSidebar"] .sidebar-brand h2 {{
+    margin: 0;
+    color: #F8FAFC !important;
+    font-size: 0.9375rem;
     font-weight: 700;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08);
+    letter-spacing: -0.02em;
+}}
+
+section[data-testid="stSidebar"] .sidebar-brand p {{
+    margin: 0.25rem 0 0;
+    color: #94A3B8 !important;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}}
+
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
+    color: #CBD5E1 !important;
+    font-size: 0.75rem !important;
+}}
+
+section[data-testid="stSidebar"] .stButton {{
+    margin-bottom: 0.15rem;
+}}
+
+section[data-testid="stSidebar"] .stButton > button {{
+    background: transparent;
+    color: #CBD5E1 !important;
+    border: 1px solid transparent;
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 500 !important;
+    font-size: 0.8125rem !important;
+    min-height: 38px;
+    padding: 0.4rem 0.75rem !important;
+    width: 100%;
+}}
+
+section[data-testid="stSidebar"] .sidebar-btn .stButton > button:hover {{
+    background: rgba(255,255,255,0.06) !important;
+    border-color: rgba(255,255,255,0.06) !important;
+    color: #F8FAFC !important;
+}}
+
+section[data-testid="stSidebar"] .sidebar-active .stButton > button {{
+    background: rgba(37, 99, 235, 0.22) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(96, 165, 250, 0.35) !important;
+    font-weight: 600 !important;
 }}
 
 section[data-testid="stSidebar"] hr {{
+    margin: 0.6rem 0;
     border-color: rgba(255,255,255,0.08);
+}}
+
+div[data-testid="stImage"] {{
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}}
+
+div[data-testid="stImage"] img {{
+    max-width: 140px;
+    margin: 0 auto;
+}}
+
+[data-testid="stHorizontalBlock"] {{
+    gap: 0.65rem;
+    align-items: flex-start;
+}}
+
+hr, [data-testid="stDivider"] {{
+    margin: 1rem 0 !important;
+    border: none;
+    border-top: 1px solid var(--sigma-border) !important;
+}}
+
+[data-testid="stAlert"] {{
+    font-size: 0.875rem;
+    border-radius: 10px;
 }}
 
 @media (max-width: 768px) {{
     div.block-container {{
-        padding-left: 0.7rem;
-        padding-right: 0.7rem;
-        padding-top: 0.8rem;
+        padding: 1rem 1rem 1.5rem;
+    }}
+    .page-header h1 {{ font-size: 1.3125rem; }}
+    .kpi-card .kpi-value {{ font-size: 1.125rem; }}
+    .summary-item {{
+        grid-template-columns: 1fr;
+    }}
+    .summary-item .right {{
+        text-align: left;
+        white-space: normal;
     }}
 }}
 </style>
@@ -319,16 +639,24 @@ section[data-testid="stSidebar"] hr {{
     )
 
 
+def page_header(title: str, subtitle: str = "") -> None:
+    subtitle_html = f'<p class="page-subtitle">{subtitle}</p>' if subtitle else ""
+    st.markdown(
+        f'<div class="page-header"><h1>{title}</h1>{subtitle_html}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def section_title(title: str) -> None:
+    st.markdown(f'<h2 class="section-title">{title}</h2>', unsafe_allow_html=True)
+
+
 def card(title, value) -> None:
     st.markdown(
         f"""
-<div style="
-padding:12px 14px;border-radius:14px;
-background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%);
-margin-bottom:10px;box-shadow:0 8px 20px rgba(15,23,42,0.05);
-border:1px solid rgba(226,232,240,0.95);border-left:5px solid {SECONDARY_COLOR};">
-<div style="font-size:12px;color:{MUTED_COLOR};text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">{title}</div>
-<div style="font-size:20px;font-weight:800;color:{TEXT_COLOR};margin-top:4px;">{value}</div>
+<div class="kpi-card">
+  <div class="kpi-label">{title}</div>
+  <div class="kpi-value">{value}</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -336,13 +664,23 @@ border:1px solid rgba(226,232,240,0.95);border-left:5px solid {SECONDARY_COLOR};
 
 
 def metrics_row(items: list[tuple[str, object]], mobile: bool) -> None:
-    if mobile:
+    """Render aligned KPI cards in a responsive grid."""
+    n = len(items)
+    if mobile or n == 1:
         for title, value in items:
             card(title, value)
         return
-    cols = st.columns(len(items))
+
+    st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
+    cols = st.columns(n, gap="small")
     for col, (title, value) in zip(cols, items):
-        col.metric(title, value)
+        with col:
+            card(title, value)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def money_cols(*names: str) -> dict:
+    return {name: st.column_config.NumberColumn(format="₹ %.2f") for name in names}
 
 
 def render_grand_total(total_invest, total_final, total_profit, is_mobile: bool) -> None:
@@ -389,10 +727,20 @@ def expected_password() -> str:
 def render_login() -> None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("### 🔐 Sigma Consultants Login")
+        st.markdown(
+            """
+<div class="login-heading">
+  <div class="hero-kicker">Sigma Consultants</div>
+  <h1>Sign in</h1>
+  <p>Use your workspace password to open the CRM.</p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        st.write("")
         with st.form("login_form"):
             pwd = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
+            submitted = st.form_submit_button("Continue", use_container_width=True, type="primary")
         if submitted:
             if pwd == expected_password():
                 st.session_state.auth = True
@@ -412,9 +760,17 @@ def go(page: str) -> None:
 
 def sidebar_nav() -> None:
     with st.sidebar:
-        st.markdown("## 📂 Sigma Consultants")
+        st.markdown(
+            """
+<div class="sidebar-brand">
+  <h2>Sigma Consultants</h2>
+  <p>Client relationship manager</p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
         st.session_state.is_mobile = st.toggle(
-            "📱 Mobile View",
+            "Compact cards",
             value=st.session_state.is_mobile,
             help="Switch between compact cards and desktop metrics.",
         )
@@ -428,22 +784,22 @@ def sidebar_nav() -> None:
                 go(page_key)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        nav("🏠 Welcome", "Welcome")
-        nav("📊 Summary", "Summary")
-        nav("➕ Add Proposal", "AddProposal")
-        nav("🔍 Find Details", "Find")
-        nav("✏️ Edit Proposal", "Edit")
-        nav("👤 Clients", "Clients")
-        nav("📊 Client Dashboard", "ClientDashboard")
+        nav("Welcome", "Welcome")
+        nav("Summary", "Summary")
+        nav("Add proposal", "AddProposal")
+        nav("Find details", "Find")
+        nav("Edit proposal", "Edit")
+        nav("Clients", "Clients")
+        nav("Client dashboard", "ClientDashboard")
         st.markdown("---")
-        nav("📥 Export Data", "Export")
+        nav("Export data", "Export")
         st.markdown("---")
-        if st.button("🔄 Reload Excel files", use_container_width=True):
+        if st.button("Reload Excel files", use_container_width=True):
             st.session_state.clients_df = load_clients()
             st.session_state.proposals_df = load_proposals()
             st.success("Reloaded from disk")
             st.rerun()
-        if st.button("🚪 Logout", use_container_width=True):
+        if st.button("Log out", use_container_width=True):
             st.session_state.auth = False
             st.session_state.page = "Welcome"
             st.rerun()
@@ -457,36 +813,31 @@ def page_welcome() -> None:
     _, center, _ = st.columns([1, 2, 1])
     with center:
         if LOGO_FILE.exists():
-            st.image(str(LOGO_FILE), width=200)
-        else:
-            st.markdown("<h2 style='text-align:center;'>Sigma Consultants</h2>", unsafe_allow_html=True)
-
+            st.image(str(LOGO_FILE), width=168)
         st.markdown(
             """
-<div style="border-radius:14px;padding:18px;margin-top:12px;background:#ffffff;
-box-shadow:0 6px 18px rgba(0,0,0,0.08);text-align:center;max-width:520px;
-margin-left:auto;margin-right:auto;">
-<h4>Welcome to Sigma Consultants CRM</h4>
-<p style="color:#555;font-size:14px;">
-Manage clients, proposals, investments, profits, and maturity tracking from one dashboard.
-</p>
+<div class="hero-card">
+  <div class="hero-kicker">Sigma Consultants</div>
+  <h1>Welcome to the CRM</h1>
+  <p>Manage clients, proposals, investments, and maturity tracking from one workspace.</p>
 </div>
 """,
             unsafe_allow_html=True,
         )
-        st.write("")
-        if st.button("➕ Add Client", use_container_width=True, type="primary"):
+        st.markdown('<div class="welcome-actions">', unsafe_allow_html=True)
+        if st.button("Add client", use_container_width=True, type="primary"):
             go("Clients")
-        if st.button("📄 Add Proposal", use_container_width=True):
+        if st.button("Add proposal", use_container_width=True):
             go("AddProposal")
-        if st.button("🔍 Find Details", use_container_width=True):
+        if st.button("Find details", use_container_width=True):
             go("Find")
-        if st.button("📊 View Summary", use_container_width=True):
+        if st.button("View summary", use_container_width=True):
             go("Summary")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def page_summary(is_mobile: bool) -> None:
-    st.header("📊 Summary")
+    page_header("Summary", "Investment, profit, and date-wise proposal totals.")
     df = st.session_state.proposals_df.copy()
     if df.empty:
         st.info("No proposals available")
@@ -502,17 +853,22 @@ def page_summary(is_mobile: bool) -> None:
     )
 
     st.markdown("---")
-    st.subheader("📅 Date Based Summary")
+    section_title("Date-based summary")
 
-    status_options = ["All"] + unique_sorted(df["Status"])
-    selected_status = st.selectbox("Select Proposal Status", status_options, key="summary_status")
+    with st.container(border=True):
+        status_options = ["All"] + unique_sorted(df["Status"])
+        c1, c2 = st.columns(2)
+        with c1:
+            selected_status = st.selectbox("Proposal status", status_options, key="summary_status")
+        with c2:
+            date_type = st.radio("Date type", ["Start Date", "End Date"], horizontal=True, key="summary_date_type")
+
     if selected_status != "All":
         df = df[df["Status"] == selected_status]
     if df.empty:
         st.warning("No data for selected status")
         return
 
-    date_type = st.radio("Select Date Type", ["Start Date", "End Date"], horizontal=True, key="summary_date_type")
     date_col = "Start_Date" if date_type == "Start Date" else "End_Date"
     df = df.dropna(subset=[date_col]).copy()
     if df.empty:
@@ -536,9 +892,10 @@ def page_summary(is_mobile: bool) -> None:
 
     df["Rate_Int"] = pd.to_numeric(df["Rate"], errors="coerce").fillna(0).round(0).astype(int)
 
-    st.markdown("### 📊 Proposal Stats")
+    section_title("Filtered totals")
     render_grand_total(df["Proposal_Cost"].sum(), df["Final_Cost"].sum(), df["Profit"].sum(), is_mobile)
     st.markdown("---")
+    section_title("By rate and date")
 
     summary_df = (
         df.groupby(["Rate_Int", "DateOnly"], as_index=False)
@@ -546,20 +903,27 @@ def page_summary(is_mobile: bool) -> None:
         .sort_values(["Rate_Int", "DateOnly"])
     )
     for _, row in summary_df.iterrows():
-        profit_color = "🟢" if row["Profit"] >= 0 else "🔴"
+        profit_cls = "profit-pos" if row["Profit"] >= 0 else "profit-neg"
         st.markdown(
             f"""
-**{row['DateOnly'].strftime('%d-%m-%Y')} | Rate {int(row['Rate_Int'])}%**  
-Investment : {fmt_money(row['Proposal_Cost'])}  
-Final Amount : {fmt_money(row['Final_Cost'])}  
-{profit_color} Profit : {fmt_money(row['Profit'])}
-"""
+<div class="summary-item">
+  <div>
+    <div class="left">{row['DateOnly'].strftime('%d-%m-%Y')}</div>
+    <div class="meta">Rate {int(row['Rate_Int'])}%</div>
+  </div>
+  <div class="right">
+    Investment {fmt_money(row['Proposal_Cost'])}<br>
+    Final {fmt_money(row['Final_Cost'])}<br>
+    <span class="{profit_cls}">Profit {fmt_money(row['Profit'])}</span>
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
         )
-        st.markdown("---")
 
 
 def page_add_proposal() -> None:
-    st.header("➕ Add New Proposal")
+    page_header("Add proposal", "Add one or more clients to a single proposal, then save.")
     active = active_clients_df()
     if active.empty:
         st.warning("Please add an active client first.")
@@ -567,19 +931,30 @@ def page_add_proposal() -> None:
             go("Clients")
         return
 
-    start_date = st.date_input("Start Date", value=date.today(), key="add_start")
-    days = st.selectbox("Duration (Days)", DURATION_DAYS, key="add_days")
-    end_date = (pd.Timestamp(start_date) + pd.Timedelta(days=int(days))).date()
-    st.caption(f"End date: **{end_date.strftime('%d-%m-%Y')}**")
+    with st.container(border=True):
+        section_title("Proposal details")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            start_date = st.date_input("Start date", value=date.today(), key="add_start")
+        with c2:
+            days = st.selectbox("Duration (days)", DURATION_DAYS, key="add_days")
+        with c3:
+            rate = st.number_input("Monthly rate (%)", min_value=0.0, step=0.25, key="add_rate")
+        end_date = (pd.Timestamp(start_date) + pd.Timedelta(days=int(days))).date()
+        st.caption(f"End date: **{end_date.strftime('%d-%m-%Y')}**")
 
-    rate = st.number_input("Monthly Rate (%)", min_value=0.0, step=0.25, key="add_rate")
-    names = unique_sorted(active["Client_Name"])
-    selected_client = st.selectbox("Client Name", ["Select Client"] + names, key="add_client")
-    principal = st.number_input("Proposal Amount (₹)", min_value=0.0, step=1000.0, key="add_principal")
+    with st.container(border=True):
+        section_title("Add client to proposal")
+        c1, c2 = st.columns(2)
+        names = unique_sorted(active["Client_Name"])
+        with c1:
+            selected_client = st.selectbox("Client name", ["Select Client"] + names, key="add_client")
+        with c2:
+            principal = st.number_input("Proposal amount (₹)", min_value=0.0, step=1000.0, key="add_principal")
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2 = st.columns(2)
     with c1:
-        add_clicked = st.button("➕ Add to Proposal", use_container_width=True)
+        add_clicked = st.button("Add to proposal", use_container_width=True)
     with c2:
         clear_clicked = st.button("Clear draft", use_container_width=True)
     if clear_clicked:
@@ -606,9 +981,19 @@ def page_add_proposal() -> None:
             st.success(f"Added {selected_client}")
 
     if st.session_state.proposal_clients:
-        st.dataframe(pd.DataFrame(st.session_state.proposal_clients), use_container_width=True, hide_index=True)
+        preview = pd.DataFrame(st.session_state.proposal_clients)
+        st.dataframe(
+            preview,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Principal": st.column_config.NumberColumn("Principal", format="₹ %.2f"),
+                "Profit": st.column_config.NumberColumn("Profit", format="₹ %.2f"),
+                "Final_Amount": st.column_config.NumberColumn("Final amount", format="₹ %.2f"),
+            },
+        )
 
-    if st.button("💾 Save Proposal", type="primary"):
+    if st.button("Save proposal", type="primary"):
         if not st.session_state.proposal_clients:
             st.warning("Add at least one client to the proposal before saving")
             return
@@ -649,7 +1034,7 @@ def page_add_proposal() -> None:
 
 
 def page_edit() -> None:
-    st.header("✏️ Edit Proposal")
+    page_header("Edit proposal", "Update amount, rate, dates, or close a proposal.")
     proposals = st.session_state.proposals_df
     if proposals.empty:
         st.info("No proposals to edit")
@@ -678,11 +1063,19 @@ def page_edit() -> None:
     row = matches.iloc[0]
     row_index = matches.index[0]
 
-    proposal_cost = st.number_input("Proposal Amount", min_value=0.0, value=float(row["Proposal_Cost"]), key="edit_cost")
-    rate = st.number_input("Rate (%)", min_value=0.0, value=float(row["Rate"]), key="edit_rate")
-    new_start = st.date_input("Start Date", value=to_date(row["Start_Date"]), key="edit_start")
-    new_end = st.date_input("End Date", value=to_date(row["End_Date"], fallback=new_start), key="edit_end")
-    new_status = st.selectbox("Status", ["Open", "Close"], index=0 if row["Status"] == "Open" else 1, key="edit_new_status")
+    with st.container(border=True):
+        c1, c2 = st.columns(2)
+        with c1:
+            proposal_cost = st.number_input(
+                "Proposal amount", min_value=0.0, value=float(row["Proposal_Cost"]), key="edit_cost"
+            )
+            rate = st.number_input("Rate (%)", min_value=0.0, value=float(row["Rate"]), key="edit_rate")
+        with c2:
+            new_start = st.date_input("Start date", value=to_date(row["Start_Date"]), key="edit_start")
+            new_end = st.date_input("End date", value=to_date(row["End_Date"], fallback=new_start), key="edit_end")
+            new_status = st.selectbox(
+                "Status", ["Open", "Close"], index=0 if row["Status"] == "Open" else 1, key="edit_new_status"
+            )
 
     days = (new_end - new_start).days
     if days < 0:
@@ -692,7 +1085,7 @@ def page_edit() -> None:
     final_cost, profit = calc(proposal_cost, rate, days)
     st.caption(f"Duration: {days} days · Final: {fmt_money(final_cost)} · Profit: {fmt_money(profit)}")
 
-    if st.button("💾 Save Changes", type="primary"):
+    if st.button("Save changes", type="primary"):
         closing = pd.Timestamp(date.today()) if new_status == "Close" else pd.NaT
         if new_status == "Close" and pd.notna(row["Closing_Date"]):
             closing = row["Closing_Date"]
@@ -711,7 +1104,7 @@ def page_edit() -> None:
 
 
 def render_by_proposal(df_master: pd.DataFrame, is_mobile: bool) -> None:
-    st.subheader("📄 Find Details By Proposal")
+    section_title("By proposal")
     status = st.selectbox("Status", ["All", "Open", "Close"], key="find_prop_status")
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
     if df.empty:
@@ -754,11 +1147,12 @@ def render_by_proposal(df_master: pd.DataFrame, is_mobile: bool) -> None:
         result[["Client_Name", "Proposal_Cost", "Final_Cost", "Profit"]].round(2),
         use_container_width=True,
         hide_index=True,
+        column_config=money_cols("Proposal_Cost", "Final_Cost", "Profit"),
     )
 
 
 def render_by_client(df_master: pd.DataFrame, is_mobile: bool) -> None:
-    st.subheader("🔎 Find Details Using Client Name")
+    section_title("By client name")
     status = st.selectbox("Status", ["All", "Open", "Close"], key="find_client_status")
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
     if df.empty:
@@ -797,18 +1191,19 @@ def render_by_client(df_master: pd.DataFrame, is_mobile: bool) -> None:
         result[["Proposal_ID", "Proposal_Cost", "Rate", "Final_Cost", "Profit", "Status"]].round(2),
         use_container_width=True,
         hide_index=True,
+        column_config=money_cols("Proposal_Cost", "Final_Cost", "Profit"),
     )
 
 
 def render_by_date(df_master: pd.DataFrame, is_mobile: bool) -> None:
-    st.subheader("📅 Find Details Using Start / End Date")
+    section_title("By start or end date")
     status = st.selectbox("Status", ["All", "Open", "Close"], key="date_status")
     df = df_master if status == "All" else df_master[df_master["Status"] == status]
     if df.empty:
         st.info("No proposals found")
         return
 
-    if st.button("➕ Check Another Date"):
+    if st.button("Add another date"):
         st.session_state.date_blocks.append(max(st.session_state.date_blocks) + 1)
         st.rerun()
 
@@ -816,9 +1211,9 @@ def render_by_date(df_master: pd.DataFrame, is_mobile: bool) -> None:
     for i, block_id in enumerate(list(st.session_state.date_blocks)):
         col1, col2 = st.columns([6, 1])
         with col1:
-            st.markdown(f"### 🔍 Date Filter {block_id}")
+            st.markdown(f'<h2 class="section-title">Date filter {block_id}</h2>', unsafe_allow_html=True)
         with col2:
-            if i != 0 and st.button("❌", key=f"remove_{block_id}"):
+            if i != 0 and st.button("Remove", key=f"remove_{block_id}"):
                 st.session_state.date_blocks.remove(block_id)
                 st.rerun()
 
@@ -849,12 +1244,13 @@ def render_by_date(df_master: pd.DataFrame, is_mobile: bool) -> None:
             result[["Client_Name", "Proposal_Cost", "Rate", "Final_Cost", "Profit"]].round(2),
             use_container_width=True,
             hide_index=True,
+            column_config=money_cols("Proposal_Cost", "Final_Cost", "Profit"),
         )
         st.divider()
 
 
 def page_find(is_mobile: bool) -> None:
-    st.header("🔍 Find Proposal Details")
+    page_header("Find details", "Look up proposals by ID, client, or date.")
     proposals = st.session_state.proposals_df
     if proposals.empty:
         st.warning("No proposal data available")
@@ -879,11 +1275,16 @@ def page_find(is_mobile: bool) -> None:
 
 
 def page_clients() -> None:
-    st.header("👤 Clients Management")
-    cname = st.text_input("Client Name", key="new_client_name")
-    notes = st.text_input("Notes (optional)", key="new_client_notes")
+    page_header("Clients", "Add, archive, and restore client records.")
+    with st.container(border=True):
+        section_title("New client")
+        c1, c2 = st.columns(2)
+        with c1:
+            cname = st.text_input("Client name", key="new_client_name")
+        with c2:
+            notes = st.text_input("Notes (optional)", key="new_client_notes")
 
-    if st.button("Add Client", type="primary"):
+    if st.button("Add client", type="primary"):
         name = cname.strip()
         if not name:
             st.warning("Enter a client name")
@@ -909,7 +1310,7 @@ def page_clients() -> None:
             st.success("Client added")
             st.rerun()
 
-    st.subheader("Directory")
+    section_title("Directory")
     show_archived = st.toggle("Show archived clients", value=False)
     view = st.session_state.clients_df.copy()
     if not show_archived:
@@ -921,24 +1322,26 @@ def page_clients() -> None:
 
     st.dataframe(view, use_container_width=True, hide_index=True)
 
-    target = st.selectbox("Archive / restore client", unique_sorted(st.session_state.clients_df["Client_Name"]))
-    col_a, col_b = st.columns(2)
-    with col_a:
-        if st.button("Archive"):
-            mask = st.session_state.clients_df["Client_Name"] == target
-            st.session_state.clients_df.loc[mask, "Is_Archived"] = True
-            save_clients()
-            st.rerun()
-    with col_b:
-        if st.button("Restore"):
-            mask = st.session_state.clients_df["Client_Name"] == target
-            st.session_state.clients_df.loc[mask, "Is_Archived"] = False
-            save_clients()
-            st.rerun()
+    with st.container(border=True):
+        section_title("Archive or restore")
+        target = st.selectbox("Client", unique_sorted(st.session_state.clients_df["Client_Name"]))
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("Archive", use_container_width=True):
+                mask = st.session_state.clients_df["Client_Name"] == target
+                st.session_state.clients_df.loc[mask, "Is_Archived"] = True
+                save_clients()
+                st.rerun()
+        with col_b:
+            if st.button("Restore", use_container_width=True):
+                mask = st.session_state.clients_df["Client_Name"] == target
+                st.session_state.clients_df.loc[mask, "Is_Archived"] = False
+                save_clients()
+                st.rerun()
 
 
 def page_client_dashboard(is_mobile: bool) -> None:
-    st.header("📊 Client Summary Dashboard")
+    page_header("Client dashboard", "Single-client detail or all-client totals.")
     clients_df = st.session_state.clients_df.copy()
     proposals_df = st.session_state.proposals_df.copy()
 
@@ -993,7 +1396,7 @@ def page_client_dashboard(is_mobile: bool) -> None:
         )
 
         st.markdown("---")
-        st.subheader("📄 Proposal Details")
+        section_title("Proposal details")
         display_df = client_df.sort_values(by=["Start_Date", "Proposal_ID"], ascending=True).copy()
         display_df.insert(0, "Sr. No.", range(1, len(display_df) + 1))
         for col in ["Start_Date", "End_Date"]:
@@ -1017,6 +1420,7 @@ def page_client_dashboard(is_mobile: bool) -> None:
             ],
             use_container_width=True,
             hide_index=True,
+            column_config=money_cols("Proposal_Cost", "Final_Cost", "Profit"),
         )
         return
 
@@ -1063,7 +1467,16 @@ def page_client_dashboard(is_mobile: bool) -> None:
         "Total of Proposal Price and Profit amount",
     ]:
         summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0).round(2)
-    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+    st.dataframe(
+        summary_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config=money_cols(
+            "Total of Proposal price",
+            "Total of Profit amount",
+            "Total of Proposal Price and Profit amount",
+        ),
+    )
 
 
 def build_excel_bytes(clients: pd.DataFrame, proposals: pd.DataFrame) -> bytes:
@@ -1077,7 +1490,7 @@ def build_excel_bytes(clients: pd.DataFrame, proposals: pd.DataFrame) -> bytes:
 
 
 def page_export() -> None:
-    st.header("📤 Export Data")
+    page_header("Export data", "Download the current clients and proposals workbook.")
     proposals_df = st.session_state.proposals_df.copy()
     clients_df = st.session_state.clients_df.copy()
     if proposals_df.empty and clients_df.empty:
@@ -1086,31 +1499,35 @@ def page_export() -> None:
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     excel_bytes = build_excel_bytes(clients_df, proposals_df)
-    st.download_button(
-        label="⬇️ Download Excel (Clients + Proposals)",
-        data=excel_bytes,
-        file_name=f"sigma_consultants_data_{timestamp}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key="export_xlsx",
-    )
 
-    st.markdown("### 🔁 Alternative Format")
-    if not proposals_df.empty:
+    with st.container(border=True):
+        section_title("Excel export")
         st.download_button(
-            label="⬇️ Download Proposals CSV",
-            data=proposals_df.to_csv(index=False, encoding="utf-8-sig"),
-            file_name=f"sigma_proposals_{timestamp}.csv",
-            mime="text/csv",
-            key="export_proposals_csv",
+            label="Download Excel (clients + proposals)",
+            data=excel_bytes,
+            file_name=f"sigma_consultants_data_{timestamp}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="export_xlsx",
         )
-    if not clients_df.empty:
-        st.download_button(
-            label="⬇️ Download Clients CSV",
-            data=clients_df.to_csv(index=False, encoding="utf-8-sig"),
-            file_name=f"sigma_clients_{timestamp}.csv",
-            mime="text/csv",
-            key="export_clients_csv",
-        )
+
+    with st.container(border=True):
+        section_title("CSV backup")
+        if not proposals_df.empty:
+            st.download_button(
+                label="Download proposals CSV",
+                data=proposals_df.to_csv(index=False, encoding="utf-8-sig"),
+                file_name=f"sigma_proposals_{timestamp}.csv",
+                mime="text/csv",
+                key="export_proposals_csv",
+            )
+        if not clients_df.empty:
+            st.download_button(
+                label="Download clients CSV",
+                data=clients_df.to_csv(index=False, encoding="utf-8-sig"),
+                file_name=f"sigma_clients_{timestamp}.csv",
+                mime="text/csv",
+                key="export_clients_csv",
+            )
 
 
 # =====================================================
@@ -1147,4 +1564,3 @@ elif page == "Export":
 else:
     st.session_state.page = "Welcome"
     st.rerun()
-    
