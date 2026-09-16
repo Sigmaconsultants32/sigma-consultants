@@ -44,13 +44,14 @@ DURATION_DAYS = [15, 20, 30, 45, 60, 90]
 
 PRIMARY_COLOR = "#0F172A"
 SECONDARY_COLOR = "#2563EB"
+SECONDARY_DARK = "#1D4ED8"
 ACCENT_COLOR = "#059669"
-BG_COLOR = "#F8FAFC"
+BG_COLOR = "#EEF2F7"
 CARD_BG = "#FFFFFF"
 TEXT_COLOR = "#0F172A"
-MUTED_COLOR = "#64748B"
-BORDER_COLOR = "#E2E8F0"
-SURFACE_ALT = "#F1F5F9"
+MUTED_COLOR = "#5B6B7C"
+BORDER_COLOR = "#D8DEE6"
+SURFACE_ALT = "#F4F6F9"
 
 
 # =====================================================
@@ -209,7 +210,7 @@ def inject_css() -> None:
     st.markdown(
         f"""
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 :root {{
     --sigma-primary: {PRIMARY_COLOR};
@@ -221,19 +222,22 @@ def inject_css() -> None:
     --sigma-muted: {MUTED_COLOR};
     --sigma-border: {BORDER_COLOR};
     --sigma-surface-alt: {SURFACE_ALT};
-    --sigma-radius: 12px;
-    --sigma-radius-lg: 16px;
-    --sigma-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-    --sigma-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
+    --sigma-radius: 14px;
+    --sigma-radius-lg: 18px;
+    --sigma-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    --sigma-shadow-md: 0 12px 32px rgba(15, 23, 42, 0.10);
+    --sigma-fs-base: 16px;
+    --sigma-fs-label: 15px;
+    --sigma-fs-caption: 14px;
 }}
 
 html, body, [class*="css"], .stApp, button, input, textarea, select {{
-    font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif !important;
-    font-size: 14px;
+    font-family: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, sans-serif !important;
+    font-size: var(--sigma-fs-base);
 }}
 
 .stApp {{
-    background: var(--sigma-bg);
+    background: linear-gradient(165deg, #F8FAFC 0%, #EEF2F7 45%, #E8EDF5 100%);
     color: var(--sigma-text);
 }}
 
@@ -242,104 +246,112 @@ html, body, [class*="css"], .stApp, button, input, textarea, select {{
 }}
 
 div.block-container {{
-    padding: 1.25rem 1.75rem 2rem;
-    max-width: 1120px;
+    padding: 1.75rem 2.25rem 2.5rem;
+    max-width: 1240px;
 }}
 
 .page-header {{
-    margin: 0 0 1.25rem 0;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--sigma-border);
+    margin: 0 0 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 1px solid var(--sigma-border);
+    border-radius: var(--sigma-radius-lg);
+    box-shadow: var(--sigma-shadow);
+    border-left: 5px solid {SECONDARY_COLOR};
 }}
 
 .page-header h1 {{
     margin: 0;
-    font-size: 1.5rem;
-    line-height: 1.25;
-    font-weight: 700;
+    font-size: 1.875rem;
+    line-height: 1.2;
+    font-weight: 800;
     letter-spacing: -0.03em;
     color: var(--sigma-text);
 }}
 
 .page-subtitle {{
-    margin: 0.4rem 0 0 0;
-    font-size: 0.875rem;
-    line-height: 1.5;
+    margin: 0.5rem 0 0 0;
+    font-size: 1rem;
+    line-height: 1.55;
     color: var(--sigma-muted);
     font-weight: 400;
-    max-width: 52ch;
+    max-width: 60ch;
 }}
 
 .section-title {{
-    margin: 0 0 0.75rem 0;
-    font-size: 0.9375rem;
-    font-weight: 600;
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    font-weight: 700;
     color: var(--sigma-text);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid #E8EDF5;
 }}
 
 h1, h2, h3, h4 {{
     color: var(--sigma-text);
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.02em;
 }}
 
-h1 {{ font-size: 1.5rem; }}
-h2 {{ font-size: 0.9375rem; }}
-h3 {{ font-size: 0.875rem; }}
+h1 {{ font-size: 1.875rem; }}
+h2 {{ font-size: 1.125rem; }}
+h3 {{ font-size: 1rem; }}
 
 [data-testid="stWidgetLabel"] p,
 label {{
-    font-size: 0.8125rem !important;
-    font-weight: 500 !important;
-    color: #475569 !important;
-    margin-bottom: 0.25rem !important;
+    font-size: var(--sigma-fs-label) !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    margin-bottom: 0.35rem !important;
 }}
 
 .stCaption, [data-testid="stCaptionContainer"] {{
-    font-size: 0.8125rem !important;
+    font-size: var(--sigma-fs-caption) !important;
     color: var(--sigma-muted) !important;
-    line-height: 1.45 !important;
+    line-height: 1.5 !important;
 }}
 
 [data-testid="stVerticalBlock"] > div {{
-    gap: 0.35rem;
+    gap: 0.5rem;
 }}
 
 .stButton > button {{
-    min-height: 40px;
-    border-radius: 10px !important;
-    font-size: 0.875rem !important;
+    min-height: 46px;
+    border-radius: 12px !important;
+    font-size: var(--sigma-fs-label) !important;
     font-weight: 600 !important;
     border: 1px solid var(--sigma-border);
     color: var(--sigma-text);
     background: #ffffff;
-    padding: 0.45rem 1rem !important;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    padding: 0.55rem 1.25rem !important;
+    transition: all 0.18s ease;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }}
 
 .stButton > button:hover {{
     background: var(--sigma-surface-alt);
-    border-color: #CBD5E1;
+    border-color: #B8C4D0;
     color: var(--sigma-text);
+    transform: translateY(-1px);
 }}
 
 .stButton > button[kind="primary"],
 button[kind="primary"],
 [data-testid="stBaseButton-primary"],
 [data-testid="stFormSubmitButton"] button {{
-    background: {SECONDARY_COLOR} !important;
+    background: linear-gradient(135deg, {SECONDARY_COLOR} 0%, {SECONDARY_DARK} 100%) !important;
     color: #ffffff !important;
-    border: 1px solid {SECONDARY_COLOR} !important;
-    box-shadow: none !important;
+    border: none !important;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.28) !important;
 }}
 
 .stButton > button[kind="primary"]:hover,
 button[kind="primary"]:hover,
 [data-testid="stBaseButton-primary"]:hover,
 [data-testid="stFormSubmitButton"] button:hover {{
-    background: #1D4ED8 !important;
-    border-color: #1D4ED8 !important;
+    background: linear-gradient(135deg, #3B82F6 0%, {SECONDARY_COLOR} 100%) !important;
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35) !important;
     color: #ffffff !important;
 }}
 
@@ -356,7 +368,8 @@ button[kind="primary"]:hover,
     border-radius: var(--sigma-radius);
     overflow: hidden;
     background: #fff;
-    font-size: 0.8125rem;
+    font-size: var(--sigma-fs-label);
+    box-shadow: var(--sigma-shadow);
 }}
 
 div[data-baseweb="select"] > div,
@@ -364,9 +377,9 @@ div[data-baseweb="input"] > div,
 .stNumberInput input,
 .stTextInput input,
 .stDateInput input {{
-    min-height: 40px;
-    font-size: 0.875rem !important;
-    border-radius: 10px !important;
+    min-height: 46px;
+    font-size: var(--sigma-fs-base) !important;
+    border-radius: 12px !important;
     color: var(--sigma-text) !important;
 }}
 
@@ -374,74 +387,80 @@ div[data-baseweb="input"] > div,
     background: #ffffff;
     border: 1px solid var(--sigma-border);
     border-radius: var(--sigma-radius-lg);
-    padding: 1.25rem 1.35rem 1rem;
-    box-shadow: var(--sigma-shadow);
+    padding: 1.5rem 1.6rem 1.25rem;
+    box-shadow: var(--sigma-shadow-md);
 }}
 
 [data-testid="stRadio"] [role="radiogroup"] {{
-    gap: 0.5rem;
+    gap: 0.65rem;
+    flex-wrap: wrap;
 }}
 
 [data-testid="stRadio"] label {{
     background: #ffffff;
     border: 1px solid var(--sigma-border);
     border-radius: 999px;
-    padding: 0.35rem 0.85rem !important;
-    font-size: 0.8125rem !important;
-    font-weight: 500 !important;
+    padding: 0.5rem 1.1rem !important;
+    font-size: var(--sigma-fs-caption) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }}
 
 [data-testid="stRadio"] label[data-checked="true"] {{
-    background: #EFF6FF !important;
-    border-color: #BFDBFE !important;
-    color: {SECONDARY_COLOR} !important;
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    border-color: #93C5FD !important;
+    color: {SECONDARY_DARK} !important;
 }}
 
 div[data-testid="stVerticalBlockBorderWrapper"] {{
-    background: #ffffff;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFD 100%);
     border: 1px solid var(--sigma-border);
     border-radius: var(--sigma-radius-lg);
-    padding: 1rem 1.15rem 0.85rem;
+    padding: 1.35rem 1.5rem 1.2rem;
     box-shadow: var(--sigma-shadow);
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
 }}
 
 .hero-card, .login-heading {{
-    background: #ffffff;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
     border: 1px solid var(--sigma-border);
     border-radius: var(--sigma-radius-lg);
-    padding: 1.75rem 1.5rem 1.5rem;
+    padding: 2.25rem 2rem 2rem;
     text-align: center;
     box-shadow: var(--sigma-shadow-md);
 }}
 
 .hero-kicker, .login-heading .hero-kicker {{
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+    display: inline-block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: {SECONDARY_COLOR};
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.35rem 0.85rem;
+    background: #EFF6FF;
+    border-radius: 999px;
 }}
 
 .hero-card h1, .login-heading h1 {{
     margin: 0;
-    font-size: 1.375rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     color: var(--sigma-text);
 }}
 
 .hero-card p, .login-heading p {{
-    margin: 0.55rem auto 0;
-    max-width: 400px;
-    font-size: 0.875rem;
-    line-height: 1.55;
+    margin: 0.75rem auto 0;
+    max-width: 440px;
+    font-size: 1.0625rem;
+    line-height: 1.6;
     color: var(--sigma-muted);
 }}
 
 .welcome-actions [data-testid="stVerticalBlock"] {{
-    gap: 0.45rem;
+    gap: 0.65rem;
 }}
 
 .kpi-grid [data-testid="column"] {{
@@ -453,112 +472,123 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 }}
 
 .kpi-card {{
-    background: #ffffff;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFD 100%);
     border: 1px solid var(--sigma-border);
     border-radius: var(--sigma-radius);
-    padding: 0.9rem 1rem;
+    padding: 1.15rem 1.25rem;
     margin: 0;
     height: 100%;
-    min-height: 88px;
+    min-height: 108px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     box-shadow: var(--sigma-shadow);
+    position: relative;
+    overflow: hidden;
+}}
+
+.kpi-card::before {{
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, {SECONDARY_COLOR}, #60A5FA);
 }}
 
 .kpi-card .kpi-label {{
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
     color: var(--sigma-muted);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    line-height: 1.3;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    line-height: 1.35;
 }}
 
 .kpi-card .kpi-value {{
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
     color: var(--sigma-text);
-    margin-top: 0.35rem;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    margin-top: 0.45rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
 }}
 
 .summary-item {{
     background: #ffffff;
     border: 1px solid var(--sigma-border);
     border-radius: var(--sigma-radius);
-    padding: 0.85rem 1rem;
-    margin: 0 0 0.5rem 0;
+    padding: 1.1rem 1.35rem;
+    margin: 0 0 0.65rem 0;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
     box-shadow: var(--sigma-shadow);
 }}
 
 .summary-item .left {{
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-size: 1.0625rem;
+    font-weight: 700;
     color: var(--sigma-text);
 }}
 
 .summary-item .meta {{
-    font-size: 0.8125rem;
+    font-size: var(--sigma-fs-caption);
     color: var(--sigma-muted);
-    margin-top: 0.15rem;
-    font-weight: 400;
+    margin-top: 0.25rem;
+    font-weight: 500;
 }}
 
 .summary-item .right {{
     text-align: right;
-    font-size: 0.8125rem;
-    color: #475569;
-    line-height: 1.5;
+    font-size: var(--sigma-fs-caption);
+    color: #334155;
+    line-height: 1.55;
     white-space: nowrap;
+    font-weight: 500;
 }}
 
-.profit-pos {{ color: {ACCENT_COLOR}; font-weight: 600; }}
-.profit-neg {{ color: #DC2626; font-weight: 600; }}
+.profit-pos {{ color: {ACCENT_COLOR}; font-weight: 700; font-size: 1rem; }}
+.profit-neg {{ color: #DC2626; font-weight: 700; font-size: 1rem; }}
 
 section[data-testid="stSidebar"] {{
-    background: #0F172A;
-    padding: 1rem 0.75rem 1.25rem;
-    border-right: 1px solid #1E293B;
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+    padding: 1.25rem 0.9rem 1.5rem;
+    border-right: 1px solid #334155;
 }}
 
 section[data-testid="stSidebar"] > div {{
-    padding-top: 0.25rem;
+    padding-top: 0.35rem;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand {{
-    padding: 0.25rem 0.5rem 0.9rem;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.65rem 1.1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 1rem;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand h2 {{
     margin: 0;
     color: #F8FAFC !important;
-    font-size: 0.9375rem;
-    font-weight: 700;
+    font-size: 1.125rem;
+    font-weight: 800;
     letter-spacing: -0.02em;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand p {{
-    margin: 0.25rem 0 0;
+    margin: 0.35rem 0 0;
     color: #94A3B8 !important;
-    font-size: 0.75rem;
-    line-height: 1.4;
+    font-size: 0.875rem;
+    line-height: 1.45;
 }}
 
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
     color: #CBD5E1 !important;
-    font-size: 0.75rem !important;
+    font-size: var(--sigma-fs-caption) !important;
 }}
 
 section[data-testid="stSidebar"] .stButton {{
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.2rem;
 }}
 
 section[data-testid="stSidebar"] .stButton > button {{
@@ -567,64 +597,70 @@ section[data-testid="stSidebar"] .stButton > button {{
     border: 1px solid transparent;
     justify-content: flex-start;
     text-align: left;
-    font-weight: 500 !important;
-    font-size: 0.8125rem !important;
-    min-height: 38px;
-    padding: 0.4rem 0.75rem !important;
+    font-weight: 600 !important;
+    font-size: var(--sigma-fs-caption) !important;
+    min-height: 44px;
+    padding: 0.5rem 0.9rem !important;
     width: 100%;
+    border-radius: 10px !important;
+    box-shadow: none !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-btn .stButton > button:hover {{
-    background: rgba(255,255,255,0.06) !important;
-    border-color: rgba(255,255,255,0.06) !important;
+    background: rgba(255,255,255,0.08) !important;
+    border-color: rgba(255,255,255,0.08) !important;
     color: #F8FAFC !important;
+    transform: none;
 }}
 
 section[data-testid="stSidebar"] .sidebar-active .stButton > button {{
-    background: rgba(37, 99, 235, 0.22) !important;
+    background: linear-gradient(135deg, rgba(37,99,235,0.35) 0%, rgba(59,130,246,0.25) 100%) !important;
     color: #FFFFFF !important;
-    border: 1px solid rgba(96, 165, 250, 0.35) !important;
-    font-weight: 600 !important;
+    border: 1px solid rgba(147, 197, 253, 0.4) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
 }}
 
 section[data-testid="stSidebar"] hr {{
-    margin: 0.6rem 0;
-    border-color: rgba(255,255,255,0.08);
+    margin: 0.85rem 0;
+    border-color: rgba(255,255,255,0.1);
 }}
 
 div[data-testid="stImage"] {{
     display: flex;
     justify-content: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
 }}
 
 div[data-testid="stImage"] img {{
-    max-width: 140px;
+    max-width: 180px;
     margin: 0 auto;
 }}
 
 [data-testid="stHorizontalBlock"] {{
-    gap: 0.65rem;
+    gap: 1rem;
     align-items: flex-start;
 }}
 
 hr, [data-testid="stDivider"] {{
-    margin: 1rem 0 !important;
+    margin: 1.25rem 0 !important;
     border: none;
     border-top: 1px solid var(--sigma-border) !important;
 }}
 
 [data-testid="stAlert"] {{
-    font-size: 0.875rem;
-    border-radius: 10px;
+    font-size: var(--sigma-fs-caption);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
 }}
 
 @media (max-width: 768px) {{
     div.block-container {{
-        padding: 1rem 1rem 1.5rem;
+        padding: 1.25rem 1rem 1.75rem;
     }}
-    .page-header h1 {{ font-size: 1.3125rem; }}
-    .kpi-card .kpi-value {{ font-size: 1.125rem; }}
+    .page-header {{ padding: 1rem 1.15rem; }}
+    .page-header h1 {{ font-size: 1.5rem; }}
+    .kpi-card .kpi-value {{ font-size: 1.5rem; }}
     .summary-item {{
         grid-template-columns: 1fr;
     }}
@@ -731,8 +767,8 @@ def render_login() -> None:
             """
 <div class="login-heading">
   <div class="hero-kicker">Sigma Consultants</div>
-  <h1>Sign in</h1>
-  <p>Use your workspace password to open the CRM.</p>
+  <h1>Welcome back</h1>
+  <p>Enter your password to access the CRM dashboard.</p>
 </div>
 """,
             unsafe_allow_html=True,
@@ -763,16 +799,16 @@ def sidebar_nav() -> None:
         st.markdown(
             """
 <div class="sidebar-brand">
-  <h2>Sigma Consultants</h2>
-  <p>Client relationship manager</p>
+  <h2>📊 Sigma Consultants</h2>
+  <p>Client &amp; proposal management</p>
 </div>
 """,
             unsafe_allow_html=True,
         )
         st.session_state.is_mobile = st.toggle(
-            "Compact cards",
+            "📱 Compact view",
             value=st.session_state.is_mobile,
-            help="Switch between compact cards and desktop metrics.",
+            help="Stack metric cards for smaller screens.",
         )
         st.markdown("---")
         current = st.session_state.page
@@ -784,22 +820,22 @@ def sidebar_nav() -> None:
                 go(page_key)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        nav("Welcome", "Welcome")
-        nav("Summary", "Summary")
-        nav("Add proposal", "AddProposal")
-        nav("Find details", "Find")
-        nav("Edit proposal", "Edit")
-        nav("Clients", "Clients")
-        nav("Client dashboard", "ClientDashboard")
+        nav("🏠  Welcome", "Welcome")
+        nav("📈  Summary", "Summary")
+        nav("➕  Add proposal", "AddProposal")
+        nav("🔍  Find details", "Find")
+        nav("✏️  Edit proposal", "Edit")
+        nav("👤  Clients", "Clients")
+        nav("📋  Client dashboard", "ClientDashboard")
         st.markdown("---")
-        nav("Export data", "Export")
+        nav("📥  Export data", "Export")
         st.markdown("---")
-        if st.button("Reload Excel files", use_container_width=True):
+        if st.button("🔄  Reload Excel files", use_container_width=True):
             st.session_state.clients_df = load_clients()
             st.session_state.proposals_df = load_proposals()
             st.success("Reloaded from disk")
             st.rerun()
-        if st.button("Log out", use_container_width=True):
+        if st.button("🚪  Log out", use_container_width=True):
             st.session_state.auth = False
             st.session_state.page = "Welcome"
             st.rerun()
@@ -813,25 +849,25 @@ def page_welcome() -> None:
     _, center, _ = st.columns([1, 2, 1])
     with center:
         if LOGO_FILE.exists():
-            st.image(str(LOGO_FILE), width=168)
+            st.image(str(LOGO_FILE), width=200)
         st.markdown(
             """
 <div class="hero-card">
   <div class="hero-kicker">Sigma Consultants</div>
-  <h1>Welcome to the CRM</h1>
-  <p>Manage clients, proposals, investments, and maturity tracking from one workspace.</p>
+  <h1>Welcome to your CRM</h1>
+  <p>Manage clients, proposals, investments, profits, and maturity dates — all in one place.</p>
 </div>
 """,
             unsafe_allow_html=True,
         )
         st.markdown('<div class="welcome-actions">', unsafe_allow_html=True)
-        if st.button("Add client", use_container_width=True, type="primary"):
+        if st.button("➕  Add client", use_container_width=True, type="primary"):
             go("Clients")
-        if st.button("Add proposal", use_container_width=True):
+        if st.button("📄  Add proposal", use_container_width=True):
             go("AddProposal")
-        if st.button("Find details", use_container_width=True):
+        if st.button("🔍  Find details", use_container_width=True):
             go("Find")
-        if st.button("View summary", use_container_width=True):
+        if st.button("📊  View summary", use_container_width=True):
             go("Summary")
         st.markdown("</div>", unsafe_allow_html=True)
 
