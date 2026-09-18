@@ -20,17 +20,17 @@ import streamlit as st
 BASE_DIR = Path(__file__).resolve().parent
 CLIENT_FILE = BASE_DIR / "clients.xlsx"
 PROPOSAL_FILE = BASE_DIR / "proposals.xlsx"
-LOGO_FILE = BASE_DIR / "sigma_logo.png"
+LOGO_FILE = BASE_DIR / "sigma_logo.jpg"
 LOGO_FALLBACK = Path(
     r"C:\Users\Smart\.cursor\projects\empty-window\assets"
     r"\c__Users_Smart_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_"
-    r"sigma_logo-3dd5e447-d2ef-4e6f-9b30-f1137e57d048.png"
+    r"Sigma_Con_Logo-e928b1a9-6cdc-44e2-837a-3d8331acffba.jpg"
 )
 
 LOGO_WIDTH = {
-    "sidebar": 228,
-    "login": 340,
-    "welcome": 380,
+    "sidebar": 210,
+    "login": 320,
+    "welcome": 360,
 }
 
 CLIENT_ID_RE = re.compile(r"SIG-C-(\d+)", re.IGNORECASE)
@@ -234,38 +234,26 @@ def resolve_logo_path() -> Path | None:
     return None
 
 
-def logo_png_bytes() -> bytes | None:
-    """Return logo PNG with black background made transparent."""
+def logo_image_data() -> tuple[bytes, str] | None:
+    """Return logo file bytes and MIME type (no transparency processing)."""
     logo_path = resolve_logo_path()
     if not logo_path:
         return None
-    try:
-        from PIL import Image
-
-        img = Image.open(logo_path).convert("RGBA")
-        pixels = img.load()
-        width, height = img.size
-        for y in range(height):
-            for x in range(width):
-                r, g, b, a = pixels[x, y]
-                if r < 45 and g < 45 and b < 45:
-                    pixels[x, y] = (r, g, b, 0)
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        return buf.getvalue()
-    except Exception:
-        return logo_path.read_bytes()
+    suffix = logo_path.suffix.lower()
+    mime = "image/jpeg" if suffix in {".jpg", ".jpeg"} else "image/png"
+    return logo_path.read_bytes(), mime
 
 
 def render_logo(context: str, tagline: str = "") -> None:
     """Show Sigma logo sized for sidebar, login, or welcome."""
-    raw = logo_png_bytes()
-    if not raw:
+    data = logo_image_data()
+    if not data:
         return
+    raw, mime = data
 
     encoded = base64.b64encode(raw).decode()
     img_html = (
-        f'<img src="data:image/png;base64,{encoded}" '
+        f'<img src="data:{mime};base64,{encoded}" '
         f'alt="Sigma Consultants" class="sigma-logo-img" />'
     )
     tagline_html = f'<p class="sidebar-brand-tagline">{tagline}</p>' if tagline else ""
@@ -672,19 +660,29 @@ section[data-testid="stSidebar"] .sidebar-brand-tagline {{
     justify-content: center;
     align-items: center;
     margin: 0 auto;
-    background: transparent !important;
 }}
 
 .logo-login {{
     margin-bottom: 1rem;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }}
 
 .logo-welcome {{
     margin-bottom: 1.15rem;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 0.85rem 1.1rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }}
 
 .logo-sidebar {{
     margin-bottom: 0.35rem;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
 }}
 
 .sigma-logo-img {{
@@ -693,19 +691,19 @@ section[data-testid="stSidebar"] .sidebar-brand-tagline {{
     height: auto;
     margin: 0 auto;
     object-fit: contain;
-    background: transparent !important;
+    border-radius: 6px;
 }}
 
 .logo-sidebar .sigma-logo-img {{
-    max-width: 228px;
+    max-width: 210px;
 }}
 
 .logo-login .sigma-logo-img {{
-    max-width: 340px;
+    max-width: 320px;
 }}
 
 .logo-welcome .sigma-logo-img {{
-    max-width: 380px;
+    max-width: 360px;
 }}
 
 section[data-testid="stSidebar"] .sidebar-toggle-box {{
@@ -884,9 +882,9 @@ hr, [data-testid="stDivider"] {{
         text-align: left;
         white-space: normal;
     }}
-    .logo-login .sigma-logo-img {{ max-width: 280px; }}
-    .logo-welcome .sigma-logo-img {{ max-width: 300px; }}
-    .logo-sidebar .sigma-logo-img {{ max-width: 200px; }}
+    .logo-login .sigma-logo-img {{ max-width: 260px; }}
+    .logo-welcome .sigma-logo-img {{ max-width: 280px; }}
+    .logo-sidebar .sigma-logo-img {{ max-width: 185px; }}
 }}
 </style>
 """,
