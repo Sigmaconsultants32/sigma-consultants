@@ -234,15 +234,36 @@ def resolve_logo_path() -> Path | None:
     return None
 
 
-def render_logo(context: str, tagline: str = "") -> None:
-    """Show Sigma logo sized for sidebar, login, or welcome."""
+def logo_png_bytes() -> bytes | None:
+    """Return logo PNG with black background made transparent."""
     logo_path = resolve_logo_path()
     if not logo_path:
+        return None
+    try:
+        from PIL import Image
+
+        img = Image.open(logo_path).convert("RGBA")
+        pixels = img.load()
+        width, height = img.size
+        for y in range(height):
+            for x in range(width):
+                r, g, b, a = pixels[x, y]
+                if r < 45 and g < 45 and b < 45:
+                    pixels[x, y] = (r, g, b, 0)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception:
+        return logo_path.read_bytes()
+
+
+def render_logo(context: str, tagline: str = "") -> None:
+    """Show Sigma logo sized for sidebar, login, or welcome."""
+    raw = logo_png_bytes()
+    if not raw:
         return
 
-    width = LOGO_WIDTH.get(context, 300)
-    frame = "logo-frame-dark" if context in {"login", "welcome"} else "logo-frame-sidebar"
-    encoded = base64.b64encode(logo_path.read_bytes()).decode()
+    encoded = base64.b64encode(raw).decode()
     img_html = (
         f'<img src="data:image/png;base64,{encoded}" '
         f'alt="Sigma Consultants" class="sigma-logo-img" />'
@@ -253,7 +274,7 @@ def render_logo(context: str, tagline: str = "") -> None:
         st.markdown(
             f"""
 <div class="sidebar-brand">
-  <div class="logo-wrap logo-{context} {frame}">{img_html}</div>
+  <div class="logo-wrap logo-{context}">{img_html}</div>
   {tagline_html}
 </div>
 """,
@@ -262,7 +283,7 @@ def render_logo(context: str, tagline: str = "") -> None:
         return
 
     st.markdown(
-        f'<div class="logo-wrap logo-{context} {frame}">{img_html}</div>',
+        f'<div class="logo-wrap logo-{context}">{img_html}</div>',
         unsafe_allow_html=True,
     )
 
@@ -651,20 +672,18 @@ section[data-testid="stSidebar"] .sidebar-brand-tagline {{
     justify-content: center;
     align-items: center;
     margin: 0 auto;
+    background: transparent !important;
 }}
 
-.logo-frame-dark {{
-    background: #000000;
-    border-radius: 14px;
-    padding: 0.65rem 1rem;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+.logo-login {{
     margin-bottom: 1rem;
 }}
 
-.logo-frame-sidebar {{
-    background: #000000;
-    border-radius: 10px;
-    padding: 0.45rem 0.55rem;
+.logo-welcome {{
+    margin-bottom: 1.15rem;
+}}
+
+.logo-sidebar {{
     margin-bottom: 0.35rem;
 }}
 
@@ -674,6 +693,7 @@ section[data-testid="stSidebar"] .sidebar-brand-tagline {{
     height: auto;
     margin: 0 auto;
     object-fit: contain;
+    background: transparent !important;
 }}
 
 .logo-sidebar .sigma-logo-img {{
