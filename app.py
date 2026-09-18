@@ -7,6 +7,7 @@ import base64
 import io
 import os
 import re
+import shutil
 from datetime import date, datetime
 from pathlib import Path
 
@@ -20,6 +21,7 @@ import streamlit as st
 BASE_DIR = Path(__file__).resolve().parent
 CLIENT_FILE = BASE_DIR / "clients.xlsx"
 PROPOSAL_FILE = BASE_DIR / "proposals.xlsx"
+BACKUP_DIR = BASE_DIR / "backups"
 LOGO_FILE = BASE_DIR / "sigma_logo.jpg"
 LOGO_FALLBACK = Path(
     r"C:\Users\Smart\.cursor\projects\empty-window\assets"
@@ -197,12 +199,138 @@ def load_proposals() -> pd.DataFrame:
     return df
 
 
+def auto_backup() -> None:
+    """Keep timestamped Excel copies on every save."""
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    try:
+        if CLIENT_FILE.exists():
+            shutil.copy2(CLIENT_FILE, BACKUP_DIR / f"clients_{stamp}.xlsx")
+        if PROPOSAL_FILE.exists():
+            shutil.copy2(PROPOSAL_FILE, BACKUP_DIR / f"proposals_{stamp}.xlsx")
+    except OSError:
+        pass
+
+
 def save_clients() -> None:
     atomic_to_excel(st.session_state.clients_df, CLIENT_FILE)
+    auto_backup()
 
 
 def save_proposals() -> None:
     atomic_to_excel(st.session_state.proposals_df, PROPOSAL_FILE)
+    auto_backup()
+
+
+def enrich_proposals(df: pd.DataFrame) -> pd.DataFrame:
+    """Add days-left and maturity bucket for open proposals."""
+    out = df.copy()
+    for col in DATE_PROPOSAL_COLS:
+        out[col] = pd.to_datetime(out[col], errors="coerce")
+    out["Status"] = out["Status"].apply(normalize_status)
+    today = date.today()
+
+    def days_left(end) -> int | None:
+        if pd.isna(end):
+            return None
+        return (pd.Timestamp(end).date() - today).days
+
+    def maturity_bucket(row) -> str:
+        if row["Status"] != "Open":
+            return "Closed"
+        left = row["Days_Left"]
+        if left is None:
+            return "No end date"
+        if left < 0:
+            return "Overdue"
+        if left == 0:
+            return "Due today"
+        if left <= 7:
+            return "Due in 7 days"
+        if left <= 15:
+            return "Due in 15 days"
+        if left <= 30:
+            return "Due in 30 days"
+        return "Later"
+
+    out["Days_Left"] = out["End_Date"].apply(days_left)
+    out["Maturity_Bucket"] = out.apply(maturity_bucket, axis=1)
+    return out
+
+
+def filter_by_maturity_bucket(df: pd.DataFrame, bucket: str) -> pd.DataFrame:
+    open_df = df[df["Status"] == "Open"].copy()
+    if bucket == "All open":
+        return open_df.sort_values(["End_Date", "Proposal_ID", "Client_Name"])
+    if bucket == "Overdue":
+        return open_df[open_df["Days_Left"] < 0].sort_values("End_Date")
+    if bucket == "Due today":
+        return open_df[open_df["Days_Left"] == 0].sort_values("Proposal_ID")
+    if bucket == "Next 7 days":
+        return open_df[open_df["Days_Left"].between(0, 7)].sort_values("End_Date")
+    if bucket == "Next 15 days":
+        return open_df[open_df["Days_Left"].between(0, 15)].sort_values("End_Date")
+    if bucket == "Next 30 days":
+        return open_df[open_df["Days_Left"].between(0, 30)].sort_values("End_Date")
+    return open_df.sort_values("End_Date")
+
+
+def view_proposal(proposal_id: str) -> None:
+    st.session_state.selected_proposal_id = proposal_id
+    go("ProposalDetail")
+
+
+def close_proposal(proposal_id: str) -> None:
+    mask = st.session_state.proposals_df["Proposal_ID"] == proposal_id
+    st.session_state.proposals_df.loc[mask, "Status"] = "Close"
+    st.session_state.proposals_df.loc[mask, "Closing_Date"] = pd.Timestamp(date.today())
+    save_proposals()
+
+
+def renew_proposal(proposal_id: str, new_start: date, duration_days: int) -> str:
+    source = st.session_state.proposals_df[
+        st.session_state.proposals_df["Proposal_ID"] == proposal_id
+    ].copy()
+    if source.empty:
+        raise ValueError("Proposal not found")
+
+    new_id = new_proposal_id()
+    new_end = pd.Timestamp(new_start) + pd.Timedelta(days=int(duration_days))
+    rows = []
+    for _, row in source.iterrows():
+        final_cost, profit = calc(float(row["Proposal_Cost"]), float(row["Rate"]), duration_days)
+        rows.append(
+            {
+                "Proposal_ID": new_id,
+                "Client_ID": row["Client_ID"],
+                "Client_Name": row["Client_Name"],
+                "Proposal_Cost": row["Proposal_Cost"],
+                "Rate": row["Rate"],
+                "Profit": profit,
+                "Final_Cost": final_cost,
+                "Start_Date": pd.Timestamp(new_start),
+                "End_Date": new_end,
+                "Status": "Open",
+                "Closing_Date": pd.NaT,
+            }
+        )
+    st.session_state.proposals_df = pd.concat(
+        [st.session_state.proposals_df, pd.DataFrame(rows)],
+        ignore_index=True,
+    )
+    save_proposals()
+    return new_id
+
+
+def proposal_display_table(df: pd.DataFrame) -> pd.DataFrame:
+    """Format proposal rows for readable tables."""
+    show = df.copy()
+    show["End_Date"] = show["End_Date"].map(fmt_date)
+    show["Start_Date"] = show["Start_Date"].map(fmt_date)
+    show["Rate"] = pd.to_numeric(show["Rate"], errors="coerce").round(2)
+    for col in ["Proposal_Cost", "Final_Cost", "Profit"]:
+        show[col] = pd.to_numeric(show[col], errors="coerce").round(2)
+    return show
 
 
 def active_clients_df() -> pd.DataFrame:
@@ -625,6 +753,20 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 .profit-pos {{ color: {ACCENT_COLOR}; font-weight: 700; font-size: 1rem; }}
 .profit-neg {{ color: #DC2626; font-weight: 700; font-size: 1rem; }}
 
+.maturity-badge {{
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}}
+.badge-overdue {{ background: #FEE2E2; color: #B91C1C; }}
+.badge-today {{ background: #FEF3C7; color: #B45309; }}
+.badge-soon {{ background: #DBEAFE; color: #1D4ED8; }}
+.badge-open {{ background: #D1FAE5; color: #047857; }}
+.badge-closed {{ background: #E2E8F0; color: #475569; }}
+
 /* ── Sidebar (boxed menu) ── */
 section[data-testid="stSidebar"] {{
     background: #151C2B;
@@ -955,7 +1097,9 @@ def init_session() -> None:
     if "auth" not in st.session_state:
         st.session_state.auth = False
     if "page" not in st.session_state:
-        st.session_state.page = "Welcome"
+        st.session_state.page = "Maturity"
+    if "selected_proposal_id" not in st.session_state:
+        st.session_state.selected_proposal_id = None
     if "is_mobile" not in st.session_state:
         st.session_state.is_mobile = False
     if "proposal_clients" not in st.session_state:
@@ -997,7 +1141,7 @@ def render_login() -> None:
         if submitted:
             if pwd == expected_password():
                 st.session_state.auth = True
-                st.session_state.page = "Welcome"
+                st.session_state.page = "Maturity"
                 st.rerun()
             st.error("Incorrect password")
 
@@ -1032,17 +1176,20 @@ def sidebar_nav() -> None:
                 go(page_key)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<p class="sidebar-section">Main menu</p>', unsafe_allow_html=True)
-        nav("🏠", "Welcome", "Welcome")
-        nav("📊", "Summary", "Summary")
-        nav("➕", "Add proposal", "AddProposal")
-        nav("🔍", "Find details", "Find")
-        nav("✏️", "Edit proposal", "Edit")
-        nav("👤", "Clients", "Clients")
-        nav("📋", "Client dashboard", "ClientDashboard")
+        st.markdown('<p class="sidebar-section">Daily use</p>', unsafe_allow_html=True)
+        nav("📅", "Maturity board", "Maturity")
+        nav("📁", "Proposal file", "ProposalDetail")
+        nav("👤", "Client ledger", "ClientLedger")
+        nav("🔍", "Search", "Search")
 
-        st.markdown('<p class="sidebar-section">Data</p>', unsafe_allow_html=True)
-        nav("📥", "Export data", "Export")
+        st.markdown('<p class="sidebar-section">Operations</p>', unsafe_allow_html=True)
+        nav("➕", "Add proposal", "AddProposal")
+        nav("✏️", "Edit line", "Edit")
+        nav("👥", "Clients", "Clients")
+
+        st.markdown('<p class="sidebar-section">Reports</p>', unsafe_allow_html=True)
+        nav("📊", "Summary", "Summary")
+        nav("📥", "Export / backup", "Export")
 
         st.markdown('<p class="sidebar-section">System</p>', unsafe_allow_html=True)
         st.markdown('<div class="sidebar-util">', unsafe_allow_html=True)
@@ -1056,14 +1203,340 @@ def sidebar_nav() -> None:
         st.markdown('<div class="sidebar-logout">', unsafe_allow_html=True)
         if st.button("🚪  Log out", use_container_width=True, key="nav_logout"):
             st.session_state.auth = False
-            st.session_state.page = "Welcome"
+            st.session_state.page = "Maturity"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
 
 # =====================================================
-# PAGES
+# PAGES — PHASE 1 (maturity-centric)
 # =====================================================
+
+MATURITY_FILTERS = [
+    "Due today",
+    "Next 7 days",
+    "Next 15 days",
+    "Next 30 days",
+    "Overdue",
+    "All open",
+]
+
+
+def maturity_badge_html(bucket: str) -> str:
+    css = {
+        "Overdue": "badge-overdue",
+        "Due today": "badge-today",
+        "Due in 7 days": "badge-soon",
+        "Due in 15 days": "badge-soon",
+        "Due in 30 days": "badge-soon",
+        "Later": "badge-open",
+        "Closed": "badge-closed",
+    }.get(bucket, "badge-open")
+    return f'<span class="maturity-badge {css}">{bucket}</span>'
+
+
+def page_maturity(is_mobile: bool) -> None:
+    page_header(
+        "Maturity board",
+        "See what is ending today, soon, or overdue — your daily starting point.",
+    )
+    df = enrich_proposals(st.session_state.proposals_df)
+    if df.empty:
+        st.info("No proposals yet. Add your first proposal to start tracking maturities.")
+        if st.button("Add proposal", type="primary"):
+            go("AddProposal")
+        return
+
+    open_df = df[df["Status"] == "Open"]
+    due_today = len(open_df[open_df["Days_Left"] == 0])
+    due_7 = len(open_df[open_df["Days_Left"].between(0, 7)])
+    overdue = len(open_df[open_df["Days_Left"] < 0])
+
+    metrics_row(
+        [
+            ("Due today", due_today),
+            ("Due in 7 days", due_7),
+            ("Overdue", overdue),
+            ("Open investment", fmt_money(open_df["Proposal_Cost"].sum())),
+        ],
+        is_mobile,
+    )
+
+    st.markdown("---")
+    bucket = st.radio(
+        "Show proposals",
+        MATURITY_FILTERS,
+        horizontal=True,
+        key="maturity_filter",
+    )
+    filtered = filter_by_maturity_bucket(df, bucket)
+    if filtered.empty:
+        st.success(f"No proposals in “{bucket}”.")
+        return
+
+    display = proposal_display_table(filtered)
+    table_cols = [
+        "Proposal_ID",
+        "Client_Name",
+        "End_Date",
+        "Days_Left",
+        "Proposal_Cost",
+        "Rate",
+        "Profit",
+        "Final_Cost",
+        "Maturity_Bucket",
+        "Status",
+    ]
+    st.dataframe(
+        display[table_cols],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            **money_cols("Proposal_Cost", "Final_Cost", "Profit"),
+            "Days_Left": st.column_config.NumberColumn("Days left", format="%d"),
+            "Rate": st.column_config.NumberColumn("Rate %", format="%.2f"),
+        },
+    )
+
+    st.markdown("---")
+    section_title("Open proposal details")
+    pid = st.selectbox(
+        "Select proposal ID",
+        unique_sorted(filtered["Proposal_ID"]),
+        key="maturity_pick_proposal",
+    )
+    if st.button("View full proposal", type="primary", key="maturity_view_btn"):
+        view_proposal(pid)
+
+
+def page_proposal_detail(is_mobile: bool) -> None:
+    page_header(
+        "Proposal file",
+        "One proposal — all clients, totals, close or renew.",
+    )
+    df = enrich_proposals(st.session_state.proposals_df)
+    if df.empty:
+        st.info("No proposals available")
+        return
+
+    ids = unique_sorted(df["Proposal_ID"])
+    default_idx = 0
+    if st.session_state.selected_proposal_id in ids:
+        default_idx = ids.index(st.session_state.selected_proposal_id)
+
+    proposal_id = st.selectbox(
+        "Proposal ID",
+        ids,
+        index=default_idx,
+        key="detail_proposal_id",
+    )
+    st.session_state.selected_proposal_id = proposal_id
+    proposal_df = df[df["Proposal_ID"] == proposal_id].copy()
+    if proposal_df.empty:
+        st.warning("Proposal not found")
+        return
+
+    start = proposal_df["Start_Date"].iloc[0]
+    end = proposal_df["End_Date"].iloc[0]
+    rate = proposal_df["Rate"].iloc[0]
+    status = proposal_df["Status"].iloc[0]
+    days_left = proposal_df["Days_Left"].iloc[0]
+    bucket = proposal_df["Maturity_Bucket"].iloc[0]
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Start", fmt_date(start))
+    c2.metric("End", fmt_date(end))
+    c3.metric("Rate", f"{float(rate):.2f}%")
+    c4.metric("Days left", int(days_left) if pd.notna(days_left) else "—")
+
+    st.markdown(maturity_badge_html(bucket), unsafe_allow_html=True)
+
+    render_grand_total(
+        proposal_df["Proposal_Cost"].sum(),
+        proposal_df["Final_Cost"].sum(),
+        proposal_df["Profit"].sum(),
+        is_mobile,
+    )
+
+    section_title("Clients in this proposal")
+    display = proposal_display_table(proposal_df)
+    st.dataframe(
+        display[
+            [
+                "Client_Name",
+                "Proposal_Cost",
+                "Rate",
+                "Profit",
+                "Final_Cost",
+                "Status",
+                "Days_Left",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            **money_cols("Proposal_Cost", "Final_Cost", "Profit"),
+            "Days_Left": st.column_config.NumberColumn("Days left", format="%d"),
+        },
+    )
+
+    st.markdown("---")
+    section_title("Actions")
+    if status == "Open":
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Close entire proposal", type="primary", key="close_whole_proposal"):
+                close_proposal(proposal_id)
+                st.success(f"Closed {proposal_id}")
+                st.rerun()
+        with c2:
+            if st.button("Go to edit line", key="detail_go_edit"):
+                go("Edit")
+
+        with st.container(border=True):
+            section_title("Renew proposal")
+            new_start = st.date_input("New start date", value=date.today(), key="renew_start")
+            new_days = st.selectbox("Duration (days)", DURATION_DAYS, key="renew_days")
+            if st.button("Create renewed proposal", key="renew_btn"):
+                new_id = renew_proposal(proposal_id, new_start, int(new_days))
+                st.success(f"Created {new_id} from {proposal_id}")
+                view_proposal(new_id)
+    else:
+        st.info("This proposal is closed. Use Renew to create a new open proposal with the same clients.")
+
+
+def page_client_ledger(is_mobile: bool) -> None:
+    page_header(
+        "Client ledger",
+        "Pick a client — see every proposal, amount, rate, end date, and profit.",
+    )
+    clients = active_clients_df()
+    if clients.empty:
+        st.info("No active clients")
+        return
+
+    df = enrich_proposals(st.session_state.proposals_df)
+    client = st.selectbox(
+        "Client",
+        unique_sorted(clients["Client_Name"]),
+        key="ledger_client",
+    )
+    client_id = clients[clients["Client_Name"] == client]["Client_ID"].iloc[0]
+    client_df = df[df["Client_ID"] == client_id].copy()
+    if client_df.empty:
+        st.info("No proposals for this client")
+        return
+
+    status = st.radio("Status", ["All", "Open", "Close"], horizontal=True, key="ledger_status")
+    if status != "All":
+        client_df = client_df[client_df["Status"] == status]
+    if client_df.empty:
+        st.info("No records for this filter")
+        return
+
+    open_rows = client_df[client_df["Status"] == "Open"]
+    metrics_row(
+        [
+            ("Open investment", fmt_money(open_rows["Proposal_Cost"].sum())),
+            ("Expected profit", fmt_money(open_rows["Profit"].sum())),
+            ("Open proposals", len(open_rows)),
+            ("Due in 7 days", int(open_rows["Days_Left"].between(0, 7).sum())),
+        ],
+        is_mobile,
+    )
+
+    display = proposal_display_table(client_df.sort_values(["End_Date", "Proposal_ID"]))
+    st.dataframe(
+        display[
+            [
+                "Proposal_ID",
+                "Start_Date",
+                "End_Date",
+                "Days_Left",
+                "Proposal_Cost",
+                "Rate",
+                "Profit",
+                "Final_Cost",
+                "Status",
+                "Maturity_Bucket",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            **money_cols("Proposal_Cost", "Final_Cost", "Profit"),
+            "Days_Left": st.column_config.NumberColumn("Days left", format="%d"),
+        },
+    )
+
+    pid = st.selectbox("Open proposal file", unique_sorted(client_df["Proposal_ID"]), key="ledger_open")
+    if st.button("View proposal", key="ledger_view"):
+        view_proposal(pid)
+
+
+def page_search(is_mobile: bool) -> None:
+    page_header("Search", "One search box — client name, proposal ID, or date (dd-mm-yyyy).")
+    df = enrich_proposals(st.session_state.proposals_df)
+    if df.empty:
+        st.warning("No data to search")
+        return
+
+    query = st.text_input("Search", placeholder="e.g. ABC, SIG-P-001, 18-09-2026", key="global_search")
+    status = st.selectbox("Status", ["All", "Open", "Close"], key="search_status")
+
+    result = df.copy()
+    if status != "All":
+        result = result[result["Status"] == status]
+
+    if query.strip():
+        q = query.strip().lower()
+        mask = (
+            result["Client_Name"].str.lower().str.contains(q, na=False)
+            | result["Proposal_ID"].str.lower().str.contains(q, na=False)
+            | result["End_Date"].map(fmt_date).str.contains(q, na=False)
+            | result["Start_Date"].map(fmt_date).str.contains(q, na=False)
+        )
+        result = result[mask]
+
+    if result.empty:
+        st.info("No matching records")
+        return
+
+    render_grand_total(
+        result["Proposal_Cost"].sum(),
+        result["Final_Cost"].sum(),
+        result["Profit"].sum(),
+        is_mobile,
+    )
+
+    display = proposal_display_table(result.sort_values(["End_Date", "Proposal_ID", "Client_Name"]))
+    st.dataframe(
+        display[
+            [
+                "Proposal_ID",
+                "Client_Name",
+                "Start_Date",
+                "End_Date",
+                "Days_Left",
+                "Proposal_Cost",
+                "Rate",
+                "Profit",
+                "Final_Cost",
+                "Status",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            **money_cols("Proposal_Cost", "Final_Cost", "Profit"),
+            "Days_Left": st.column_config.NumberColumn("Days left", format="%d"),
+        },
+    )
+
+    pid = st.selectbox("Open proposal", unique_sorted(result["Proposal_ID"]), key="search_open")
+    if st.button("View proposal file", key="search_view"):
+        view_proposal(pid)
+
 
 def page_welcome() -> None:
     _, center, _ = st.columns([1, 2, 1])
@@ -1284,7 +1757,7 @@ def page_add_proposal() -> None:
         save_proposals()
         st.session_state.proposal_clients = []
         st.success(f"Proposal {proposal_id} created")
-        go("Summary")
+        view_proposal(proposal_id)
 
 
 def page_edit() -> None:
@@ -1354,7 +1827,7 @@ def page_edit() -> None:
         st.session_state.proposals_df.at[row_index, "Closing_Date"] = closing
         save_proposals()
         st.success("Updated")
-        go("Summary")
+        view_proposal(proposal_id)
 
 
 def render_by_proposal(df_master: pd.DataFrame, is_mobile: bool) -> None:
@@ -1744,12 +2217,17 @@ def build_excel_bytes(clients: pd.DataFrame, proposals: pd.DataFrame) -> bytes:
 
 
 def page_export() -> None:
-    page_header("Export data", "Download the current clients and proposals workbook.")
+    page_header("Export & backup", "Download data or find auto-backups saved on every change.")
     proposals_df = st.session_state.proposals_df.copy()
     clients_df = st.session_state.clients_df.copy()
     if proposals_df.empty and clients_df.empty:
         st.warning("No data available to export.")
         return
+
+    if BACKUP_DIR.exists():
+        backups = sorted(BACKUP_DIR.glob("*.xlsx"), reverse=True)
+        if backups:
+            st.caption(f"Auto-backup folder: `{BACKUP_DIR}` — latest: **{backups[0].name}**")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     excel_bytes = build_excel_bytes(clients_df, proposals_df)
@@ -1799,7 +2277,15 @@ sidebar_nav()
 is_mobile = bool(st.session_state.is_mobile)
 
 page = st.session_state.page
-if page == "Welcome":
+if page == "Maturity":
+    page_maturity(is_mobile)
+elif page == "ProposalDetail":
+    page_proposal_detail(is_mobile)
+elif page == "ClientLedger":
+    page_client_ledger(is_mobile)
+elif page == "Search":
+    page_search(is_mobile)
+elif page == "Welcome":
     page_welcome()
 elif page == "Summary":
     page_summary(is_mobile)
@@ -1808,13 +2294,13 @@ elif page == "AddProposal":
 elif page == "Edit":
     page_edit()
 elif page == "Find":
-    page_find(is_mobile)
+    page_search(is_mobile)
 elif page == "Clients":
     page_clients()
 elif page == "ClientDashboard":
-    page_client_dashboard(is_mobile)
+    page_client_ledger(is_mobile)
 elif page == "Export":
     page_export()
 else:
-    st.session_state.page = "Welcome"
+    st.session_state.page = "Maturity"
     st.rerun()
