@@ -551,139 +551,169 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 .profit-pos {{ color: {ACCENT_COLOR}; font-weight: 700; font-size: 1rem; }}
 .profit-neg {{ color: #DC2626; font-weight: 700; font-size: 1rem; }}
 
-/* ── Sidebar ── */
+/* ── Sidebar (boxed menu) ── */
 section[data-testid="stSidebar"] {{
-    background: #1A2234;
+    background: #151C2B;
     border-right: 1px solid #2A3548;
 }}
 
 section[data-testid="stSidebar"] > div {{
-    padding: 1.5rem 1.1rem 1.75rem;
-    background: #1A2234;
+    padding: 1.35rem 1rem 1.75rem;
+    background: #151C2B;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand {{
-    padding: 0.25rem 0.5rem 1.25rem;
-    margin-bottom: 0.25rem;
-    border-bottom: 1px solid #2E3A50;
+    background: linear-gradient(145deg, #1E2A40 0%, #1A2234 100%);
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 1.1rem 1.15rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand h2 {{
     margin: 0;
     color: #FFFFFF !important;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.3;
 }}
 
 section[data-testid="stSidebar"] .sidebar-brand p {{
-    margin: 0.4rem 0 0;
-    color: #8B9BB4 !important;
-    font-size: 0.9375rem;
-    line-height: 1.45;
+    margin: 0.35rem 0 0;
+    color: #94A3B8 !important;
+    font-size: 0.9rem;
+    line-height: 1.4;
     font-weight: 500;
 }}
 
+section[data-testid="stSidebar"] .sidebar-toggle-box {{
+    background: #1E2A40;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 1rem;
+}}
+
 section[data-testid="stSidebar"] .sidebar-section {{
-    margin: 1.1rem 0 0.5rem;
-    padding: 0 0.5rem;
-    font-size: 0.75rem;
+    margin: 0.85rem 0 0.55rem;
+    padding: 0 0.15rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #6B7A94;
+    color: #64748B;
 }}
 
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {{
-    color: #C5D0E0 !important;
-    font-size: 0.9375rem !important;
+    color: #CBD5E1 !important;
+    font-size: 0.9rem !important;
     font-weight: 600 !important;
 }}
 
 section[data-testid="stSidebar"] [data-testid="stToggle"] label span {{
     color: #E2E8F0 !important;
-    font-size: 0.9375rem !important;
+    font-size: 0.9rem !important;
     font-weight: 600 !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-btn,
-section[data-testid="stSidebar"] .sidebar-active {{
-    margin-bottom: 0.3rem;
+section[data-testid="stSidebar"] .sidebar-active,
+section[data-testid="stSidebar"] .sidebar-util,
+section[data-testid="stSidebar"] .sidebar-logout {{
+    margin-bottom: 0.5rem;
 }}
 
 section[data-testid="stSidebar"] .stButton {{
     margin-bottom: 0;
 }}
 
-section[data-testid="stSidebar"] .stButton > button {{
-    background: transparent !important;
-    color: #DDE4EE !important;
-    border: none !important;
+section[data-testid="stSidebar"] .sidebar-btn .stButton > button {{
+    background: #1E2A40 !important;
+    color: #E2E8F0 !important;
+    border: 1px solid #3D4F68 !important;
     justify-content: flex-start;
     text-align: left;
     font-weight: 600 !important;
-    font-size: 1rem !important;
-    min-height: 48px;
-    padding: 0.65rem 1rem !important;
+    font-size: 0.95rem !important;
+    min-height: 50px;
+    padding: 0.7rem 1rem !important;
     width: 100%;
-    border-radius: 10px !important;
-    box-shadow: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
     letter-spacing: 0.01em;
+    transition: all 0.15s ease;
 }}
 
-section[data-testid="stSidebar"] .stButton > button p,
-section[data-testid="stSidebar"] .stButton > button div {{
-    font-size: 1rem !important;
+section[data-testid="stSidebar"] .sidebar-btn .stButton > button p,
+section[data-testid="stSidebar"] .sidebar-btn .stButton > button div {{
+    font-size: 0.95rem !important;
     font-weight: 600 !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-btn .stButton > button:hover {{
-    background: #243044 !important;
+    background: #253347 !important;
     color: #FFFFFF !important;
-    transform: none;
-    border: none !important;
+    border-color: #4B6A8F !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    transform: translateY(-1px);
 }}
 
 section[data-testid="stSidebar"] .sidebar-active .stButton > button {{
-    background: {SECONDARY_COLOR} !important;
+    background: linear-gradient(135deg, {SECONDARY_COLOR} 0%, {SECONDARY_DARK} 100%) !important;
     color: #FFFFFF !important;
-    border: none !important;
+    border: 1px solid #60A5FA !important;
     font-weight: 700 !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+    min-height: 50px;
+    border-radius: 12px !important;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4) !important;
+}}
+
+section[data-testid="stSidebar"] .sidebar-active .stButton > button p,
+section[data-testid="stSidebar"] .sidebar-active .stButton > button div {{
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-active .stButton > button:hover {{
-    background: {SECONDARY_DARK} !important;
+    background: linear-gradient(135deg, #3B82F6 0%, {SECONDARY_COLOR} 100%) !important;
     color: #FFFFFF !important;
+    transform: translateY(-1px);
 }}
 
 section[data-testid="stSidebar"] .sidebar-util .stButton > button {{
-    background: #243044 !important;
-    color: #B8C5D6 !important;
-    border: 1px solid #2E3A50 !important;
-    font-size: 0.9375rem !important;
-    min-height: 44px;
+    background: #1E2A40 !important;
+    color: #CBD5E1 !important;
+    border: 1px dashed #475569 !important;
+    font-size: 0.9rem !important;
+    min-height: 46px;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-util .stButton > button:hover {{
-    background: #2C3A52 !important;
+    background: #253347 !important;
     color: #FFFFFF !important;
-    border-color: #3D4F6A !important;
+    border-color: #64748B !important;
+    border-style: solid !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-logout .stButton > button {{
-    background: transparent !important;
-    color: #F87171 !important;
-    border: 1px solid #4A3040 !important;
-    font-size: 0.9375rem !important;
-    min-height: 44px;
+    background: #2A1F28 !important;
+    color: #FCA5A5 !important;
+    border: 1px solid #7F3D45 !important;
+    font-size: 0.9rem !important;
+    min-height: 46px;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
 }}
 
 section[data-testid="stSidebar"] .sidebar-logout .stButton > button:hover {{
-    background: rgba(248, 113, 113, 0.12) !important;
-    color: #FCA5A5 !important;
+    background: #3D2430 !important;
+    color: #FECACA !important;
     border-color: #F87171 !important;
 }}
 
@@ -695,6 +725,7 @@ section[data-testid="stSidebar"] hr {{
 
 section[data-testid="stSidebar"] [data-testid="stAlert"] {{
     font-size: 0.875rem;
+    border-radius: 10px;
 }}
 
 div[data-testid="stImage"] {{
@@ -876,36 +907,39 @@ def sidebar_nav() -> None:
 """,
             unsafe_allow_html=True,
         )
+
+        st.markdown('<div class="sidebar-toggle-box">', unsafe_allow_html=True)
         st.session_state.is_mobile = st.toggle(
             "Compact card view",
             value=st.session_state.is_mobile,
             help="Stack metric cards for smaller screens.",
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
         current = st.session_state.page
 
-        def nav(label: str, page_key: str) -> None:
+        def nav(icon: str, label: str, page_key: str) -> None:
             css = "sidebar-active" if current == page_key else "sidebar-btn"
             st.markdown(f'<div class="{css}">', unsafe_allow_html=True)
-            if st.button(label, use_container_width=True, key=f"nav_{page_key}"):
+            if st.button(f"{icon}  {label}", use_container_width=True, key=f"nav_{page_key}"):
                 go(page_key)
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown('<p class="sidebar-section">Main menu</p>', unsafe_allow_html=True)
-        nav("Welcome", "Welcome")
-        nav("Summary", "Summary")
-        nav("Add proposal", "AddProposal")
-        nav("Find details", "Find")
-        nav("Edit proposal", "Edit")
-        nav("Clients", "Clients")
-        nav("Client dashboard", "ClientDashboard")
+        nav("🏠", "Welcome", "Welcome")
+        nav("📊", "Summary", "Summary")
+        nav("➕", "Add proposal", "AddProposal")
+        nav("🔍", "Find details", "Find")
+        nav("✏️", "Edit proposal", "Edit")
+        nav("👤", "Clients", "Clients")
+        nav("📋", "Client dashboard", "ClientDashboard")
 
         st.markdown('<p class="sidebar-section">Data</p>', unsafe_allow_html=True)
-        nav("Export data", "Export")
+        nav("📥", "Export data", "Export")
 
         st.markdown('<p class="sidebar-section">System</p>', unsafe_allow_html=True)
         st.markdown('<div class="sidebar-util">', unsafe_allow_html=True)
-        if st.button("Reload Excel files", use_container_width=True, key="nav_reload"):
+        if st.button("🔄  Reload Excel files", use_container_width=True, key="nav_reload"):
             st.session_state.clients_df = load_clients()
             st.session_state.proposals_df = load_proposals()
             st.success("Reloaded from disk")
@@ -913,7 +947,7 @@ def sidebar_nav() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown('<div class="sidebar-logout">', unsafe_allow_html=True)
-        if st.button("Log out", use_container_width=True, key="nav_logout"):
+        if st.button("🚪  Log out", use_container_width=True, key="nav_logout"):
             st.session_state.auth = False
             st.session_state.page = "Welcome"
             st.rerun()
@@ -1679,4 +1713,3 @@ elif page == "Export":
 else:
     st.session_state.page = "Welcome"
     st.rerun()
-
