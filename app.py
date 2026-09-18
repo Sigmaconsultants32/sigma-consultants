@@ -3,6 +3,7 @@
 # =====================================================
 from __future__ import annotations
 
+import base64
 import io
 import os
 import re
@@ -20,6 +21,17 @@ BASE_DIR = Path(__file__).resolve().parent
 CLIENT_FILE = BASE_DIR / "clients.xlsx"
 PROPOSAL_FILE = BASE_DIR / "proposals.xlsx"
 LOGO_FILE = BASE_DIR / "sigma_logo.png"
+LOGO_FALLBACK = Path(
+    r"C:\Users\Smart\.cursor\projects\empty-window\assets"
+    r"\c__Users_Smart_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_"
+    r"sigma_logo-3dd5e447-d2ef-4e6f-9b30-f1137e57d048.png"
+)
+
+LOGO_WIDTH = {
+    "sidebar": 228,
+    "login": 340,
+    "welcome": 380,
+}
 
 CLIENT_ID_RE = re.compile(r"SIG-C-(\d+)", re.IGNORECASE)
 PROPOSAL_ID_RE = re.compile(r"SIG-P-(\d+)", re.IGNORECASE)
@@ -200,6 +212,59 @@ def active_clients_df() -> pd.DataFrame:
 
 def unique_sorted(series: pd.Series) -> list:
     return sorted(series.dropna().unique().tolist())
+
+
+def ensure_logo() -> None:
+    if LOGO_FILE.exists() or not LOGO_FALLBACK.exists():
+        return
+    try:
+        import shutil
+
+        shutil.copy2(LOGO_FALLBACK, LOGO_FILE)
+    except OSError:
+        pass
+
+
+def resolve_logo_path() -> Path | None:
+    ensure_logo()
+    if LOGO_FILE.exists():
+        return LOGO_FILE
+    if LOGO_FALLBACK.exists():
+        return LOGO_FALLBACK
+    return None
+
+
+def render_logo(context: str, tagline: str = "") -> None:
+    """Show Sigma logo sized for sidebar, login, or welcome."""
+    logo_path = resolve_logo_path()
+    if not logo_path:
+        return
+
+    width = LOGO_WIDTH.get(context, 300)
+    frame = "logo-frame-dark" if context in {"login", "welcome"} else "logo-frame-sidebar"
+    encoded = base64.b64encode(logo_path.read_bytes()).decode()
+    img_html = (
+        f'<img src="data:image/png;base64,{encoded}" '
+        f'alt="Sigma Consultants" class="sigma-logo-img" />'
+    )
+    tagline_html = f'<p class="sidebar-brand-tagline">{tagline}</p>' if tagline else ""
+
+    if context == "sidebar":
+        st.markdown(
+            f"""
+<div class="sidebar-brand">
+  <div class="logo-wrap logo-{context} {frame}">{img_html}</div>
+  {tagline_html}
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown(
+        f'<div class="logo-wrap logo-{context} {frame}">{img_html}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # =====================================================
@@ -566,26 +631,61 @@ section[data-testid="stSidebar"] .sidebar-brand {{
     background: linear-gradient(145deg, #1E2A40 0%, #1A2234 100%);
     border: 1px solid #334155;
     border-radius: 14px;
-    padding: 1.1rem 1.15rem;
+    padding: 0.85rem 0.75rem 0.95rem;
     margin-bottom: 1rem;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    text-align: center;
 }}
 
-section[data-testid="stSidebar"] .sidebar-brand h2 {{
-    margin: 0;
-    color: #FFFFFF !important;
-    font-size: 1.2rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.3;
-}}
-
-section[data-testid="stSidebar"] .sidebar-brand p {{
-    margin: 0.35rem 0 0;
+section[data-testid="stSidebar"] .sidebar-brand-tagline {{
+    margin: 0.55rem 0 0;
     color: #94A3B8 !important;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     line-height: 1.4;
     font-weight: 500;
+    text-align: center;
+}}
+
+.logo-wrap {{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}}
+
+.logo-frame-dark {{
+    background: #000000;
+    border-radius: 14px;
+    padding: 0.65rem 1rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    margin-bottom: 1rem;
+}}
+
+.logo-frame-sidebar {{
+    background: #000000;
+    border-radius: 10px;
+    padding: 0.45rem 0.55rem;
+    margin-bottom: 0.35rem;
+}}
+
+.sigma-logo-img {{
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+    object-fit: contain;
+}}
+
+.logo-sidebar .sigma-logo-img {{
+    max-width: 228px;
+}}
+
+.logo-login .sigma-logo-img {{
+    max-width: 340px;
+}}
+
+.logo-welcome .sigma-logo-img {{
+    max-width: 380px;
 }}
 
 section[data-testid="stSidebar"] .sidebar-toggle-box {{
@@ -731,12 +831,6 @@ section[data-testid="stSidebar"] [data-testid="stAlert"] {{
 div[data-testid="stImage"] {{
     display: flex;
     justify-content: center;
-    margin-bottom: 1rem;
-}}
-
-div[data-testid="stImage"] img {{
-    max-width: 180px;
-    margin: 0 auto;
 }}
 
 [data-testid="stHorizontalBlock"] {{
@@ -770,6 +864,9 @@ hr, [data-testid="stDivider"] {{
         text-align: left;
         white-space: normal;
     }}
+    .logo-login .sigma-logo-img {{ max-width: 280px; }}
+    .logo-welcome .sigma-logo-img {{ max-width: 300px; }}
+    .logo-sidebar .sigma-logo-img {{ max-width: 200px; }}
 }}
 </style>
 """,
@@ -865,10 +962,10 @@ def expected_password() -> str:
 def render_login() -> None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        render_logo("login")
         st.markdown(
             """
 <div class="login-heading">
-  <div class="hero-kicker">Sigma Consultants</div>
   <h1>Welcome back</h1>
   <p>Enter your password to access the CRM dashboard.</p>
 </div>
@@ -898,15 +995,7 @@ def go(page: str) -> None:
 
 def sidebar_nav() -> None:
     with st.sidebar:
-        st.markdown(
-            """
-<div class="sidebar-brand">
-  <h2>Sigma Consultants</h2>
-  <p>Client &amp; proposal management</p>
-</div>
-""",
-            unsafe_allow_html=True,
-        )
+        render_logo("sidebar", tagline="Client &amp; proposal management")
 
         st.markdown('<div class="sidebar-toggle-box">', unsafe_allow_html=True)
         st.session_state.is_mobile = st.toggle(
@@ -961,12 +1050,10 @@ def sidebar_nav() -> None:
 def page_welcome() -> None:
     _, center, _ = st.columns([1, 2, 1])
     with center:
-        if LOGO_FILE.exists():
-            st.image(str(LOGO_FILE), width=200)
+        render_logo("welcome")
         st.markdown(
             """
 <div class="hero-card">
-  <div class="hero-kicker">Sigma Consultants</div>
   <h1>Welcome to your CRM</h1>
   <p>Manage clients, proposals, investments, profits, and maturity dates — all in one place.</p>
 </div>
