@@ -333,6 +333,218 @@ def proposal_display_table(df: pd.DataFrame) -> pd.DataFrame:
     return show
 
 
+RAW_IMPORT_ALIASES = {
+    "start date": "Start_Date",
+    "start_date": "Start_Date",
+    "client name": "Client_Name",
+    "client_name": "Client_Name",
+    "initial amount": "Proposal_Cost",
+    "proposal amount": "Proposal_Cost",
+    "amount": "Proposal_Cost",
+    "principal": "Proposal_Cost",
+    "duration": "Duration",
+    "end date": "End_Date",
+    "end_date": "End_Date",
+    "profit rate": "Rate",
+    "rate": "Rate",
+    "rate %": "Rate",
+    "final amount": "Final_Cost",
+    "final_amount": "Final_Cost",
+    "profit": "Profit",
+    "status": "Status",
+}
+
+DEFAULT_RAW_IMPORT_PATH = Path(r"c:\Users\Smart\Desktop\dATa.xlsx")
+
+
+def normalize_raw_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Map common spreadsheet headers to internal column names."""
+    out = df.copy()
+    rename = {}
+    for col in out.columns:
+        key = str(col).strip().lower()
+        if key in RAW_IMPORT_ALIASES:
+            rename[col] = RAW_IMPORT_ALIASES[key]
+    return out.rename(columns=rename)
+
+
+def prepare_raw_import_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Clean and validate a raw import sheet."""
+    raw = normalize_raw_columns(df)
+    required = ["Client_Name", "Start_Date", "End_Date", "Proposal_Cost", "Rate"]
+    missing = [c for c in required if c not in raw.columns]
+    if missing:
+        raise ValueError(f"Missing columns: {', '.join(missing)}")
+
+    raw = raw.copy()
+    raw["Client_Name"] = raw["Client_Name"].fillna("").astype(str).str.strip()
+    raw = raw[raw["Client_Name"] != ""]
+    raw["Start_Date"] = pd.to_datetime(raw["Start_Date"], errors="coerce")
+    raw["End_Date"] = pd.to_datetime(raw["End_Date"], errors="coerce")
+    raw["Proposal_Cost"] = pd.to_numeric(raw["Proposal_Cost"], errors="coerce")
+    raw["Rate"] = pd.to_numeric(raw["Rate"], errors="coerce")
+    if "Final_Cost" not in raw.columns:
+        raw["Final_Cost"] = pd.NA
+    if "Profit" not in raw.columns:
+        raw["Profit"] = pd.NA
+    raw["Final_Cost"] = pd.to_numeric(raw["Final_Cost"], errors="coerce")
+    raw["Profit"] = pd.to_numeric(raw["Profit"], errors="coerce")
+
+    raw = raw.dropna(subset=["Client_Name", "Start_Date", "End_Date", "Proposal_Cost", "Rate"])
+    if raw.empty:
+        raise ValueError("No valid rows found after cleaning.")
+
+    duration = (raw["End_Date"] - raw["Start_Date"]).dt.days
+    recalc_final, recalc_profit = zip(
+        *[
+            calc(float(p), float(r), max(int(d), 0))
+            for p, r, d in zip(raw["Proposal_Cost"], raw["Rate"], duration)
+        ]
+    )
+    raw["Final_Cost"] = raw["Final_Cost"].fillna(pd.Series(recalc_final, index=raw.index))
+    raw["Profit"] = raw["Profit"].fillna(pd.Series(recalc_profit, index=raw.index))
+
+    if "Status" in raw.columns:
+        raw["Status"] = raw["Status"].apply(normalize_status)
+    else:
+        today = pd.Timestamp(date.today())
+        raw["Status"] = raw["End_Date"].apply(
+            lambda end: "Close" if pd.notna(end) and end < today else "Open"
+        )
+    raw["Closing_Date"] = raw.apply(
+        lambda row: row["End_Date"] if row["Status"] == "Close" else pd.NaT,
+        axis=1,
+    )
+    return raw.reset_index(drop=True)
+
+
+def upsert_clients_from_raw(raw: pd.DataFrame, clients_df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, str]]:
+    """Create Client_ID for each unique client name."""
+    clients = clients_df.copy()
+    name_to_id: dict[str, str] = {}
+    for name, cid in zip(clients["Client_Name"], clients["Client_ID"]):
+        key = str(name).strip()
+        if key:
+            name_to_id[key.lower()] = str(cid)
+
+    new_rows = []
+    for name in sorted(raw["Client_Name"].unique()):
+        clean = str(name).strip()
+        if not clean:
+            continue
+        if clean.lower() in name_to_id:
+            continue
+        cid = next_id(
+            clients["Client_ID"] if not clients.empty else pd.Series([], dtype=str),
+            "SIG-C-",
+            CLIENT_ID_RE,
+        )
+        name_to_id[clean.lower()] = cid
+        new_rows.append(
+            {
+                "Client_ID": cid,
+                "Client_Name": clean,
+                "Created_Date": pd.Timestamp.now(),
+                "Is_Archived": False,
+                "Notes": "Imported from Excel",
+            }
+        )
+        clients = pd.concat([clients, pd.DataFrame([new_rows[-1]])], ignore_index=True)
+
+    for name, cid in zip(clients["Client_Name"], clients["Client_ID"]):
+        key = str(name).strip()
+        if key:
+            name_to_id[key.lower()] = str(cid)
+    return clients, name_to_id
+
+
+def build_proposals_from_raw(
+    raw: pd.DataFrame,
+    name_to_id: dict[str, str],
+    proposals_df: pd.DataFrame,
+    group_by_terms: bool = True,
+) -> pd.DataFrame:
+    """
+    Build proposal rows with auto Proposal_ID.
+    Rows with same start date, end date, and rate become one proposal (multi-client).
+    """
+    work = raw.copy()
+    if group_by_terms:
+        work["_Group_Key"] = work.apply(
+            lambda row: (
+                pd.Timestamp(row["Start_Date"]).normalize(),
+                pd.Timestamp(row["End_Date"]).normalize(),
+                round(float(row["Rate"]), 4),
+            ),
+            axis=1,
+        )
+    else:
+        work["_Group_Key"] = work.index
+
+    base = proposals_df["Proposal_ID"] if not proposals_df.empty else pd.Series([], dtype=str)
+    group_to_pid: dict = {}
+    rows = []
+    for _, row in work.iterrows():
+        gkey = row["_Group_Key"]
+        if gkey not in group_to_pid:
+            group_to_pid[gkey] = next_id(
+                pd.concat([base, pd.Series(list(group_to_pid.values()))], ignore_index=True),
+                "SIG-P-",
+                PROPOSAL_ID_RE,
+            )
+            base = pd.concat([base, pd.Series([group_to_pid[gkey]])], ignore_index=True)
+
+        cname = str(row["Client_Name"]).strip()
+        cid = name_to_id.get(cname.lower())
+        if not cid:
+            raise ValueError(f"Client ID not found for: {cname}")
+
+        rows.append(
+            {
+                "Proposal_ID": group_to_pid[gkey],
+                "Client_ID": cid,
+                "Client_Name": cname,
+                "Proposal_Cost": float(row["Proposal_Cost"]),
+                "Rate": float(row["Rate"]),
+                "Final_Cost": float(row["Final_Cost"]),
+                "Profit": float(row["Profit"]),
+                "Start_Date": pd.Timestamp(row["Start_Date"]),
+                "End_Date": pd.Timestamp(row["End_Date"]),
+                "Status": row["Status"],
+                "Closing_Date": row["Closing_Date"],
+            }
+        )
+    return pd.DataFrame(rows, columns=PROPOSAL_COLS)
+
+
+def import_raw_excel(
+    raw_df: pd.DataFrame,
+    clients_df: pd.DataFrame,
+    proposals_df: pd.DataFrame,
+    append: bool = True,
+    group_by_terms: bool = True,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """Import raw spreadsheet; auto-create Client_ID and Proposal_ID."""
+    prepared = prepare_raw_import_df(raw_df)
+    clients, name_to_id = upsert_clients_from_raw(prepared, clients_df)
+    imported = build_proposals_from_raw(prepared, name_to_id, proposals_df, group_by_terms)
+
+    if append:
+        final_clients = clients
+        final_proposals = pd.concat([proposals_df, imported], ignore_index=True)
+    else:
+        final_clients = clients
+        final_proposals = imported
+
+    stats = {
+        "rows": len(prepared),
+        "clients_new": len(clients) - len(clients_df),
+        "proposals": imported["Proposal_ID"].nunique(),
+        "lines": len(imported),
+    }
+    return final_clients, final_proposals, stats
+
+
 def active_clients_df() -> pd.DataFrame:
     clients = st.session_state.clients_df
     return clients.loc[~clients["Is_Archived"]].copy()
@@ -1190,6 +1402,7 @@ def sidebar_nav() -> None:
         st.markdown('<p class="sidebar-section">Reports</p>', unsafe_allow_html=True)
         nav("📊", "Summary", "Summary")
         nav("📥", "Export / backup", "Export")
+        nav("📤", "Import Excel", "Import")
 
         st.markdown('<p class="sidebar-section">System</p>', unsafe_allow_html=True)
         st.markdown('<div class="sidebar-util">', unsafe_allow_html=True)
@@ -2216,6 +2429,100 @@ def build_excel_bytes(clients: pd.DataFrame, proposals: pd.DataFrame) -> bytes:
     return output.getvalue()
 
 
+def page_import() -> None:
+    page_header(
+        "Import Excel",
+        "Upload raw proposal data — Client ID and Proposal ID are created automatically.",
+    )
+
+    st.markdown(
+        """
+Your file can use columns like **Start Date**, **Client Name**, **Initial Amount**,
+**Duration**, **End Date**, **Profit Rate**, **Final Amount**, **Profit** (as in `dATa.xlsx`).
+
+**Proposal ID rule:** rows with the same **start date + end date + rate** become **one proposal**
+with multiple clients. Everything else is filled in automatically.
+"""
+    )
+
+    with st.container(border=True):
+        section_title("Choose file")
+        uploaded = st.file_uploader(
+            "Upload Excel (.xlsx)",
+            type=["xlsx", "xls"],
+            key="import_upload",
+        )
+        if DEFAULT_RAW_IMPORT_PATH.exists():
+            if st.button(f"Load desktop file: {DEFAULT_RAW_IMPORT_PATH.name}", key="load_desktop"):
+                st.session_state.import_preview_df = pd.read_excel(DEFAULT_RAW_IMPORT_PATH)
+                st.rerun()
+
+    preview_source = None
+    if uploaded is not None:
+        preview_source = pd.read_excel(uploaded)
+    elif "import_preview_df" in st.session_state:
+        preview_source = st.session_state.import_preview_df
+
+    if preview_source is None:
+        st.info("Upload your Excel file or load the desktop `dATa.xlsx` file.")
+        return
+
+    st.caption(f"**{len(preview_source)}** rows · columns: {', '.join(map(str, preview_source.columns))}")
+    st.dataframe(preview_source.head(20), use_container_width=True, hide_index=True)
+
+    with st.container(border=True):
+        section_title("Import options")
+        append_mode = st.radio(
+            "How to import",
+            ["Add to existing data (recommended)", "Replace all existing data"],
+            key="import_mode",
+        )
+        group_terms = st.checkbox(
+            "Group rows into one proposal when start date, end date, and rate match",
+            value=True,
+            key="import_group",
+        )
+        if append_mode.startswith("Replace"):
+            st.warning("Replace will remove current clients and proposals after you confirm.")
+
+    try:
+        prepared = prepare_raw_import_df(preview_source)
+        st.success(
+            f"Ready: **{len(prepared)}** valid rows · "
+            f"**{prepared['Client_Name'].nunique()}** clients · "
+            f"preview proposals: **{prepared.groupby(['Start_Date', 'End_Date', 'Rate']).ngroups if group_terms else len(prepared)}**"
+        )
+    except ValueError as exc:
+        st.error(str(exc))
+        st.caption("Rename your columns to match: Start Date, Client Name, Initial Amount, End Date, Profit Rate, etc.")
+        return
+
+    if st.button("Import into CRM", type="primary", key="run_import"):
+        append = append_mode.startswith("Add")
+        if not append:
+            st.session_state.clients_df = pd.DataFrame(columns=CLIENT_COLS)
+            st.session_state.proposals_df = pd.DataFrame(columns=PROPOSAL_COLS)
+
+        clients_df, proposals_df, stats = import_raw_excel(
+            preview_source,
+            st.session_state.clients_df,
+            st.session_state.proposals_df,
+            append=append,
+            group_by_terms=group_terms,
+        )
+        st.session_state.clients_df = clients_df
+        st.session_state.proposals_df = proposals_df
+        save_clients()
+        save_proposals()
+        if "import_preview_df" in st.session_state:
+            del st.session_state.import_preview_df
+        st.success(
+            f"Imported **{stats['lines']}** lines · **{stats['proposals']}** proposals · "
+            f"**{stats['clients_new']}** new clients"
+        )
+        go("Maturity")
+
+
 def page_export() -> None:
     page_header("Export & backup", "Download data or find auto-backups saved on every change.")
     proposals_df = st.session_state.proposals_df.copy()
@@ -2301,6 +2608,8 @@ elif page == "ClientDashboard":
     page_client_ledger(is_mobile)
 elif page == "Export":
     page_export()
+elif page == "Import":
+    page_import()
 else:
     st.session_state.page = "Maturity"
     st.rerun()
