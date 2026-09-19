@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 # =====================================================
 # PATHS & CONSTANTS
@@ -1501,18 +1502,37 @@ hr, [data-testid="stDivider"] {{
     }}
 }}
 
-@media (min-width: 769px) {{
-    #sigma-mobile-topbar,
-    #sigma-mobile-topbar + div[data-testid="stHorizontalBlock"],
-    #sigma-mobile-drawer,
-    #sigma-mobile-drawer + div[data-testid="stVerticalBlockBorderWrapper"] {{
-        display: none !important;
-    }}
-}}
 </style>
 """,
         unsafe_allow_html=True,
     )
+
+
+def sync_viewport_mode() -> None:
+    """Set ?vp=mobile|desktop in the URL so we render only one navigation UI."""
+    components.html(
+        """
+        <script>
+        (function () {
+            const w = window.parent.document.documentElement.clientWidth
+                || window.parent.innerWidth
+                || 1024;
+            const mode = w < 769 ? "mobile" : "desktop";
+            const url = new URL(window.parent.location.href);
+            if (url.searchParams.get("vp") !== mode) {
+                url.searchParams.set("vp", mode);
+                window.parent.location.replace(url.toString());
+            }
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
+
+def is_phone_viewport() -> bool:
+    return st.query_params.get("vp") == "mobile"
 
 
 def page_header(title: str, subtitle: str = "") -> None:
@@ -1590,7 +1610,7 @@ def init_session() -> None:
     if "selected_proposal_id" not in st.session_state:
         st.session_state.selected_proposal_id = None
     if "is_mobile" not in st.session_state:
-        st.session_state.is_mobile = True
+        st.session_state.is_mobile = False
     if "mobile_menu_open" not in st.session_state:
         st.session_state.mobile_menu_open = False
     if "proposal_clients" not in st.session_state:
@@ -1868,12 +1888,21 @@ def page_maturity(is_mobile: bool) -> None:
         is_mobile,
     )
 
-    bucket = st.selectbox(
-        "Show proposals",
-        MATURITY_FILTERS,
-        index=len(MATURITY_FILTERS) - 1,
-        key="maturity_filter",
-    )
+    if is_mobile:
+        bucket = st.selectbox(
+            "Show proposals",
+            MATURITY_FILTERS,
+            index=len(MATURITY_FILTERS) - 1,
+            key="maturity_filter",
+        )
+    else:
+        bucket = st.radio(
+            "Show proposals",
+            MATURITY_FILTERS,
+            index=len(MATURITY_FILTERS) - 1,
+            horizontal=True,
+            key="maturity_filter",
+        )
     filtered = filter_by_maturity_bucket(df, bucket)
     if filtered.empty:
         st.success(f"No proposals in “{bucket}”.")
@@ -2989,16 +3018,21 @@ def page_export() -> None:
 
 inject_css()
 init_session()
+sync_viewport_mode()
 
 if not st.session_state.auth:
     render_login()
     st.stop()
 
-sidebar_nav()
-is_mobile = bool(st.session_state.is_mobile)
+phone_ui = is_phone_viewport()
+if phone_ui:
+    render_mobile_shell(st.session_state.page)
+else:
+    sidebar_nav()
+
+is_mobile = phone_ui or bool(st.session_state.is_mobile)
 
 page = st.session_state.page
-render_mobile_shell(page)
 if page == "Maturity":
     page_maturity(is_mobile)
 elif page == "ProposalDetail":
