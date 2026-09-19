@@ -44,6 +44,15 @@ DATE_COLS = ["Start_Date", "End_Date", "Closing_Date"]
 MONEY_COLS = ["Proposal_Cost", "Rate", "Final_Cost", "Profit"]
 DURATION_DAYS = [15, 20, 30, 45, 60, 90]
 
+C_PRIMARY = "#0F172A"
+C_ACCENT = "#2563EB"
+C_ACCENT_DARK = "#1D4ED8"
+C_SUCCESS = "#059669"
+C_BG = "#EEF2F7"
+C_CARD = "#FFFFFF"
+C_MUTED = "#64748B"
+C_BORDER = "#E2E8F0"
+
 PAGES = {
     "Maturity": "📅  Maturity board",
     "ProposalDetail": "📁  Proposal file",
@@ -56,6 +65,12 @@ PAGES = {
     "Import": "📤  Import Excel",
     "Export": "📥  Export / backup",
 }
+
+NAV_GROUPS = [
+    ("Daily use", ["Maturity", "ProposalDetail", "ClientLedger", "Search"]),
+    ("Operations", ["AddProposal", "Edit", "Clients"]),
+    ("Reports", ["Summary", "Import", "Export"]),
+]
 
 MATURITY_FILTERS = [
     "Due today", "Next 7 days", "Next 15 days", "Next 30 days",
@@ -433,53 +448,348 @@ def _logo_bytes() -> tuple[bytes, str] | None:
     return path.read_bytes(), mime
 
 
-def logo_html(width: int = 200) -> str:
+def logo_html(width: int = 200, css_class: str = "sigma-logo") -> str:
     data = _logo_bytes()
     if not data:
         return ""
     b64 = base64.b64encode(data[0]).decode()
-    return f'<img src="data:{data[1]};base64,{b64}" style="width:{width}px;max-width:100%;display:block;margin:0 auto;border-radius:8px;" alt="Sigma" />'
+    return (
+        f'<img src="data:{data[1]};base64,{b64}" class="{css_class}" '
+        f'style="width:{width}px;max-width:100%;" alt="Sigma Consultants" />'
+    )
 
 
 def css() -> None:
-    st.markdown("""
+    st.markdown(
+        f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
-html, body, [class*="css"], .stApp { font-family: "Plus Jakarta Sans", system-ui, sans-serif !important; }
-.stApp { background: #f1f5f9; }
-div.block-container { padding: 1.25rem 1.5rem 2rem; max-width: 1200px; }
-.page-title { font-size: 1.65rem; font-weight: 700; color: #0f172a; margin: 0 0 0.25rem; }
-.page-sub { color: #64748b; font-size: 0.92rem; margin: 0 0 1rem; }
-section[data-testid="stSidebar"] { background: #151c2b; }
-section[data-testid="stSidebar"] .stButton > button {
-    width: 100%; text-align: left; border-radius: 10px; min-height: 44px;
-    background: #1e2a40; color: #e2e8f0; border: 1px solid #334155; font-weight: 600;
-}
-section[data-testid="stSidebar"] .nav-active .stButton > button {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border-color: #60a5fa;
-}
-.sidebar-meta { font-size: 0.75rem; color: #94a3b8; line-height: 1.4; padding: 0.5rem 0; }
-.sidebar-meta strong { color: #e2e8f0; }
-@media (max-width: 768px) {
-    div.block-container { padding: 0.85rem 0.85rem 1.25rem; }
-    .page-title { font-size: 1.35rem; }
-    [data-testid="stSidebarCollapsedControl"] {
-        display: flex !important; color: #fff !important;
-        background: #2563eb !important; border-radius: 8px !important;
-        width: 2.5rem !important; height: 2.5rem !important;
-    }
-    .mobile-tip { display: block !important; }
-}
-.mobile-tip { display: none; margin-bottom: 0.75rem; background: #eff6ff; border: 1px solid #bfdbfe;
-    color: #1e40af; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8rem; }
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {{
+    --c-primary: {C_PRIMARY};
+    --c-accent: {C_ACCENT};
+    --c-accent-dark: {C_ACCENT_DARK};
+    --c-success: {C_SUCCESS};
+    --c-bg: {C_BG};
+    --c-card: {C_CARD};
+    --c-muted: {C_MUTED};
+    --c-border: {C_BORDER};
+    --radius: 14px;
+    --shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 10px 28px rgba(15, 23, 42, 0.09);
+}}
+
+html, body, [class*="css"], .stApp, button, input, textarea, select {{
+    font-family: "Plus Jakarta Sans", Inter, system-ui, sans-serif !important;
+}}
+
+.stApp {{
+    background: linear-gradient(165deg, #F8FAFC 0%, {C_BG} 50%, #E8EDF5 100%);
+    color: var(--c-primary);
+}}
+
+[data-testid="stHeader"] {{ background: transparent; }}
+
+div.block-container {{
+    padding: 1.5rem 2rem 2.5rem;
+    max-width: 1180px;
+}}
+
+/* ── Page header card ── */
+.page-header {{
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.35rem;
+    margin-bottom: 1.15rem;
+    box-shadow: var(--shadow);
+}}
+.page-header h1 {{
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--c-primary);
+    letter-spacing: -0.02em;
+}}
+.page-header p {{
+    margin: 0.35rem 0 0;
+    color: var(--c-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}}
+
+/* ── KPI cards ── */
+.kpi-card {{
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    box-shadow: var(--shadow);
+    min-height: 88px;
+}}
+.kpi-label {{
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--c-muted);
+    margin-bottom: 0.35rem;
+}}
+.kpi-value {{
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--c-primary);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}}
+.kpi-value.accent {{ color: var(--c-accent); }}
+.kpi-value.success {{ color: var(--c-success); }}
+.kpi-value.warn {{ color: #D97706; }}
+.kpi-value.danger {{ color: #DC2626; }}
+
+.section-label {{
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c-muted);
+    margin: 0.25rem 0 0.65rem;
+}}
+
+/* ── Login ── */
+.login-wrap {{
+    max-width: 420px;
+    margin: 2rem auto 0;
+}}
+.login-card {{
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 18px;
+    padding: 2rem 1.75rem 1.75rem;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+}}
+.login-card .logo-box {{
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+}}
+.login-card h2 {{
+    margin: 0 0 0.35rem;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--c-primary);
+}}
+.login-card .login-sub {{
+    color: var(--c-muted);
+    font-size: 0.92rem;
+    margin-bottom: 1.25rem;
+}}
+
+/* ── Sidebar ── */
+section[data-testid="stSidebar"] {{
+    background: #151C2B !important;
+    border-right: 1px solid #2A3548;
+}}
+section[data-testid="stSidebar"] > div {{
+    padding: 1.25rem 0.9rem 1.5rem;
+    background: #151C2B;
+}}
+.sidebar-brand {{
+    background: linear-gradient(145deg, #1E2A40, #1A2234);
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 0.85rem 0.65rem;
+    margin-bottom: 0.85rem;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}}
+.sidebar-brand .logo-box {{
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.45rem 0.55rem;
+    margin-bottom: 0.45rem;
+}}
+.sidebar-brand .tagline {{
+    margin: 0;
+    font-size: 0.78rem;
+    color: #94A3B8;
+    font-weight: 500;
+}}
+.sidebar-stats {{
+    background: #1E2A40;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    margin-bottom: 0.85rem;
+    font-size: 0.78rem;
+    color: #94A3B8;
+    line-height: 1.5;
+}}
+.sidebar-stats strong {{ color: #F1F5F9; font-size: 0.95rem; }}
+.sidebar-stats .path {{ font-size: 0.65rem; color: #64748B; word-break: break-all; }}
+
+section[data-testid="stSidebar"] .nav-section {{
+    margin: 0.75rem 0 0.35rem;
+    padding: 0 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748B;
+}}
+section[data-testid="stSidebar"] .nav-btn .stButton > button {{
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    min-height: 46px;
+    padding: 0.55rem 0.85rem !important;
+    border-radius: 11px !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    background: #1E2A40 !important;
+    color: #E2E8F0 !important;
+    border: 1px solid #3D4F68 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+    margin-bottom: 0.35rem;
+}}
+section[data-testid="stSidebar"] .nav-btn .stButton > button:hover {{
+    background: #253347 !important;
+    border-color: #4B6A8F !important;
+    color: #fff !important;
+}}
+section[data-testid="stSidebar"] .nav-active .stButton > button {{
+    background: linear-gradient(135deg, {C_ACCENT}, {C_ACCENT_DARK}) !important;
+    color: #fff !important;
+    border-color: #60A5FA !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}}
+section[data-testid="stSidebar"] .nav-util .stButton > button {{
+    background: #1E2A40 !important;
+    color: #CBD5E1 !important;
+    border: 1px dashed #475569 !important;
+    border-radius: 11px !important;
+    min-height: 42px;
+    font-size: 0.85rem !important;
+}}
+section[data-testid="stSidebar"] .nav-logout .stButton > button {{
+    background: #2A1F28 !important;
+    color: #FCA5A5 !important;
+    border: 1px solid #7F3D45 !important;
+    border-radius: 11px !important;
+    min-height: 42px;
+    font-size: 0.85rem !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
+    color: #CBD5E1 !important;
+    font-weight: 600 !important;
+}}
+
+.mobile-tip {{
+    display: none;
+    background: #1E3A5F;
+    border: 1px solid #2563EB;
+    color: #BFDBFE;
+    padding: 0.5rem 0.65rem;
+    border-radius: 9px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}}
+
+/* ── Main content polish ── */
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+    border-color: var(--c-border) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--shadow);
+    background: var(--c-card);
+}}
+.stButton > button[kind="primary"] {{
+    background: linear-gradient(135deg, {C_ACCENT}, {C_ACCENT_DARK}) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28) !important;
+}}
+.stButton > button[kind="secondary"] {{
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    border-color: var(--c-border) !important;
+}}
+[data-testid="stMetric"] {{
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    box-shadow: var(--shadow);
+}}
+[data-testid="stMetricLabel"] {{
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--c-muted) !important;
+}}
+[data-testid="stMetricValue"] {{
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    color: var(--c-primary) !important;
+}}
+hr, [data-testid="stDivider"] {{
+    margin: 1.1rem 0 !important;
+    border-color: var(--c-border) !important;
+}}
+[data-testid="stDataFrame"] {{
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    overflow: hidden;
+}}
+
+@media (max-width: 768px) {{
+    div.block-container {{ padding: 0.9rem 0.9rem 1.5rem; }}
+    .page-header h1 {{ font-size: 1.3rem; }}
+    .kpi-value {{ font-size: 1.2rem; }}
+    .mobile-tip {{ display: block; }}
+    [data-testid="stSidebarCollapsedControl"] {{
+        display: flex !important;
+        color: #fff !important;
+        background: {C_ACCENT} !important;
+        border-radius: 9px !important;
+    }}
+}}
 </style>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def header(title: str, sub: str = "") -> None:
-    st.markdown(f'<p class="page-title">{title}</p>', unsafe_allow_html=True)
-    if sub:
-        st.markdown(f'<p class="page-sub">{sub}</p>', unsafe_allow_html=True)
+    sub_html = f"<p>{sub}</p>" if sub else ""
+    st.markdown(
+        f'<div class="page-header"><h1>{title}</h1>{sub_html}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def kpi_row(items: list) -> None:
+    """Render a row of KPI cards. Optional 3rd element: accent|success|warn|danger."""
+    cols = st.columns(len(items))
+    for col, item in zip(cols, items):
+        label, value = item[0], item[1]
+        tone = item[2] if len(item) > 2 else ""
+        cls = f"kpi-value {tone}" if tone else "kpi-value"
+        with col:
+            st.markdown(
+                f'<div class="kpi-card"><div class="kpi-label">{label}</div>'
+                f'<div class="{cls.strip()}">{value}</div></div>',
+                unsafe_allow_html=True,
+            )
+
+
+def section_label(text: str) -> None:
+    st.markdown(f'<p class="section-label">{text}</p>', unsafe_allow_html=True)
 
 
 # ── Auth & session ──────────────────────────────────────────────────────────
@@ -508,16 +818,25 @@ def init_session() -> None:
 
 
 def login_page() -> None:
-    _, col, _ = st.columns([1, 1.2, 1])
+    img = logo_html(300)
+    logo_block = f'<div class="logo-box">{img}</div>' if img else ""
+    st.markdown(
+        f"""
+<div class="login-wrap">
+  <div class="login-card">
+    {logo_block}
+    <h2>Welcome back</h2>
+    <p class="login-sub">Sign in to manage clients, proposals, and maturities.</p>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    _, col, _ = st.columns([1, 1.1, 1])
     with col:
-        img = logo_html(280)
-        if img:
-            st.markdown(img, unsafe_allow_html=True)
-        st.markdown("### Welcome back")
-        st.caption("Enter your password to open the CRM.")
         with st.form("login"):
-            pwd = st.text_input("Password", type="password")
-            if st.form_submit_button("Continue", use_container_width=True, type="primary"):
+            pwd = st.text_input("Password", type="password", placeholder="Enter your password")
+            if st.form_submit_button("Continue to dashboard", use_container_width=True, type="primary"):
                 if pwd == password():
                     st.session_state.auth = True
                     st.session_state._data_ready = False
@@ -528,37 +847,55 @@ def login_page() -> None:
 
 def sidebar() -> None:
     with st.sidebar:
-        if logo_html(190):
-            st.markdown(f'<div style="background:#fff;border-radius:10px;padding:8px;margin-bottom:12px;">{logo_html(190)}</div>', unsafe_allow_html=True)
-        st.caption("Client & proposal management")
+        img = logo_html(200)
+        logo_block = f'<div class="logo-box">{img}</div>' if img else ""
+        st.markdown(
+            f"""
+<div class="sidebar-brand">
+  {logo_block}
+  <p class="tagline">Client &amp; proposal management</p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
         n_c = len(st.session_state.clients_df)
         n_p = len(st.session_state.proposals_df)
         st.markdown(
-            f'<div class="sidebar-meta"><strong>{n_c}</strong> clients · <strong>{n_p}</strong> proposals<br>'
-            f'Files: <code style="font-size:0.68rem;">{BASE_DIR.name}/</code></div>',
+            f"""
+<div class="sidebar-stats">
+  <strong>{n_c}</strong> clients &nbsp;·&nbsp; <strong>{n_p}</strong> proposals<br>
+  <span class="path">Data: {BASE_DIR}</span>
+</div>
+""",
             unsafe_allow_html=True,
         )
         st.markdown(
-            '<p class="mobile-tip">📱 On phone: tap <strong>☰</strong> (top-left) to open or close this menu.</p>',
+            '<p class="mobile-tip">📱 Tap <strong>☰</strong> (top-left) to open or close this menu.</p>',
             unsafe_allow_html=True,
         )
         cur = st.session_state.page
-        for key, label in PAGES.items():
-            wrap = "nav-active" if cur == key else ""
-            st.markdown(f'<div class="{wrap}">', unsafe_allow_html=True)
-            if st.button(label, key=f"nav_{key}", use_container_width=True):
-                go(key)
-            st.markdown("</div>", unsafe_allow_html=True)
-        st.divider()
-        if st.button("🔄  Reload from Excel", use_container_width=True):
+        for section_name, keys in NAV_GROUPS:
+            st.markdown(f'<p class="nav-section">{section_name}</p>', unsafe_allow_html=True)
+            for key in keys:
+                wrap = "nav-active" if cur == key else "nav-btn"
+                st.markdown(f'<div class="{wrap}">', unsafe_allow_html=True)
+                if st.button(PAGES[key], key=f"nav_{key}", use_container_width=True):
+                    go(key)
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<p class="nav-section">System</p>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-util">', unsafe_allow_html=True)
+        if st.button("🔄  Reload from Excel", use_container_width=True, key="nav_reload"):
             load_all_from_disk()
             st.session_state._data_ready = True
             st.toast("Reloaded from disk")
             st.rerun()
-        if st.button("🚪  Log out", use_container_width=True):
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<div class="nav-logout">', unsafe_allow_html=True)
+        if st.button("🚪  Log out", use_container_width=True, key="nav_logout"):
             st.session_state.auth = False
             st.session_state._data_ready = False
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ── Pages ───────────────────────────────────────────────────────────────────
@@ -570,12 +907,15 @@ def page_maturity() -> None:
         st.info("No proposals yet. Import Excel or add a proposal.")
         return
     open_df = df[df["Status"] == "Open"]
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Due today", int((open_df["Days_Left"] == 0).sum()))
-    c2.metric("Due in 7 days", int(open_df["Days_Left"].between(0, 7).sum()))
-    c3.metric("Overdue", int((open_df["Days_Left"] < 0).sum()))
-    c4.metric("Open investment", fmt_money(open_df["Proposal_Cost"].sum()))
-    bucket = st.selectbox("Show", MATURITY_FILTERS, index=len(MATURITY_FILTERS) - 1)
+    kpi_row([
+        ("Due today", int((open_df["Days_Left"] == 0).sum()), "warn"),
+        ("Due in 7 days", int(open_df["Days_Left"].between(0, 7).sum()), "accent"),
+        ("Overdue", int((open_df["Days_Left"] < 0).sum()), "danger"),
+        ("Open investment", fmt_money(open_df["Proposal_Cost"].sum()), "success"),
+    ])
+    with st.container(border=True):
+        section_label("Filter proposals")
+        bucket = st.selectbox("Show", MATURITY_FILTERS, index=len(MATURITY_FILTERS) - 1, label_visibility="collapsed")
     filtered = filter_maturity(df, bucket)
     if filtered.empty:
         st.success(f"No proposals in “{bucket}”.")
@@ -603,12 +943,14 @@ def page_proposal_detail() -> None:
     pid = st.selectbox("Proposal ID", ids, index=idx)
     st.session_state.selected_proposal_id = pid
     pdf = df[df["Proposal_ID"] == pid]
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Start", fmt_date(pdf["Start_Date"].iloc[0]))
-    c2.metric("End", fmt_date(pdf["End_Date"].iloc[0]))
-    c3.metric("Rate", f"{float(pdf['Rate'].iloc[0]):.2f}%")
     dl = pdf["Days_Left"].iloc[0]
-    c4.metric("Days left", int(dl) if pd.notna(dl) else "—")
+    kpi_row([
+        ("Start date", fmt_date(pdf["Start_Date"].iloc[0])),
+        ("End date", fmt_date(pdf["End_Date"].iloc[0])),
+        ("Rate", f"{float(pdf['Rate'].iloc[0]):.2f}%", "accent"),
+        ("Days left", int(dl) if pd.notna(dl) else "—", "warn"),
+    ])
+    section_label("Clients in this proposal")
     st.dataframe(
         display_table(pdf)[["Client_Name", "Proposal_Cost", "Rate", "Profit", "Final_Cost", "Status", "Days_Left"]],
         use_container_width=True, hide_index=True, column_config=money_cfg("Proposal_Cost", "Profit", "Final_Cost"),
@@ -631,7 +973,7 @@ def page_proposal_detail() -> None:
 
 
 def page_client_ledger() -> None:
-    header("Client ledger")
+    header("Client ledger", "All proposals and totals for one client.")
     clients = active_clients()
     if clients.empty:
         st.info("No active clients.")
@@ -647,10 +989,12 @@ def page_client_ledger() -> None:
         st.info("No records.")
         return
     open_r = cdf[cdf["Status"] == "Open"]
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Open investment", fmt_money(open_r["Proposal_Cost"].sum()))
-    c2.metric("Expected profit", fmt_money(open_r["Profit"].sum()))
-    c3.metric("Open lines", len(open_r))
+    kpi_row([
+        ("Open investment", fmt_money(open_r["Proposal_Cost"].sum()), "success"),
+        ("Expected profit", fmt_money(open_r["Profit"].sum()), "accent"),
+        ("Open lines", len(open_r)),
+    ])
+    section_label("Proposal history")
     st.dataframe(
         display_table(cdf.sort_values("End_Date"))[["Proposal_ID", "Start_Date", "End_Date", "Days_Left", "Proposal_Cost", "Profit", "Status"]],
         use_container_width=True, hide_index=True, column_config=money_cfg("Proposal_Cost", "Profit"),
@@ -679,10 +1023,12 @@ def page_search() -> None:
     if res.empty:
         st.info("No matches.")
         return
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Investment", fmt_money(res["Proposal_Cost"].sum()))
-    c2.metric("Final", fmt_money(res["Final_Cost"].sum()))
-    c3.metric("Profit", fmt_money(res["Profit"].sum()))
+    kpi_row([
+        ("Investment", fmt_money(res["Proposal_Cost"].sum())),
+        ("Final amount", fmt_money(res["Final_Cost"].sum()), "accent"),
+        ("Profit", fmt_money(res["Profit"].sum()), "success"),
+    ])
+    section_label("Results")
     st.dataframe(
         display_table(res)[["Proposal_ID", "Client_Name", "End_Date", "Proposal_Cost", "Profit", "Status"]],
         use_container_width=True, hide_index=True, column_config=money_cfg("Proposal_Cost", "Profit"),
@@ -690,20 +1036,24 @@ def page_search() -> None:
 
 
 def page_add_proposal() -> None:
-    header("Add proposal")
+    header("Add proposal", "Create one proposal with one or more clients.")
     active = active_clients()
     if active.empty:
         st.warning("Add a client first.")
         return
-    c1, c2, c3 = st.columns(3)
-    start = c1.date_input("Start date", value=date.today())
-    days = c2.selectbox("Duration (days)", DURATION_DAYS)
-    rate = c3.number_input("Rate %", min_value=0.0, step=0.25)
-    end = (pd.Timestamp(start) + pd.Timedelta(days=int(days))).date()
-    st.caption(f"End date: **{end.strftime('%d-%m-%Y')}**")
-    c1, c2 = st.columns(2)
-    client = c1.selectbox("Client", ["—"] + unique_sorted(active["Client_Name"]))
-    amount = c2.number_input("Amount (₹)", min_value=0.0, step=1000.0)
+    with st.container(border=True):
+        section_label("Proposal terms")
+        c1, c2, c3 = st.columns(3)
+        start = c1.date_input("Start date", value=date.today())
+        days = c2.selectbox("Duration (days)", DURATION_DAYS)
+        rate = c3.number_input("Rate %", min_value=0.0, step=0.25)
+        end = (pd.Timestamp(start) + pd.Timedelta(days=int(days))).date()
+        st.caption(f"Maturity date: **{end.strftime('%d-%m-%Y')}**")
+    with st.container(border=True):
+        section_label("Add client line")
+        c1, c2 = st.columns(2)
+        client = c1.selectbox("Client", ["—"] + unique_sorted(active["Client_Name"]))
+        amount = c2.number_input("Amount (₹)", min_value=0.0, step=1000.0)
     if st.button("Add to draft"):
         if client == "—" or amount <= 0:
             st.warning("Select client and amount.")
@@ -735,52 +1085,58 @@ def page_add_proposal() -> None:
 
 
 def page_edit() -> None:
-    header("Edit line")
+    header("Edit line", "Update amount, rate, dates, or close a single client line.")
     prop = st.session_state.proposals_df
     if prop.empty:
         st.info("No proposals.")
         return
-    sf = st.selectbox("Status filter", ["Open", "Close"])
-    df = prop[prop["Status"] == sf]
-    if df.empty:
-        st.info(f"No {sf} proposals.")
-        return
-    pid = st.selectbox("Proposal ID", unique_sorted(df["Proposal_ID"]))
-    pdf = df[df["Proposal_ID"] == pid]
-    client = st.selectbox("Client", unique_sorted(pdf["Client_Name"]))
+    with st.container(border=True):
+        section_label("Select record")
+        sf = st.selectbox("Status filter", ["Open", "Close"])
+        df = prop[prop["Status"] == sf]
+        if df.empty:
+            st.info(f"No {sf} proposals.")
+            return
+        pid = st.selectbox("Proposal ID", unique_sorted(df["Proposal_ID"]))
+        pdf = df[df["Proposal_ID"] == pid]
+        client = st.selectbox("Client", unique_sorted(pdf["Client_Name"]))
     row = pdf[pdf["Client_Name"] == client].iloc[0]
     ix = pdf[pdf["Client_Name"] == client].index[0]
-    c1, c2 = st.columns(2)
-    cost = c1.number_input("Amount", min_value=0.0, value=float(row["Proposal_Cost"]))
-    rate = c2.number_input("Rate %", min_value=0.0, value=float(row["Rate"]))
-    c3, c4 = st.columns(2)
-    sd = c3.date_input("Start", value=to_date(row["Start_Date"]))
-    ed = c4.date_input("End", value=to_date(row["End_Date"], sd))
-    nst = st.selectbox("Status", ["Open", "Close"], index=0 if row["Status"] == "Open" else 1)
-    d = (ed - sd).days
-    if d < 0:
-        st.error("End before start.")
-        return
-    final, profit = calc(cost, rate, d)
-    st.caption(f"Final {fmt_money(final)} · Profit {fmt_money(profit)}")
-    if st.button("Save", type="primary"):
-        st.session_state.proposals_df.at[ix, "Proposal_Cost"] = cost
-        st.session_state.proposals_df.at[ix, "Rate"] = rate
-        st.session_state.proposals_df.at[ix, "Start_Date"] = pd.Timestamp(sd)
-        st.session_state.proposals_df.at[ix, "End_Date"] = pd.Timestamp(ed)
-        st.session_state.proposals_df.at[ix, "Final_Cost"] = final
-        st.session_state.proposals_df.at[ix, "Profit"] = profit
-        st.session_state.proposals_df.at[ix, "Status"] = nst
-        st.session_state.proposals_df.at[ix, "Closing_Date"] = pd.Timestamp(date.today()) if nst == "Close" else pd.NaT
-        save_proposals()
-        st.success("Updated")
+    with st.container(border=True):
+        section_label("Edit values")
+        c1, c2 = st.columns(2)
+        cost = c1.number_input("Amount", min_value=0.0, value=float(row["Proposal_Cost"]))
+        rate = c2.number_input("Rate %", min_value=0.0, value=float(row["Rate"]))
+        c3, c4 = st.columns(2)
+        sd = c3.date_input("Start", value=to_date(row["Start_Date"]))
+        ed = c4.date_input("End", value=to_date(row["End_Date"], sd))
+        nst = st.selectbox("Status", ["Open", "Close"], index=0 if row["Status"] == "Open" else 1)
+        d = (ed - sd).days
+        if d < 0:
+            st.error("End before start.")
+            return
+        final, profit = calc(cost, rate, d)
+        st.caption(f"Final {fmt_money(final)} · Profit {fmt_money(profit)}")
+        if st.button("Save changes", type="primary"):
+            st.session_state.proposals_df.at[ix, "Proposal_Cost"] = cost
+            st.session_state.proposals_df.at[ix, "Rate"] = rate
+            st.session_state.proposals_df.at[ix, "Start_Date"] = pd.Timestamp(sd)
+            st.session_state.proposals_df.at[ix, "End_Date"] = pd.Timestamp(ed)
+            st.session_state.proposals_df.at[ix, "Final_Cost"] = final
+            st.session_state.proposals_df.at[ix, "Profit"] = profit
+            st.session_state.proposals_df.at[ix, "Status"] = nst
+            st.session_state.proposals_df.at[ix, "Closing_Date"] = pd.Timestamp(date.today()) if nst == "Close" else pd.NaT
+            save_proposals()
+            st.success("Updated")
 
 
 def page_clients() -> None:
-    header("Clients")
-    c1, c2 = st.columns(2)
-    name = c1.text_input("New client name")
-    notes = c2.text_input("Notes")
+    header("Clients", "Add, archive, and restore client records.")
+    with st.container(border=True):
+        section_label("New client")
+        c1, c2 = st.columns(2)
+        name = c1.text_input("Client name")
+        notes = c2.text_input("Notes (optional)")
     if st.button("Add client", type="primary"):
         n = name.strip()
         if not n:
@@ -814,18 +1170,20 @@ def page_clients() -> None:
 
 
 def page_summary() -> None:
-    header("Summary")
+    header("Summary", "Investment totals and date-wise breakdowns.")
     df = st.session_state.proposals_df.copy()
     if df.empty:
         st.info("No data.")
         return
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Investment", fmt_money(df["Proposal_Cost"].sum()))
-    c2.metric("Profit", fmt_money(df["Profit"].sum()))
-    c3.metric("Open", int((df["Status"] == "Open").sum()))
-    st.subheader("By rate & date")
-    stat = st.selectbox("Status", ["All", "Open", "Close"])
-    dtype = st.radio("Date", ["Start Date", "End Date"], horizontal=True)
+    kpi_row([
+        ("Total investment", fmt_money(df["Proposal_Cost"].sum())),
+        ("Total profit", fmt_money(df["Profit"].sum()), "success"),
+        ("Open proposals", int((df["Status"] == "Open").sum()), "accent"),
+    ])
+    with st.container(border=True):
+        section_label("Breakdown by rate & date")
+        stat = st.selectbox("Status", ["All", "Open", "Close"])
+        dtype = st.radio("Date", ["Start Date", "End Date"], horizontal=True)
     if stat != "All":
         df = df[df["Status"] == stat]
     col = "Start_Date" if dtype == "Start Date" else "End_Date"
@@ -838,9 +1196,11 @@ def page_summary() -> None:
 
 
 def page_import() -> None:
-    header("Import Excel", "Upload raw data — IDs are created automatically.")
-    st.caption("Columns: Start Date, Client Name, Initial Amount, End Date, Profit Rate, etc.")
-    up = st.file_uploader("Excel file", type=["xlsx", "xls"])
+    header("Import Excel", "Upload raw data — Client ID and Proposal ID are created automatically.")
+    with st.container(border=True):
+        section_label("Choose file")
+        st.caption("Expected columns: Start Date, Client Name, Initial Amount, End Date, Profit Rate, etc.")
+        up = st.file_uploader("Excel file", type=["xlsx", "xls"])
     src = None
     if up is not None:
         src = pd.read_excel(up)
@@ -862,20 +1222,34 @@ def page_import() -> None:
 
 
 def page_export() -> None:
-    header("Export & backup")
+    header("Export & backup", "Download your data or use auto-backups saved on every change.")
     c, p = st.session_state.clients_df, st.session_state.proposals_df
-    if BACKUP_DIR.exists():
-        backups = sorted(BACKUP_DIR.glob("*.xlsx"), reverse=True)
-        if backups:
-            st.caption(f"Latest auto-backup: `{backups[0].name}`")
-    buf = io.BytesIO()
+    with st.container(border=True):
+        section_label("Auto-backup")
+        if BACKUP_DIR.exists():
+            backups = sorted(BACKUP_DIR.glob("*.xlsx"), reverse=True)
+            if backups:
+                st.caption(f"Latest backup: **{backups[0].name}** · folder: `{BACKUP_DIR}`")
+            else:
+                st.caption("Backups are created automatically when you save data.")
+        else:
+            st.caption("Backups folder will be created on first save.")
+    with st.container(border=True):
+        section_label("Download")
+        buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as w:
         if not c.empty:
             c.to_excel(w, sheet_name="Clients", index=False)
         if not p.empty:
             p.to_excel(w, sheet_name="Proposals", index=False)
-    st.download_button("Download Excel", buf.getvalue(), f"sigma_crm_{datetime.now():%Y%m%d}.xlsx",
-                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button(
+            "Download Excel (clients + proposals)",
+            buf.getvalue(),
+            f"sigma_crm_{datetime.now():%Y%m%d}.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            type="primary",
+        )
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
