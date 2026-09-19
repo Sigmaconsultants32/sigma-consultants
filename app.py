@@ -1329,112 +1329,183 @@ hr, [data-testid="stDivider"] {{
     padding: 0.85rem 1rem;
 }}
 
-.mobile-hint {{
+.sigma-mobile-only {{
     display: none;
 }}
 
 @media (max-width: 768px) {{
-    div.block-container {{
-        padding: 1.25rem 1rem 5.75rem;
+    header[data-testid="stHeader"] {{
+        display: none !important;
     }}
-    .page-header {{ padding: 1rem 1.15rem; }}
-    .page-header h1 {{ font-size: 1.5rem; }}
-    .kpi-card .kpi-value {{ font-size: 1.5rem; }}
+
+    section[data-testid="stSidebar"] {{
+        display: none !important;
+    }}
+
+    div.block-container {{
+        padding: 0.85rem 0.85rem 1.25rem;
+        max-width: 100%;
+    }}
+
+    .sigma-mobile-only {{
+        display: block;
+    }}
+
+    .page-header {{
+        display: none !important;
+    }}
+
+    .section-title {{
+        font-size: 0.95rem !important;
+        margin: 0.5rem 0 0.35rem !important;
+    }}
+
+    .kpi-card {{
+        padding: 0.65rem 0.75rem !important;
+        margin-bottom: 0 !important;
+    }}
+
+    .kpi-card .kpi-label {{
+        font-size: 0.68rem !important;
+    }}
+
+    .kpi-card .kpi-value {{
+        font-size: 1.15rem !important;
+    }}
+
     .summary-item {{
         grid-template-columns: 1fr;
     }}
+
     .summary-item .right {{
         text-align: left;
         white-space: normal;
     }}
+
     .logo-login .sigma-logo-img {{ max-width: 260px; }}
     .logo-welcome .sigma-logo-img {{ max-width: 280px; }}
     .logo-sidebar .sigma-logo-img {{ max-width: 185px; }}
 
-    .mobile-hint {{
-        display: block;
-        margin: 0 0 0.85rem;
-        padding: 0.65rem 0.85rem;
-        border-radius: 10px;
-        background: #EFF6FF;
-        border: 1px solid #BFDBFE;
-        color: #1E40AF;
-        font-size: 0.82rem;
-        line-height: 1.45;
+    hr, [data-testid="stDivider"] {{
+        margin: 0.75rem 0 !important;
     }}
 
-    /* Fixed bottom tab bar */
-    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] {{
+    [data-testid="stHorizontalBlock"] {{
+        gap: 0.45rem !important;
+    }}
+
+    /* Sticky top bar */
+    #sigma-mobile-topbar + div[data-testid="stHorizontalBlock"] {{
         position: fixed !important;
-        bottom: 0 !important;
+        top: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        z-index: 999990 !important;
-        background: #151C2B !important;
-        padding: 0.35rem 0.3rem calc(0.45rem + env(safe-area-inset-bottom)) !important;
-        border-top: 1px solid #334155 !important;
-        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.28) !important;
+        z-index: 999992 !important;
+        background: linear-gradient(180deg, #151C2B 0%, #1A2234 100%) !important;
+        padding: 0.55rem 0.65rem calc(0.55rem + env(safe-area-inset-top)) !important;
+        border-bottom: 1px solid #334155 !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22) !important;
         margin: 0 !important;
-        gap: 0.2rem !important;
+        align-items: center !important;
     }}
 
-    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] [data-testid="column"] {{
-        padding: 0 0.12rem !important;
-    }}
-
-    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] button {{
-        font-size: 0.72rem !important;
-        font-weight: 600 !important;
-        min-height: 50px !important;
-        padding: 0.35rem 0.15rem !important;
-        line-height: 1.15 !important;
+    #sigma-mobile-topbar + div[data-testid="stHorizontalBlock"] button {{
+        min-height: 42px !important;
+        width: 42px !important;
+        padding: 0 !important;
+        font-size: 1.15rem !important;
         border-radius: 10px !important;
-        white-space: normal !important;
+        background: #1E2A40 !important;
+        border: 1px solid #475569 !important;
+        color: #E2E8F0 !important;
     }}
 
-    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] button[kind="primary"] {{
+    .mobile-topbar-brand {{
+        text-align: center;
+        padding: 0 0.25rem;
+    }}
+
+    .mobile-topbar-title {{
+        display: block;
+        color: #F8FAFC;
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }}
+
+    .mobile-topbar-meta {{
+        text-align: right;
+        color: #94A3B8;
+        font-size: 0.68rem;
+        font-weight: 600;
+        line-height: 1.2;
+        padding-top: 0.15rem;
+    }}
+
+    div.block-container {{
+        padding-top: calc(3.65rem + env(safe-area-inset-top)) !important;
+    }}
+
+    /* Slide-down menu drawer */
+    #sigma-mobile-drawer + div[data-testid="stVerticalBlockBorderWrapper"] {{
+        position: fixed !important;
+        top: calc(3.35rem + env(safe-area-inset-top)) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 999991 !important;
+        background: rgba(15, 23, 42, 0.97) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0.65rem 0.85rem 1.25rem !important;
+        overflow-y: auto !important;
+        box-shadow: inset 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+        animation: sigmaDrawerIn 0.18s ease-out;
+    }}
+
+    #sigma-mobile-drawer + div[data-testid="stVerticalBlockBorderWrapper"] button {{
+        min-height: 46px !important;
+        margin-bottom: 0.35rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 11px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+    }}
+
+    #sigma-mobile-drawer + div[data-testid="stVerticalBlockBorderWrapper"] button[kind="primary"] {{
         background: linear-gradient(135deg, {SECONDARY_COLOR} 0%, {SECONDARY_DARK} 100%) !important;
         border-color: #60A5FA !important;
     }}
 
-    /* More-menu sheet above bottom bar */
-    #sigma-mobile-more-marker + div[data-testid="stVerticalBlockBorderWrapper"] {{
-        position: fixed !important;
-        left: 0.5rem !important;
-        right: 0.5rem !important;
-        bottom: calc(4.35rem + env(safe-area-inset-bottom)) !important;
-        z-index: 999989 !important;
-        max-height: 55vh;
-        overflow-y: auto;
-        background: #1E2A40 !important;
-        border: 1px solid #475569 !important;
-        border-radius: 14px !important;
-        padding: 0.65rem !important;
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35) !important;
+    .mobile-drawer-section {{
+        margin: 0.85rem 0 0.4rem;
+        padding: 0 0.15rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #64748B;
     }}
 
-    #sigma-mobile-more-marker + div[data-testid="stVerticalBlockBorderWrapper"] button {{
-        min-height: 44px !important;
-        margin-bottom: 0.35rem !important;
-        font-size: 0.88rem !important;
+    .mobile-drawer-section:first-child {{
+        margin-top: 0.15rem;
     }}
 
-    /* Make Streamlit sidebar opener easier to spot */
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"] {{
-        display: flex !important;
-        color: #2563EB !important;
-        background: #EFF6FF !important;
-        border-radius: 8px !important;
+    @keyframes sigmaDrawerIn {{
+        from {{ opacity: 0; transform: translateY(-8px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
     }}
 }}
 
 @media (min-width: 769px) {{
-    .mobile-hint,
-    #sigma-mobile-tabs,
-    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"],
-    #sigma-mobile-more-marker,
-    #sigma-mobile-more-marker + div[data-testid="stVerticalBlockBorderWrapper"] {{
+    #sigma-mobile-topbar,
+    #sigma-mobile-topbar + div[data-testid="stHorizontalBlock"],
+    #sigma-mobile-drawer,
+    #sigma-mobile-drawer + div[data-testid="stVerticalBlockBorderWrapper"] {{
         display: none !important;
     }}
 }}
@@ -1471,9 +1542,17 @@ def card(title, value) -> None:
 def metrics_row(items: list[tuple[str, object]], mobile: bool) -> None:
     """Render aligned KPI cards in a responsive grid."""
     n = len(items)
-    if mobile or n == 1:
-        for title, value in items:
-            card(title, value)
+    if n == 1:
+        card(items[0][0], items[0][1])
+        return
+
+    if mobile:
+        for row_start in range(0, n, 2):
+            row_items = items[row_start : row_start + 2]
+            cols = st.columns(len(row_items), gap="small")
+            for col, (title, value) in zip(cols, row_items):
+                with col:
+                    card(title, value)
         return
 
     st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
@@ -1511,7 +1590,9 @@ def init_session() -> None:
     if "selected_proposal_id" not in st.session_state:
         st.session_state.selected_proposal_id = None
     if "is_mobile" not in st.session_state:
-        st.session_state.is_mobile = False
+        st.session_state.is_mobile = True
+    if "mobile_menu_open" not in st.session_state:
+        st.session_state.mobile_menu_open = False
     if "proposal_clients" not in st.session_state:
         st.session_state.proposal_clients = []
     if "date_blocks" not in st.session_state:
@@ -1628,73 +1709,108 @@ def sidebar_nav() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_mobile_hint() -> None:
-    st.markdown(
-        '<div class="mobile-hint">Use the <strong>bottom menu</strong> to switch pages. '
-        "Tap <strong>››</strong> (top-left) for the full sidebar.</div>",
-        unsafe_allow_html=True,
-    )
+PAGE_LABELS = {
+    "Maturity": "Maturity board",
+    "ProposalDetail": "Proposal file",
+    "ClientLedger": "Client ledger",
+    "Search": "Search",
+    "Welcome": "Welcome",
+    "Summary": "Summary",
+    "AddProposal": "Add proposal",
+    "Edit": "Edit line",
+    "Clients": "Clients",
+    "Export": "Export & backup",
+    "Import": "Import Excel",
+}
+
+MOBILE_NAV_SECTIONS = [
+    (
+        "Daily use",
+        [
+            ("📅", "Maturity board", "Maturity"),
+            ("📁", "Proposal file", "ProposalDetail"),
+            ("👤", "Client ledger", "ClientLedger"),
+            ("🔍", "Search", "Search"),
+        ],
+    ),
+    (
+        "Operations",
+        [
+            ("➕", "Add proposal", "AddProposal"),
+            ("✏️", "Edit line", "Edit"),
+            ("👥", "Clients", "Clients"),
+        ],
+    ),
+    (
+        "Reports",
+        [
+            ("📊", "Summary", "Summary"),
+            ("📥", "Export / backup", "Export"),
+            ("📤", "Import Excel", "Import"),
+        ],
+    ),
+]
 
 
-def render_mobile_nav(current: str) -> None:
-    """Bottom tab bar for phones — Streamlit hides the sidebar on small screens."""
-    if "mobile_more_open" not in st.session_state:
-        st.session_state.mobile_more_open = False
+def render_mobile_shell(current: str) -> None:
+    """Sticky top bar + hide/show drawer menu for phones."""
+    title = PAGE_LABELS.get(current, "Sigma CRM")
+    storage = data_storage_summary()
+    menu_open = bool(st.session_state.mobile_menu_open)
+    menu_label = "✕" if menu_open else "☰"
 
-    if st.session_state.mobile_more_open:
-        st.markdown('<div id="sigma-mobile-more-marker"></div>', unsafe_allow_html=True)
+    st.markdown('<div id="sigma-mobile-topbar" class="sigma-mobile-only"></div>', unsafe_allow_html=True)
+    top_left, top_center, top_right = st.columns([1, 4.5, 1.5])
+    with top_left:
+        if st.button(menu_label, key="mob_menu_toggle", help="Open or close menu"):
+            st.session_state.mobile_menu_open = not menu_open
+            st.rerun()
+    with top_center:
+        st.markdown(
+            f'<div class="mobile-topbar-brand"><span class="mobile-topbar-title">{title}</span></div>',
+            unsafe_allow_html=True,
+        )
+    with top_right:
+        st.markdown(
+            f'<div class="mobile-topbar-meta">{storage["clients"]} clients<br>{storage["proposals"]} rows</div>',
+            unsafe_allow_html=True,
+        )
+
+    if menu_open:
+        st.markdown('<div id="sigma-mobile-drawer" class="sigma-mobile-only"></div>', unsafe_allow_html=True)
         with st.container(border=True):
-            st.caption("More pages")
-            more_pages = [
-                ("Add proposal", "AddProposal"),
-                ("Edit line", "Edit"),
-                ("Clients", "Clients"),
-                ("Summary", "Summary"),
-                ("Export / backup", "Export"),
-                ("Import Excel", "Import"),
-            ]
-            for label, page_key in more_pages:
-                if st.button(label, key=f"mnav_more_{page_key}", use_container_width=True):
-                    st.session_state.mobile_more_open = False
-                    go(page_key)
-            if st.button("Reload Excel files", key="mnav_reload", use_container_width=True):
+            for section_name, items in MOBILE_NAV_SECTIONS:
+                st.markdown(
+                    f'<p class="mobile-drawer-section">{section_name}</p>',
+                    unsafe_allow_html=True,
+                )
+                for icon, label, page_key in items:
+                    if st.button(
+                        f"{icon}  {label}",
+                        key=f"mdraw_{page_key}",
+                        use_container_width=True,
+                        type="primary" if current == page_key else "secondary",
+                    ):
+                        st.session_state.mobile_menu_open = False
+                        go(page_key)
+
+            st.markdown('<p class="mobile-drawer-section">Display</p>', unsafe_allow_html=True)
+            st.session_state.is_mobile = st.toggle(
+                "Compact cards (2 per row)",
+                value=bool(st.session_state.is_mobile),
+                key="mob_compact_toggle",
+            )
+
+            st.markdown('<p class="mobile-drawer-section">System</p>', unsafe_allow_html=True)
+            if st.button("🔄  Reload Excel files", key="mdraw_reload", use_container_width=True):
                 reload_data_from_disk(force=True)
-                st.session_state.mobile_more_open = False
+                st.session_state.mobile_menu_open = False
                 st.rerun()
-            if st.button("Log out", key="mnav_logout", use_container_width=True):
+            if st.button("🚪  Log out", key="mdraw_logout", use_container_width=True):
                 st.session_state.auth = False
-                st.session_state.mobile_more_open = False
+                st.session_state.mobile_menu_open = False
                 st.session_state.page = "Maturity"
                 st.rerun()
-
-    st.markdown('<div id="sigma-mobile-tabs"></div>', unsafe_allow_html=True)
-    primary = [
-        ("Board", "Maturity"),
-        ("Proposal", "ProposalDetail"),
-        ("Ledger", "ClientLedger"),
-        ("Search", "Search"),
-    ]
-    cols = st.columns(5)
-    for col, (label, page_key) in zip(cols[:4], primary):
-        with col:
-            if st.button(
-                label,
-                key=f"mnav_{page_key}",
-                use_container_width=True,
-                type="primary" if current == page_key else "secondary",
-            ):
-                st.session_state.mobile_more_open = False
-                go(page_key)
-
-    with cols[4]:
-        if st.button(
-            "More",
-            key="mnav_more",
-            use_container_width=True,
-            type="primary" if st.session_state.mobile_more_open else "secondary",
-        ):
-            st.session_state.mobile_more_open = not st.session_state.mobile_more_open
-            st.rerun()
 
 
 # =====================================================
@@ -1752,12 +1868,10 @@ def page_maturity(is_mobile: bool) -> None:
         is_mobile,
     )
 
-    st.markdown("---")
-    bucket = st.radio(
+    bucket = st.selectbox(
         "Show proposals",
         MATURITY_FILTERS,
         index=len(MATURITY_FILTERS) - 1,
-        horizontal=True,
         key="maturity_filter",
     )
     filtered = filter_by_maturity_bucket(df, bucket)
@@ -1766,38 +1880,42 @@ def page_maturity(is_mobile: bool) -> None:
         return
 
     display = proposal_display_table(filtered)
-    table_cols = [
-        "Proposal_ID",
-        "Client_Name",
-        "End_Date",
-        "Days_Left",
-        "Proposal_Cost",
-        "Rate",
-        "Profit",
-        "Final_Cost",
-        "Maturity_Bucket",
-        "Status",
-    ]
-    st.dataframe(
-        display[table_cols],
-        use_container_width=True,
-        hide_index=True,
-        column_config={
+    if is_mobile:
+        table_cols = ["Client_Name", "End_Date", "Days_Left", "Proposal_Cost", "Status"]
+    else:
+        table_cols = [
+            "Proposal_ID",
+            "Client_Name",
+            "End_Date",
+            "Days_Left",
+            "Proposal_Cost",
+            "Rate",
+            "Profit",
+            "Final_Cost",
+            "Maturity_Bucket",
+            "Status",
+        ]
+    df_kwargs = {
+        "use_container_width": True,
+        "hide_index": True,
+        "column_config": {
             **money_cols("Proposal_Cost", "Final_Cost", "Profit"),
             "Days_Left": st.column_config.NumberColumn("Days left", format="%d"),
             "Rate": st.column_config.NumberColumn("Rate %", format="%.2f"),
         },
-    )
+    }
+    if is_mobile:
+        df_kwargs["height"] = 360
+    st.dataframe(display[table_cols], **df_kwargs)
 
-    st.markdown("---")
-    section_title("Open proposal details")
-    pid = st.selectbox(
-        "Select proposal ID",
-        unique_sorted(filtered["Proposal_ID"]),
-        key="maturity_pick_proposal",
-    )
-    if st.button("View full proposal", type="primary", key="maturity_view_btn"):
-        view_proposal(pid)
+    with st.expander("Open proposal details", expanded=not is_mobile):
+        pid = st.selectbox(
+            "Select proposal ID",
+            unique_sorted(filtered["Proposal_ID"]),
+            key="maturity_pick_proposal",
+        )
+        if st.button("View full proposal", type="primary", key="maturity_view_btn"):
+            view_proposal(pid)
 
 
 def page_proposal_detail(is_mobile: bool) -> None:
@@ -2880,7 +2998,7 @@ sidebar_nav()
 is_mobile = bool(st.session_state.is_mobile)
 
 page = st.session_state.page
-render_mobile_hint()
+render_mobile_shell(page)
 if page == "Maturity":
     page_maturity(is_mobile)
 elif page == "ProposalDetail":
@@ -2910,5 +3028,3 @@ elif page == "Import":
 else:
     st.session_state.page = "Maturity"
     st.rerun()
-
-render_mobile_nav(page)
