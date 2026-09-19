@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import os
 import re
 import shutil
@@ -22,6 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent
 CLIENT_FILE = BASE_DIR / "clients.xlsx"
 PROPOSAL_FILE = BASE_DIR / "proposals.xlsx"
 BACKUP_DIR = BASE_DIR / "backups"
+DATA_MANIFEST_FILE = BASE_DIR / "data_manifest.json"
 LOGO_FILE = BASE_DIR / "sigma_logo.jpg"
 LOGO_FALLBACK = Path(
     r"C:\Users\Smart\.cursor\projects\empty-window\assets"
@@ -152,9 +154,75 @@ def new_proposal_id() -> str:
 
 def atomic_to_excel(df: pd.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".xlsx.tmp")
-    df.to_excel(tmp, index=False)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    df.to_excel(tmp, index=False, engine="openpyxl")
+    if path.exists():
+        path.unlink()
     os.replace(tmp, path)
+    if not path.exists() or path.stat().st_size == 0:
+        raise OSError(f"Failed to write {path}")
+
+
+def get_data_mtime() -> float:
+    mtimes = [path.stat().st_mtime for path in (CLIENT_FILE, PROPOSAL_FILE) if path.exists()]
+    return max(mtimes) if mtimes else 0.0
+
+
+def reload_data_from_disk(force: bool = False) -> bool:
+    """Load Excel files from disk when the app starts or disk data is newer."""
+    disk_mtime = get_data_mtime()
+    loaded_mtime = st.session_state.get("_data_mtime")
+    has_data = "clients_df" in st.session_state and "proposals_df" in st.session_state
+    if not force and has_data and loaded_mtime is not None and disk_mtime <= loaded_mtime:
+        return False
+    st.session_state.clients_df = load_clients()
+    st.session_state.proposals_df = load_proposals()
+    st.session_state._data_mtime = disk_mtime
+    return True
+
+
+def verify_saved_file(path: Path, expected_rows: int) -> tuple[bool, str]:
+    if not path.exists():
+        return False, f"{path.name} was not written."
+    try:
+        saved_rows = len(pd.read_excel(path))
+    except Exception as exc:
+        return False, str(exc)
+    if saved_rows != expected_rows:
+        return False, f"{path.name}: expected {expected_rows} rows, found {saved_rows}."
+    return True, "OK"
+
+
+def write_data_manifest() -> None:
+    manifest = {
+        "clients": len(st.session_state.clients_df),
+        "proposals": len(st.session_state.proposals_df),
+        "saved_at": datetime.now().isoformat(timespec="seconds"),
+        "client_file": str(CLIENT_FILE),
+        "proposal_file": str(PROPOSAL_FILE),
+        "app_file": str(Path(__file__).resolve()),
+    }
+    DATA_MANIFEST_FILE.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+
+def data_storage_summary() -> dict:
+    saved_label = "Not saved yet"
+    if DATA_MANIFEST_FILE.exists():
+        try:
+            manifest = json.loads(DATA_MANIFEST_FILE.read_text(encoding="utf-8"))
+            saved_label = manifest.get("saved_at", saved_label).replace("T", " ")
+        except (json.JSONDecodeError, OSError):
+            pass
+    elif CLIENT_FILE.exists() or PROPOSAL_FILE.exists():
+        mtime = get_data_mtime()
+        if mtime:
+            saved_label = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M")
+    return {
+        "clients": len(st.session_state.get("clients_df", [])),
+        "proposals": len(st.session_state.get("proposals_df", [])),
+        "folder": str(BASE_DIR),
+        "saved_label": saved_label,
+    }
 
 
 def ensure_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
@@ -213,12 +281,24 @@ def auto_backup() -> None:
 
 
 def save_clients() -> None:
+    expected_rows = len(st.session_state.clients_df)
     atomic_to_excel(st.session_state.clients_df, CLIENT_FILE)
+    ok, msg = verify_saved_file(CLIENT_FILE, expected_rows)
+    if not ok:
+        raise OSError(f"Could not save clients: {msg}")
+    st.session_state._data_mtime = get_data_mtime()
+    write_data_manifest()
     auto_backup()
 
 
 def save_proposals() -> None:
+    expected_rows = len(st.session_state.proposals_df)
     atomic_to_excel(st.session_state.proposals_df, PROPOSAL_FILE)
+    ok, msg = verify_saved_file(PROPOSAL_FILE, expected_rows)
+    if not ok:
+        raise OSError(f"Could not save proposals: {msg}")
+    st.session_state._data_mtime = get_data_mtime()
+    write_data_manifest()
     auto_backup()
 
 
@@ -272,6 +352,8 @@ def filter_by_maturity_bucket(df: pd.DataFrame, bucket: str) -> pd.DataFrame:
         return open_df[open_df["Days_Left"].between(0, 15)].sort_values("End_Date")
     if bucket == "Next 30 days":
         return open_df[open_df["Days_Left"].between(0, 30)].sort_values("End_Date")
+    if bucket == "All data (incl. closed)":
+        return df.sort_values(["End_Date", "Proposal_ID", "Client_Name"])
     return open_df.sort_values("End_Date")
 
 
@@ -1068,6 +1150,31 @@ section[data-testid="stSidebar"] .sidebar-toggle-box {{
     margin-bottom: 1rem;
 }}
 
+section[data-testid="stSidebar"] .sidebar-data-info {{
+    margin: 0.75rem 0 1rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 12px;
+    background: #1E2A40;
+    border: 1px solid #334155;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: #CBD5E1;
+}}
+
+section[data-testid="stSidebar"] .sidebar-data-info p {{
+    margin: 0 0 0.35rem;
+}}
+
+section[data-testid="stSidebar"] .sidebar-data-info p:last-child {{
+    margin-bottom: 0;
+}}
+
+section[data-testid="stSidebar"] .sidebar-data-path {{
+    font-size: 0.68rem;
+    color: #94A3B8;
+    word-break: break-all;
+}}
+
 section[data-testid="stSidebar"] .sidebar-section {{
     margin: 0.85rem 0 0.55rem;
     padding: 0 0.15rem;
@@ -1318,10 +1425,7 @@ def init_session() -> None:
         st.session_state.proposal_clients = []
     if "date_blocks" not in st.session_state:
         st.session_state.date_blocks = [1]
-    if "clients_df" not in st.session_state:
-        st.session_state.clients_df = load_clients()
-    if "proposals_df" not in st.session_state:
-        st.session_state.proposals_df = load_proposals()
+    reload_data_from_disk()
 
 
 def expected_password() -> str:
@@ -1352,6 +1456,7 @@ def render_login() -> None:
             submitted = st.form_submit_button("Continue", use_container_width=True, type="primary")
         if submitted:
             if pwd == expected_password():
+                reload_data_from_disk(force=True)
                 st.session_state.auth = True
                 st.session_state.page = "Maturity"
                 st.rerun()
@@ -1378,6 +1483,18 @@ def sidebar_nav() -> None:
             help="Stack metric cards for smaller screens.",
         )
         st.markdown("</div>", unsafe_allow_html=True)
+
+        storage = data_storage_summary()
+        st.markdown(
+            f"""
+<div class="sidebar-data-info">
+  <p><strong>{storage['clients']}</strong> clients · <strong>{storage['proposals']}</strong> proposals</p>
+  <p>Last saved: {storage['saved_label']}</p>
+  <p class="sidebar-data-path">Data folder:<br>{storage['folder']}</p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 
         current = st.session_state.page
 
@@ -1407,8 +1524,7 @@ def sidebar_nav() -> None:
         st.markdown('<p class="sidebar-section">System</p>', unsafe_allow_html=True)
         st.markdown('<div class="sidebar-util">', unsafe_allow_html=True)
         if st.button("🔄  Reload Excel files", use_container_width=True, key="nav_reload"):
-            st.session_state.clients_df = load_clients()
-            st.session_state.proposals_df = load_proposals()
+            reload_data_from_disk(force=True)
             st.success("Reloaded from disk")
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1432,6 +1548,7 @@ MATURITY_FILTERS = [
     "Next 30 days",
     "Overdue",
     "All open",
+    "All data (incl. closed)",
 ]
 
 
@@ -1479,6 +1596,7 @@ def page_maturity(is_mobile: bool) -> None:
     bucket = st.radio(
         "Show proposals",
         MATURITY_FILTERS,
+        index=len(MATURITY_FILTERS) - 1,
         horizontal=True,
         key="maturity_filter",
     )
@@ -2474,7 +2592,10 @@ with multiple clients. Everything else is filled in automatically.
         section_title("Import options")
         append_mode = st.radio(
             "How to import",
-            ["Add to existing data (recommended)", "Replace all existing data"],
+            [
+                "Replace all existing data (use for first full import)",
+                "Add to existing data",
+            ],
             key="import_mode",
         )
         group_terms = st.checkbox(
@@ -2483,7 +2604,9 @@ with multiple clients. Everything else is filled in automatically.
             key="import_group",
         )
         if append_mode.startswith("Replace"):
-            st.warning("Replace will remove current clients and proposals after you confirm.")
+            st.warning("Replace will remove current clients and proposals before importing.")
+        else:
+            st.info("Add mode keeps your current data and appends imported rows.")
 
     try:
         prepared = prepare_raw_import_df(preview_source)
@@ -2503,23 +2626,36 @@ with multiple clients. Everything else is filled in automatically.
             st.session_state.clients_df = pd.DataFrame(columns=CLIENT_COLS)
             st.session_state.proposals_df = pd.DataFrame(columns=PROPOSAL_COLS)
 
-        clients_df, proposals_df, stats = import_raw_excel(
-            preview_source,
-            st.session_state.clients_df,
-            st.session_state.proposals_df,
-            append=append,
-            group_by_terms=group_terms,
-        )
-        st.session_state.clients_df = clients_df
-        st.session_state.proposals_df = proposals_df
-        save_clients()
-        save_proposals()
+        try:
+            clients_df, proposals_df, stats = import_raw_excel(
+                preview_source,
+                st.session_state.clients_df,
+                st.session_state.proposals_df,
+                append=append,
+                group_by_terms=group_terms,
+            )
+            st.session_state.clients_df = clients_df
+            st.session_state.proposals_df = proposals_df
+            save_clients()
+            save_proposals()
+            reload_data_from_disk(force=True)
+        except OSError as exc:
+            st.error(f"Import saved in memory but could not write Excel files: {exc}")
+            st.warning(
+                f"Close `clients.xlsx` / `proposals.xlsx` if open in Excel, then retry. "
+                f"Files should be saved in: `{BASE_DIR}`"
+            )
+            return
+
         if "import_preview_df" in st.session_state:
             del st.session_state.import_preview_df
+        storage = data_storage_summary()
         st.success(
             f"Imported **{stats['lines']}** lines · **{stats['proposals']}** proposals · "
-            f"**{stats['clients_new']}** new clients"
+            f"**{stats['clients_new']}** new clients. "
+            f"Saved **{storage['clients']}** clients and **{storage['proposals']}** proposals to disk."
         )
+        st.caption(f"Data files: `{CLIENT_FILE}` and `{PROPOSAL_FILE}`")
         go("Maturity")
 
 
