@@ -1329,9 +1329,13 @@ hr, [data-testid="stDivider"] {{
     padding: 0.85rem 1rem;
 }}
 
+.mobile-hint {{
+    display: none;
+}}
+
 @media (max-width: 768px) {{
     div.block-container {{
-        padding: 1.25rem 1rem 1.75rem;
+        padding: 1.25rem 1rem 5.75rem;
     }}
     .page-header {{ padding: 1rem 1.15rem; }}
     .page-header h1 {{ font-size: 1.5rem; }}
@@ -1346,6 +1350,93 @@ hr, [data-testid="stDivider"] {{
     .logo-login .sigma-logo-img {{ max-width: 260px; }}
     .logo-welcome .sigma-logo-img {{ max-width: 280px; }}
     .logo-sidebar .sigma-logo-img {{ max-width: 185px; }}
+
+    .mobile-hint {{
+        display: block;
+        margin: 0 0 0.85rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 10px;
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        color: #1E40AF;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }}
+
+    /* Fixed bottom tab bar */
+    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] {{
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 999990 !important;
+        background: #151C2B !important;
+        padding: 0.35rem 0.3rem calc(0.45rem + env(safe-area-inset-bottom)) !important;
+        border-top: 1px solid #334155 !important;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.28) !important;
+        margin: 0 !important;
+        gap: 0.2rem !important;
+    }}
+
+    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] [data-testid="column"] {{
+        padding: 0 0.12rem !important;
+    }}
+
+    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] button {{
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        min-height: 50px !important;
+        padding: 0.35rem 0.15rem !important;
+        line-height: 1.15 !important;
+        border-radius: 10px !important;
+        white-space: normal !important;
+    }}
+
+    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"] button[kind="primary"] {{
+        background: linear-gradient(135deg, {SECONDARY_COLOR} 0%, {SECONDARY_DARK} 100%) !important;
+        border-color: #60A5FA !important;
+    }}
+
+    /* More-menu sheet above bottom bar */
+    #sigma-mobile-more-marker + div[data-testid="stVerticalBlockBorderWrapper"] {{
+        position: fixed !important;
+        left: 0.5rem !important;
+        right: 0.5rem !important;
+        bottom: calc(4.35rem + env(safe-area-inset-bottom)) !important;
+        z-index: 999989 !important;
+        max-height: 55vh;
+        overflow-y: auto;
+        background: #1E2A40 !important;
+        border: 1px solid #475569 !important;
+        border-radius: 14px !important;
+        padding: 0.65rem !important;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35) !important;
+    }}
+
+    #sigma-mobile-more-marker + div[data-testid="stVerticalBlockBorderWrapper"] button {{
+        min-height: 44px !important;
+        margin-bottom: 0.35rem !important;
+        font-size: 0.88rem !important;
+    }}
+
+    /* Make Streamlit sidebar opener easier to spot */
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"] {{
+        display: flex !important;
+        color: #2563EB !important;
+        background: #EFF6FF !important;
+        border-radius: 8px !important;
+    }}
+}}
+
+@media (min-width: 769px) {{
+    .mobile-hint,
+    #sigma-mobile-tabs,
+    #sigma-mobile-tabs + div[data-testid="stHorizontalBlock"],
+    #sigma-mobile-more-marker,
+    #sigma-mobile-more-marker + div[data-testid="stVerticalBlockBorderWrapper"] {{
+        display: none !important;
+    }}
 }}
 </style>
 """,
@@ -1535,6 +1626,75 @@ def sidebar_nav() -> None:
             st.session_state.page = "Maturity"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_mobile_hint() -> None:
+    st.markdown(
+        '<div class="mobile-hint">Use the <strong>bottom menu</strong> to switch pages. '
+        "Tap <strong>››</strong> (top-left) for the full sidebar.</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_mobile_nav(current: str) -> None:
+    """Bottom tab bar for phones — Streamlit hides the sidebar on small screens."""
+    if "mobile_more_open" not in st.session_state:
+        st.session_state.mobile_more_open = False
+
+    if st.session_state.mobile_more_open:
+        st.markdown('<div id="sigma-mobile-more-marker"></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.caption("More pages")
+            more_pages = [
+                ("Add proposal", "AddProposal"),
+                ("Edit line", "Edit"),
+                ("Clients", "Clients"),
+                ("Summary", "Summary"),
+                ("Export / backup", "Export"),
+                ("Import Excel", "Import"),
+            ]
+            for label, page_key in more_pages:
+                if st.button(label, key=f"mnav_more_{page_key}", use_container_width=True):
+                    st.session_state.mobile_more_open = False
+                    go(page_key)
+            if st.button("Reload Excel files", key="mnav_reload", use_container_width=True):
+                reload_data_from_disk(force=True)
+                st.session_state.mobile_more_open = False
+                st.rerun()
+            if st.button("Log out", key="mnav_logout", use_container_width=True):
+                st.session_state.auth = False
+                st.session_state.mobile_more_open = False
+                st.session_state.page = "Maturity"
+                st.rerun()
+
+    st.markdown('<div id="sigma-mobile-tabs"></div>', unsafe_allow_html=True)
+    primary = [
+        ("Board", "Maturity"),
+        ("Proposal", "ProposalDetail"),
+        ("Ledger", "ClientLedger"),
+        ("Search", "Search"),
+    ]
+    cols = st.columns(5)
+    for col, (label, page_key) in zip(cols[:4], primary):
+        with col:
+            if st.button(
+                label,
+                key=f"mnav_{page_key}",
+                use_container_width=True,
+                type="primary" if current == page_key else "secondary",
+            ):
+                st.session_state.mobile_more_open = False
+                go(page_key)
+
+    with cols[4]:
+        if st.button(
+            "More",
+            key="mnav_more",
+            use_container_width=True,
+            type="primary" if st.session_state.mobile_more_open else "secondary",
+        ):
+            st.session_state.mobile_more_open = not st.session_state.mobile_more_open
+            st.rerun()
 
 
 # =====================================================
@@ -2720,6 +2880,7 @@ sidebar_nav()
 is_mobile = bool(st.session_state.is_mobile)
 
 page = st.session_state.page
+render_mobile_hint()
 if page == "Maturity":
     page_maturity(is_mobile)
 elif page == "ProposalDetail":
@@ -2749,3 +2910,5 @@ elif page == "Import":
 else:
     st.session_state.page = "Maturity"
     st.rerun()
+
+render_mobile_nav(page)
